@@ -34,6 +34,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			'settings' => 'Settings',
 			'list' => 'List',
 			'log' => 'Log',
+			'edit-user' => 'User',
 		);
 		$this->tabs = apply_filters( $this->slug.'-tabs', $this->tabs );
 		
@@ -171,6 +172,31 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			white-space:nowrap;
 		}
 		
+		h4 {
+			margin-bottom:0.2em;
+		}
+		
+		button.process-user {
+			margin:1em 0em;
+		}
+		
+		.wp-user-account-details,
+		.profile-site-details,
+		.connections-post-details {
+			border:solid 1px #ccc;
+			padding:1em;
+		}
+
+		.wp-user-account-details .buttons,
+		.profile-site-details .buttons,
+		.connections-post-details .buttons {
+			text-align:right;
+		}
+		
+		.buttons button {
+			margin-left:0.5em;
+		}
+		
 		</style>
   		<script type="text/javascript">
 			jQuery(document).ready( function()
@@ -229,6 +255,11 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		add_settings_section(
 			'log', 'Log', array( $this, 'print_log_section' ),
 			$this->slug.':log'
+		);
+
+		add_settings_section(
+			'edit-user', 'Edit User', array( $this, 'print_edit_user_section' ),
+			$this->slug.':edit-user'
 		);
 
 	}
@@ -446,7 +477,9 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		 
 			<h2 class="nav-tab-wrapper">
 				<?php foreach( $this->tabs as $k => $t ): ?>
+					<?php if( $k != 'edit-user' ): ?>
 					<a href="?page=<?php echo $this->slug; ?>&tab=<?php echo $k; ?>" class="nav-tab <?php if($k==$this->tab) echo 'active'; ?>"><?php echo $t; ?></a>
+					<?php endif; ?>
 				<?php endforeach; ?>
 			</h2>
 		
@@ -841,6 +874,245 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 	public function print_log( $args )
 	{
 		echo 'print_log';
+	}
+	
+	
+	public function print_edit_user_section( $args )
+	{
+		$id = $_REQUEST['id'];
+
+		if( empty($id) )
+		{
+			?>
+			<p class="no-id">No id provided.</p>
+			<?php
+			return;
+		}
+
+		$user = $this->model->get_user_by_id( $id );
+		if( empty($user) )
+		{
+			?>
+			<p class="invalid-id">Invalid id provided: "<?php echo $id; ?>"</p>
+			<?php
+			return;
+		}
+		
+		echo '<pre>';
+		var_dump($user);
+		echo '</pre>';
+		
+		
+		if( $user['wp_user_id'] )
+			$wp_user = $this->model->get_wp_user( $user['wp_user_id'] );
+		if( $user['profile_site_id'] )
+			$profile_site = $this->model->get_profile_site( $user['profile_site_id'] );
+		if( $user['connections_post_id'] )
+			$connections_post = $this->model->get_connections_post( $user['connections_post_id'] );
+		
+
+		// button: Process User
+		?>
+		<button name="process-user" class="process-user top">Process User</button>
+		<?php
+		
+		
+		// WP User account
+		?>
+		<h4>WordPress User Account</h4>
+		
+		<div class="wp-user-account-details">
+			
+			<?php
+			// if wp_user_id is set
+				// if user id exists, then list user details
+				// else ERROR, wp_user_id set but user does not exist.
+
+			$wp_user = null;
+			if( $user['wp_user_id'] ):
+				$wp_user = $this->model->get_wp_user( $user['wp_user_id'] );
+			
+				if( $wp_user ):
+					/*
+					["ID"]=>string(3) "294"
+					["user_login"]=>string(8) "iaggarwa"
+					["user_email"]=>string(24) "Ishwar.Aggarwal@uncc.edu"
+					["display_name"]=>string(15) "Ishwar Aggarwal"
+					*/
+					//orghub_print($wp_user->data);
+					orghub_print($wp_user->data->ID);
+					orghub_print($wp_user->data->user_login);
+					orghub_print($wp_user->data->user_email);
+					orghub_print($wp_user->data->display_name);
+				else:
+					?><p class="error">ERROR: wp_user_id set ("<?php echo $user['wp_user_id']; ?>") but user does not exist.</p><?php
+				endif;
+			else:
+				?><p>No user set.</p><?php
+			endif;
+			?>
+		
+			<div class="buttons">
+			
+				<?php
+				// buttons: 
+					// if user exists, delete user; else, create user.
+					// if wp_user_id is set, reset wp_user_id 
+		
+				if( $wp_user ):
+					?><button name="delete-user">Delete User</button><?php
+				else:
+					?><button name="create-user">Create User</button><?php
+				endif;
+				
+				if( $user['wp_user_id'] ):
+					?><button name="reset-wp-user-id">Reset wp_user_id</button><?php
+				endif;
+				?>		
+			
+			</div>
+		
+		</div>
+		
+		<?php
+		// Profile Site
+		?>
+		<h4>Profile Site</h4>
+		
+		<div class="profile-site-details">
+			
+			<?php
+			// if profile_site_id is set
+				// if profile site exists, then list site details
+				// else ERROR, profile_site_id is set but does not exist.
+
+			$profile_site = null;
+			if( $user['profile_site_id'] ):
+				$profile_site = $this->model->get_profile_site( $user['profile_site_id'] );
+			
+				if( $profile_site ):
+					/*
+					["blog_id"]=>
+					["domain"]=>
+					["path"]=>
+  					["archived"]=>
+  					["blogname"]=>
+  					["siteurl"]=>
+    				*/
+					orghub_print($profile_site->blog_id);
+					orghub_print($profile_site->domain);
+					orghub_print($profile_site->path);
+					orghub_print($profile_site->archived);
+					orghub_print($profile_site->blogname);
+					orghub_print($profile_site->siteurl);
+				else:
+					?><p class="error">ERROR: profile_site_id set ("<?php echo $user['profile_site_id']; ?>") but site does not exist.</p><?php
+				endif;
+			else:
+				?><p>No profile site set.</p><?php
+			endif;
+			?>
+		
+			<div class="buttons">
+			
+				<?php
+				// buttons:
+					// if profile site exists, archive site & delete site; else create Site
+					// create site, specify path to site.
+					// if profile_site_id is set, reset profile_site_id
+		
+				if( $profile_site ):
+					?><button name="delete-site">Delete Site</button><?php
+				else:
+					$path_creation_type = $this->model->get_option( 'path-creation-type', 'username-slug' );
+					$path = '';
+					switch( $path_creation_type )
+					{
+						case 'full-name-slug':
+							$path = sanitize_title( $user['first_name'].' '.$user['last_name'] );
+							break;
+				
+						case 'username-slug':
+							$path = $user['username'];
+							break;
+					}
+					?>
+					<label for="site-path">Path:</label>
+					<input type="text" id="site-path" name="site-path" value="<?php echo $path; ?>" />
+					<button name="create-site">Create Site</button>
+					<?php
+				endif;
+				
+				if( $user['profile_site_id'] ):
+					?><button name="reset-profile-site-id">Reset profile_site_id</button><?php
+				endif;
+				?>		
+			
+			</div>
+		
+		</div>		
+
+		<?php
+		// Connections Post
+		?>
+		<h4>Connections Post</h4>
+		
+		<div class="connections-post-details">
+			
+			<?php
+			// if connections_post_id is set
+				// if connection post exists, then list connection post details
+				// else ERROR, connections_post_id is set but does not exist.
+
+			$connections_post = null;
+			if( $user['connections_post_id'] ):
+				$connections_post = $this->model->get_connections_post( $user['connections_post_id'] );
+			
+				if( $connections_post ):
+					/*
+					["ID"]=>int(2000)
+					["post_author"]=>string(3) "294"
+					["post_title"]=>string(17) "Ishwar   Aggarwal"				  
+  					["post_status"]=>string(5) "draft"
+    				*/
+    				//orghub_print($connections_post);
+					orghub_print($connections_post['ID']);
+					orghub_print($connections_post['post_author']);
+					orghub_print($connections_post['post_title']);
+					orghub_print($connections_post['post_status']);
+				else:
+					?><p class="error">ERROR: connections_post_id set ("<?php echo $user['connections_post_id']; ?>") but connections post does not exist.</p><?php
+				endif;
+			else:
+				?><p>No connections post set.</p><?php
+			endif;
+			?>
+		
+			<div class="buttons">
+			
+				<?php
+				// buttons:
+					// if connection post exists, draft & delete connection post; else create post
+					// if connections_post_id is set, reset connections_post_id
+		
+				if( $connections_post ):
+					?><button name="delete-post">Delete Post</button><?php
+				else:
+					?><button name="create-post">Create Post</button><?php
+				endif;
+				
+				if( $user['connections_post_id'] ):
+					?><button name="reset-connections-post-id">Reset connections_post_id</button><?php
+				endif;
+				?>		
+			
+			</div>
+		
+		</div>
+		<?php
+		
+		// button: Process User
+		?><button name="process-user" class="process-user bottom">Process User</button><?php
 	}
 	
 }

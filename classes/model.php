@@ -288,6 +288,7 @@ class OrganizationHub_Model
 	
 	public function get_user( $username )
 	{
+		global $wpdb;
 		return $wpdb->get_row(
 			$wpdb->prepare(
 				'SELECT * FROM '.self::$table.' WHERE username = %s',
@@ -938,6 +939,32 @@ class OrganizationHub_Model
 			$this->write_to_log( "ERROR: Unable to set user status in DB: ".$db_user['id']." => ".$status, true );
 			return false;
 		}
+	}
+	
+	
+	public function get_wp_user( $id )
+	{
+		return get_user_by( 'id', intval($id) );
+	}
+	
+	public function get_profile_site( $id )
+	{
+		
+		return get_blog_details( intval($id) );
+	}
+	
+	public function get_connections_post( $id )
+	{
+		$connections_blog_id = $this->check_connections_site();
+		if( !$connections_blog_id ) return false;
+		
+		switch_to_blog( $connections_blog_id );
+				
+		$post = get_post( intval($id), ARRAY_A );
+		
+		restore_current_blog();
+		
+		return $post;
 	}
 
 
