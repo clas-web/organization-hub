@@ -19,6 +19,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 	
 	private $process_results = null;
 	private $model = null;
+	private $users_table = null;
 
 	
 	//------------------------------------------------------------------------------------
@@ -350,9 +351,9 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 
 	public function process()
 	{
-		if( empty($_GET['action']) ) return;
+		if( empty($_REQUEST['action']) ) return;
 		
-		switch( $_GET['action'] )
+		switch( $_REQUEST['action'] )
 		{
 			case 'upload':
 				$this->upload_file();
@@ -364,7 +365,6 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			
 			case 'save':
 				$this->save_settings();
-				
 		}
 	}
 	
@@ -435,7 +435,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 	//------------------------------------------------------------------------------------
 	public function show()
 	{
-		 $this->process();
+		$this->process();
 		?>
 		
 		<div class="wrap tab-<?php echo $this->tab; ?>">
@@ -525,7 +525,26 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		<?php
 	}
 	
-
+	
+	
+	public function add_screen_options()
+	{
+		if( $this->tab == 'list' )
+		{
+			$option = 'per_page';
+			$args = array(
+				'label' => 'Users',
+				'default' => 100,
+				'option' => 'users_per_page'
+			);
+			add_screen_option( $option, $args );
+			
+			require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/list-table.php' );
+			$this->users_table = new OrganizationsHub_ListTable();
+		}
+	}
+	
+	
 
 //========================================================================================
 //========================================================= Display Setting Sections =====
@@ -626,10 +645,14 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		//orghub_print($filter);
 		
 		//orghub_print( $filter_types );
+
+		if( $this->users_table == null )
+		{
+			require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/list-table.php' );
+			$this->users_table = new OrganizationsHub_ListTable();
+		}
 		
-		require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/list-table.php' );
-		$list_table = new OrganizationsHub_ListTable();
-		$list_table->prepare_items( $filter );
+		$this->users_table->prepare_items( $filter );
 		?>
 		
 		<form action="admin.php" class="filter-form">
@@ -685,8 +708,11 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			
 		</form>
 
+		<form id="events-filter" action="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>" method="post">
+			<?php $this->users_table->search_box('search','users-table-search'); ?>
+			<?php $this->users_table->display(); ?>
+		</form>
 		<?php
-		$list_table->display();
 	}
 	
 

@@ -65,19 +65,35 @@ class OrganizationHub_Model
 	/**
 	 * Drop the table
 	 */
-	public function delete_table() {
+	public function delete_table()
+	{
 		global $wpdb;
 
 		$wpdb->query( "DROP TABLE ".self::$table.";" );
 	}
 
 
-	public function count_items() {
+	public function count_items()
+	{
 		global $wpdb;
 
 		$result = $wpdb->get_var( "SELECT COUNT(*) FROM ".self::$table );
 
 		return absint( $result );
+	}
+	
+	public function is_valid( $id )
+	{
+		global $wpdb;
+
+		$count = $wpdb->get_var( 
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM ".self::$table." WHERE id = %d",
+				intval( $id )
+			)
+		);
+
+		return ( !empty($count) && $count > 0 );
 	}
 
 
@@ -138,7 +154,73 @@ class OrganizationHub_Model
 		$wpdb->query( "DELETE FROM ".self::$table );
 	}
 
-	public function get_users( $filter = array(), $offset = 0, $limit = -1 )
+	public function get_users( $filter = array(), $search = array(), $orderby = null, $offset = 0, $limit = -1 )
+	{
+		global $wpdb;
+		
+		$where_string = '';
+		if( is_array($filter) && count($filter) > 0 )
+		{
+			$keys = array_keys($filter);
+			$where_string = 'WHERE ';
+			
+			for( $i = 0; $i < count($keys); $i++ )
+			{
+				$key = $keys[$i];
+				$where_string .= ' ( ';
+				for( $j = 0; $j < count($filter[$key]); $j++ )
+				{
+					$where_string .= $key." = '".$filter[$key][$j]."' ";
+					if( $j < count($filter[$key])-1 ) $where_string .= ' OR ';
+				}
+				$where_string .= ' ) ';
+				
+				if( $i < count($keys)-1 ) $where_string .= ' AND ';
+			}
+		}
+
+		if( is_array($search) && count($search) > 0 )
+		{
+			$keys = array_keys($search);
+			if( empty($where_string) ) $where_string = 'WHERE ';
+			else $where_string .= ' AND ';
+			
+			$where_string .= ' ( ';
+			for( $i = 0; $i < count($keys); $i++ )
+			{
+				$key = $keys[$i];
+				$where_string .= ' ( ';
+				for( $j = 0; $j < count($search[$key]); $j++ )
+				{
+					$where_string .= $key." LIKE '%".$search[$key][$j]."%' ";
+					if( $j < count($search[$key])-1 ) $where_string .= ' OR ';
+				}
+				$where_string .= ' ) ';
+				
+				if( $i < count($keys)-1 ) $where_string .= ' OR ';
+			}
+			$where_string .= ' ) ';
+		}
+				
+		if( $orderby ) $orderby = 'ORDER BY '.$orderby; else $orderby = '';
+		
+		$limit = intval( $limit );
+		$offset = intval( $offset );
+		
+		$limit_string = '';
+		if( $limit > 0 )
+		{
+			if( $offset > 0 )
+				$limit_string = "LIMIT $offset, $limit";
+			else
+				$limit_string = "LIMIT $limit";
+		}
+
+//		orghub_print("SELECT * FROM ".self::$table." $where_string $orderby $limit_string");
+		return $wpdb->get_results( "SELECT * FROM ".self::$table." $where_string $orderby $limit_string", ARRAY_A );
+	}
+
+	public function get_users_count( $filter = array(), $search = array(), $orderby = null, $offset = 0, $limit = -1 )
 	{
 		global $wpdb;
 		
@@ -163,6 +245,31 @@ class OrganizationHub_Model
 			}
 		}
 		
+		if( is_array($search) && count($search) > 0 )
+		{
+			$keys = array_keys($search);
+			if( empty($where_string) ) $where_string = 'WHERE ';
+			else $where_string .= ' AND ';
+			
+			$where_string .= ' ( ';
+			for( $i = 0; $i < count($keys); $i++ )
+			{
+				$key = $keys[$i];
+				$where_string .= ' ( ';
+				for( $j = 0; $j < count($search[$key]); $j++ )
+				{
+					$where_string .= $key." LIKE '%".$search[$key][$j]."%' ";
+					if( $j < count($search[$key])-1 ) $where_string .= ' OR ';
+				}
+				$where_string .= ' ) ';
+				
+				if( $i < count($keys)-1 ) $where_string .= ' OR ';
+			}
+			$where_string .= ' ) ';
+		}
+				
+		if( $orderby ) $orderby = 'ORDER BY '.$orderby; else $orderby = '';
+		
 		$limit = intval( $limit );
 		$offset = intval( $offset );
 		
@@ -175,10 +282,9 @@ class OrganizationHub_Model
 				$limit_string = "LIMIT $limit";
 		}
 
-		//orghub_print("SELECT * FROM ".self::$table." $where_string $limit_string");
-		return $wpdb->get_results( "SELECT * FROM ".self::$table." $where_string $limit_string", ARRAY_A );
-	}
-	
+//		orghub_print("SELECT COUNT(*) FROM ".self::$table." $where_string $orderby $limit_string");
+		return $wpdb->get_var( "SELECT COUNT(*) FROM ".self::$table." $where_string $orderby $limit_string" );
+	}	
 	
 	public function get_user( $username )
 	{
@@ -186,6 +292,19 @@ class OrganizationHub_Model
 			$wpdb->prepare(
 				'SELECT * FROM '.self::$table.' WHERE username = %s',
 				$username
+			),
+			ARRAY_A
+		);
+	}
+	
+	
+	public function get_user_by_id( $user_id )
+	{
+		global $wpdb;
+		return $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM '.self::$table.' WHERE id = %d',
+				$user_id
 			),
 			ARRAY_A
 		);
@@ -267,13 +386,19 @@ class OrganizationHub_Model
 	
 	private function create_user( $db_user )
 	{
-
 		global $wpdb;
+		
+		if( is_numeric($db_user) )
+		{
+			$db_user = $this->get_user_by_id( $db_user );
+			if( !$db_user ) return null;
+		}
+		
 		$user_id = false;
 		
 		if( $db_user['wp_user_id'] )
 		{
-			$user = get_user_by( 'id', $db_user['wp_user_id'] );
+			$user = $this->get_wp_user( $db_user['wp_user_id'] );
 			if( $user !== false ) return $db_user['wp_user_id'];
 		}
 		
@@ -358,6 +483,12 @@ class OrganizationHub_Model
 	{
 		global $wpdb;
 		
+		if( is_numeric($db_user) )
+		{
+			$db_user = $this->get_user_by_id( $db_user );
+			if( !$db_user ) return null;
+		}
+		
 		$profile_site_categories = $this->get_option( 'profile-site-categories' );
 		$profile_site_categories = array_filter( explode(',', $profile_site_categories), 'trim' );
 		
@@ -371,6 +502,11 @@ class OrganizationHub_Model
 			{
 				// TODO LATER: check blog settings.
 				return $db_user['profile_site_id'];
+			}
+			else
+			{
+				// error / exception
+				return null;
 			}
 		}
 		
@@ -400,7 +536,8 @@ class OrganizationHub_Model
 			$blog_details = get_blog_details( $blog_id );
 			if( $blog_details )
 			{
-				$user = get_user_by( 'email', $blog_details['admin_email'] );
+				$this->write_to_log( print_r($blog_details->admin_email) );
+				$user = get_user_by( 'email', $blog_details->admin_email );
 				if( (!$user) || ($user->slug !== $db_user['username']) )
 				{
 					$this->write_to_log( 'Profile site already exists with another admin.', true );
@@ -418,7 +555,13 @@ class OrganizationHub_Model
 		}
 		else
 		{
-			$blog_id = wpmu_create_blog( $db_user['domain'], $path, $db_user['first_name'].' '.$db_user['last_name'], $db_user['wp_user_id'] );
+			$blog_id = wpmu_create_blog( $db_user['domain'], '/'.$path, $db_user['first_name'].' '.$db_user['last_name'], $db_user['wp_user_id'] );
+			if( is_wp_error($blog_id))
+			{
+				$this->write_to_log( $blog_id->get_error_message(), true );
+				$this->write_to_log( 'Site: '.$db_user['domain'].'/'.$path, true );
+				return null;
+			}
 		}
 		
 		if( $blog_id )
@@ -443,12 +586,18 @@ class OrganizationHub_Model
 		}
 		
 		$this->write_to_log( "ERROR: Unable to create profile site.", true );
-		return false;
+		return null;
 	}
 	
 	private function create_connection_post( $db_user )
 	{
 		global $wpdb;
+		
+		if( is_numeric($db_user) )
+		{
+			$db_user = $this->get_user_by_id( $db_user );
+			if( !$db_user ) return null;
+		}
 		
 		$connections_site_categories = $this->get_option( 'connections-site-categories' );
 		$connections_site_categories = array_filter( explode(',', $connections_site_categories), 'trim' );
@@ -490,6 +639,7 @@ class OrganizationHub_Model
 				else
 					update_post_meta( $db_user['connections_post_id'], 'url', 'n/a' );
 				
+				wp_reset_query();
 				return $db_user['connections_post_id'];
 			}
 			else

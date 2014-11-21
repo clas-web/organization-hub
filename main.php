@@ -42,13 +42,16 @@ class OrganizationHub_Main
 	 */
 	public static function setup_admin_pages()
 	{
-	    add_menu_page(
+	    $hook = add_menu_page(
 			'Organization Hub',
 			'Organization Hub',
 			'manage_network',
 			'organization-hub',
 			array( 'OrganizationHub_Main', 'show_admin_page' )
 		);
+		
+		//echo 'hook: '.$hook;
+        add_action( "load-$hook", array( 'OrganizationHub_Main', 'add_screen_options' ) );
 
 		require_once( dirname(__FILE__).'/functions.php' );
 		
@@ -168,6 +171,16 @@ class OrganizationHub_Main
 	{
 		if( !self::init_page() ) return;
 		self::$_page->show();
+	}
+	
+	
+	/**
+	 *
+	 */
+	public static function add_screen_options()
+	{
+		if( !self::init_page() ) return;
+		self::$_page->add_screen_options();
 	}
 
 }	
