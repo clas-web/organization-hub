@@ -752,12 +752,86 @@ class OrganizationHub_Model
 	
 	private function draft_connections_post( $db_user )
 	{
+		global $wpdb;
 		
+		if( is_numeric($db_user) )
+		{
+			$db_user = $this->get_user_by_id( $db_user );
+			if( !$db_user ) return null;
+		}
+		
+		if( !$db_user['wp_user_id'] ) return null;
+		if( !$db_user['connections_post_id'] ) return null;
+		
+		$connections_blog_id = $this->check_connections_site();
+		
+		if( !$connections_blog_id )
+		{
+			$this->write_to_log( 'Connections site does not exist or does not have Connections Hub plugin activated.', true );
+			return null;
+		}
+		
+		switch_to_blog( $connections_blog_id );
+		
+		$post = get_post( $db_user['connections_post_id'], ARRAY_A );
+		
+		if( $post )
+		{
+			$connection_post = array(
+				'ID'           => $db_user['connections_post_id'],
+				'post_status'  => 'draft',
+			);
+			wp_update_post( $connections_post );
+		}
+
+		restore_current_blog();
+		
+		if( $post )
+		{
+			$result = $wpdb->update(
+				self::$table,
+				array( 'connections_post_id' => null ),
+				array( 'id' => intval( $db_user['id'] ) ),
+				array( '%d' ),
+				array( '%d' )
+			);
+		}
+		
+		return null;
 	}
 	
 	private function archive_site( $db_user )
 	{
+		global $wpdb;
 		
+		if( is_numeric($db_user) )
+		{
+			$db_user = $this->get_user_by_id( $db_user );
+			if( !$db_user ) return null;
+		}
+		
+		if( !$db_user['wp_user_id'] ) return null;
+		if( !$db_user['profile_site_id'] ) return null;
+		
+		$blog_details = get_blog_details( $db_user['profile_site_id'] );
+		
+		if( $blog_details === false )
+		{
+			$db_user['profile_site_id'] = null;
+		}
+		else
+		{
+			// archive site
+			$result = $wpdb->update(
+				$wpdb->blogs,
+				array( 'archived' => 1 ),
+				array( 'blog_id' => intval($db_user['profile_site_id']) ),
+				array( '%d' ),
+				array( '%d' )
+			);
+		}
+		
+		return null;
 	}
 	
 	
