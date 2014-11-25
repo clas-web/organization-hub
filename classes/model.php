@@ -918,28 +918,7 @@ class OrganizationHub_Model
 	}
 	
 	
-	public function set_user_status( $db_user, $status )
-	{
-		global $wpdb;
-		
-		$result = $wpdb->update(
-			self::$table,
-			array( 'status' => $status ),
-			array( 'id' => intval( $db_user['id'] ) ),
-			array( '%s' ),
-			array( '%d' )
-		);
-	
-		if( $result !== false )
-		{
-			return $status;
-		}
-		else
-		{
-			$this->write_to_log( "ERROR: Unable to set user status in DB: ".$db_user['id']." => ".$status, true );
-			return false;
-		}
-	}
+
 	
 	
 	public function get_wp_user( $id )
@@ -966,6 +945,29 @@ class OrganizationHub_Model
 		
 		return $post;
 	}
+	
+	
+	public function get_connections_post_edit_link( $id )
+	{
+		$connections_blog_id = $this->check_connections_site();
+		if( !$connections_blog_id ) return false;
+		
+		switch_to_blog( $connections_blog_id );
+				
+// 		$link = get_edit_post_link( intval($id) );
+		$link = admin_url().'post.php?post='.$id.'&action=edit';
+		
+		restore_current_blog();
+		
+		return $link;
+	}
+
+
+
+
+
+
+
 
 
 }

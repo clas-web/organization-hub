@@ -382,21 +382,123 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 
 	public function process()
 	{
+		$users = $this->model->get_users();
+		
+		foreach( $users as $u )
+		{
+			$exceptions = $this->model->get_exceptions( $u['id'] );
+			if( count($exceptions) == 0 )
+			{
+				$this->model->clear_user_exceptions( $u['id'] );
+			}
+		}
+		
 		if( empty($_REQUEST['action']) ) return;
 		
+		switch( $this->tab )
+		{
+			case 'settings':
+				$this->process_settings_page();
+				break;
+			case 'list':
+				$this->process_list_page();
+				break;
+			case 'log':
+				$this->process_log_page();
+				break;
+			case 'edit-user':
+				$this->process_edit_user_page();
+				break;
+		}
+	}
+	
+	private function process_settings_page()
+	{
+		switch( $_REQUEST['action'] )
+		{
+			case 'save':
+				$this->save_settings();
+				break;
+		}
+	}
+	
+	private function process_list_page()
+	{
 		switch( $_REQUEST['action'] )
 		{
 			case 'upload':
+				echo 'upload : ';
 				$this->upload_file();
 				break;
-				
-			case 'process':
+			case 'Process All Users':
 				$this->process_users();
 				break;
-			
-			case 'save':
-				$this->save_settings();
 		}
+	}
+	
+	private function process_log_page()
+	{
+		switch( $_REQUEST['action'] )
+		{
+		}
+	}
+	
+	private function process_edit_user_page()
+	{
+		$user_id = intval($_REQUEST['id']);
+		if( !$user_id ) return;
+		
+		switch( $_REQUEST['action'] )
+		{
+			case 'update-status':
+				// TODO: update status function
+				break;
+			case 'Process User':
+				$this->model->process_user( $user_id );
+				break;
+			case 'create-username':
+				$this->model->create_username( $user_id );
+				break;
+			case 'delete-username':
+				// TODO: delete username function
+				//$this->model->delete_username( $user_id );
+				break;
+			case 'reset-wp-user-id':
+				$this->model->update_wp_user_id( $user_id, null );
+				break;
+			case 'create-site':
+				$this->model->create_site( $user_id, $_REQUEST['site-path'], true );
+				break;
+			case 'archive-site':
+				$this->model->archive_site( $user_id );
+				break;
+			case 'publish-site':
+				$this->model->publish_site( $user_id );
+				break;
+			case 'reset-profile-site-id':
+				$this->model->update_profile_site_id( $user_id, null );
+				break;
+			case 'create-connections-post':
+				$this->model->create_connections_post( $user_id, true );
+				break;
+			case 'draft-connections-post':
+				$this->model->draft_connections_post( $user_id );
+				break;
+			case 'reset-connections-post-id':
+				$this->model->update_connections_post_id( $user_id, null );
+				break;
+			case 'clear-username-error':
+				$this->model->remove_user_exception( $user_id, 'username' );
+				break;
+			case 'clear-site-error':
+				$this->model->remove_user_exception( $user_id, 'site' );
+				break;
+			case 'clear-connections-error':
+				$this->model->remove_user_exception( $user_id, 'connections' );
+				break;
+		}
+		
+		//wp_redirect( 'admin.php?page=organization-hub&tab=edit-user&id='.$_REQUEST['id'] );
 	}
 	
 	public function upload_file()
@@ -898,22 +1000,14 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			return;
 		}
 		
-		echo '<pre>';
-		var_dump($user);
-		echo '</pre>';
+		<form action="admin.php">
+			<input type="hidden" name="page" value="<?php echo $this->slug; ?>" />
+			<input type="hidden" name="tab" value="<?php echo $this->tab; ?>" />
+			<input type="hidden" name="id" value="<?php echo $id; ?>" />
 		
-		
-		if( $user['wp_user_id'] )
-			$wp_user = $this->model->get_wp_user( $user['wp_user_id'] );
-		if( $user['profile_site_id'] )
-			$profile_site = $this->model->get_profile_site( $user['profile_site_id'] );
-		if( $user['connections_post_id'] )
-			$connections_post = $this->model->get_connections_post( $user['connections_post_id'] );
-		
-
+		<?php
 		// button: Process User
-		?>
-		<button name="process-user" class="process-user top">Process User</button>
+		submit_button( 'Process User', 'primary', 'action' ); ?>
 		<?php
 		
 		
@@ -921,9 +1015,21 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		?>
 		<h4>WordPress User Account</h4>
 		
-		<div class="wp-user-account-details">
+		<div id="wp-user-account-details" class="details-box">
 			
 			<?php
+
+			$exception = $this->model->get_user_exception( $id, 'username' );
+			if( $exception )
+			{
+				?>
+				<p class="exception">
+					<?php echo $exception; ?>
+					<a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&action=clear-username-error">Clear Error</a>
+				</p>
+				<?php
+			}
+				
 			// if wp_user_id is set
 				// if user id exists, then list user details
 				// else ERROR, wp_user_id set but user does not exist.
@@ -940,10 +1046,17 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 					["display_name"]=>string(15) "Ishwar Aggarwal"
 					*/
 					//orghub_print($wp_user->data);
-					orghub_print($wp_user->data->ID);
-					orghub_print($wp_user->data->user_login);
-					orghub_print($wp_user->data->user_email);
-					orghub_print($wp_user->data->display_name);
+// 					orghub_print($wp_user->data->ID);
+// 					orghub_print($wp_user->data->user_login);
+// 					orghub_print($wp_user->data->user_email);
+// 					orghub_print($wp_user->data->display_name);
+					
+					?>
+					<div class="user-id"><label>ID</label><span><?php echo $wp_user->data->ID; ?></span></div>
+					<div class="user-login"><label>Login</label><span><?php echo $wp_user->data->user_login; ?></span></div>
+					<div class="user-name"><label>Name</label><span><?php echo $wp_user->data->display_name; ?></span></div>
+					<div class="user-email"><label>Email</label><span><?php echo $wp_user->data->user_email; ?></span></div>
+					<?php
 				else:
 					?><p class="error">ERROR: wp_user_id set ("<?php echo $user['wp_user_id']; ?>") but user does not exist.</p><?php
 				endif;
@@ -960,13 +1073,14 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 					// if wp_user_id is set, reset wp_user_id 
 		
 				if( $wp_user ):
-					?><button name="delete-user">Delete User</button><?php
+					?><a href="<?php echo network_admin_url( 'user-edit.php?user_id='.$wp_user->ID ); ?>" target="_blank">Edit User</a><?php
+					/*?><button name="action" value="delete-username">Delete User</button><?php*/
 				else:
-					?><button name="create-user">Create User</button><?php
+					?><button name="action" value="create-username">Create User</button><?php
 				endif;
 				
 				if( $user['wp_user_id'] ):
-					?><button name="reset-wp-user-id">Reset wp_user_id</button><?php
+					?><button name="action" value="reset-wp-user-id">Reset wp_user_id</button><?php
 				endif;
 				?>		
 			
@@ -979,9 +1093,21 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		?>
 		<h4>Profile Site</h4>
 		
-		<div class="profile-site-details">
+		<div id="profile-site-details" class="details-box">
 			
 			<?php
+
+			$exception = $this->model->get_user_exception( $id, 'site' );
+			if( $exception )
+			{
+				?>
+				<p class="exception">
+					<?php echo $exception; ?>
+					<a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&action=clear-site-error">Clear Error</a>
+				</p>
+				<?php
+			}
+
 			// if profile_site_id is set
 				// if profile site exists, then list site details
 				// else ERROR, profile_site_id is set but does not exist.
@@ -999,12 +1125,19 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
   					["blogname"]=>
   					["siteurl"]=>
     				*/
-					orghub_print($profile_site->blog_id);
-					orghub_print($profile_site->domain);
-					orghub_print($profile_site->path);
-					orghub_print($profile_site->archived);
-					orghub_print($profile_site->blogname);
-					orghub_print($profile_site->siteurl);
+// 					orghub_print($profile_site->blog_id);
+// 					orghub_print($profile_site->domain);
+// 					orghub_print($profile_site->path);
+// 					orghub_print($profile_site->archived);
+// 					orghub_print($profile_site->blogname);
+// 					orghub_print($profile_site->siteurl);
+
+					?>
+					<div class="site-id"><label>ID</label><span><?php echo $profile_site->blog_id; ?></span></div>
+					<div class="site-name"><label>Name</label><span><?php echo $profile_site->blogname; ?></span></div>
+					<div class="site-url"><label>URL</label><span><?php echo $profile_site->siteurl; ?></span></div>
+					<div class="site-archived"><label>Archived</label><span><?php echo ($profile_site->archived == '0' ? 'No' : 'Yes'); ?></span></div>
+					<?php
 				else:
 					?><p class="error">ERROR: profile_site_id set ("<?php echo $user['profile_site_id']; ?>") but site does not exist.</p><?php
 				endif;
@@ -1022,7 +1155,12 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 					// if profile_site_id is set, reset profile_site_id
 		
 				if( $profile_site ):
-					?><button name="delete-site">Delete Site</button><?php
+					?><a href="<?php echo network_admin_url( 'site-info.php?id='.$profile_site->blog_id ); ?>" target="_blank">Edit Site</a><?php
+					if( $profile_site->archived == '0' ):
+						?><button name="action" value="archive-site">Archive Site</button><?php
+					else:
+						?><button name="action" value="publish-site">Publish Site</button><?php
+					endif;
 				else:
 					$path_creation_type = $this->model->get_option( 'path-creation-type', 'username-slug' );
 					$path = '';
@@ -1039,12 +1177,12 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 					?>
 					<label for="site-path">Path:</label>
 					<input type="text" id="site-path" name="site-path" value="<?php echo $path; ?>" />
-					<button name="create-site">Create Site</button>
+					<button name="action" value="create-site">Create Site</button>
 					<?php
 				endif;
 				
 				if( $user['profile_site_id'] ):
-					?><button name="reset-profile-site-id">Reset profile_site_id</button><?php
+					?><button name="action" value="reset-profile-site-id">Reset profile_site_id</button><?php
 				endif;
 				?>		
 			
@@ -1057,9 +1195,20 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		?>
 		<h4>Connections Post</h4>
 		
-		<div class="connections-post-details">
+		<div id="connections-post-details" class="details-box">
 			
 			<?php
+			$exception = $this->model->get_user_exception( $id, 'connections' );
+			if( $exception )
+			{
+				?>
+				<p class="exception">
+					<?php echo $exception; ?>
+					<a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&action=clear-connections-error">Clear Error</a>
+				</p>
+				<?php
+			}
+
 			// if connections_post_id is set
 				// if connection post exists, then list connection post details
 				// else ERROR, connections_post_id is set but does not exist.
@@ -1076,10 +1225,20 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
   					["post_status"]=>string(5) "draft"
     				*/
     				//orghub_print($connections_post);
-					orghub_print($connections_post['ID']);
-					orghub_print($connections_post['post_author']);
-					orghub_print($connections_post['post_title']);
-					orghub_print($connections_post['post_status']);
+// 					orghub_print($connections_post['ID']);
+// 					orghub_print($connections_post['post_author']);
+// 					orghub_print($connections_post['post_title']);
+// 					orghub_print($connections_post['post_status']);
+					
+					$author = get_user_by( 'id', $connections_post['post_author'] );
+
+					?>
+					<div class="connections-id"><label>ID</label><span><?php echo $connections_post['ID']; ?></span></div>
+					<div class="connections-title"><label>Title</label><span><?php echo $connections_post['post_title']; ?></span></div>
+					<div class="connections-author"><label>Author</label><span><?php echo $author->display_name; ?></span></div>
+					<div class="connections-draft"><label>Status</label><span><?php echo $connections_post['post_status']; ?></span></div>
+					<?php
+
 				else:
 					?><p class="error">ERROR: connections_post_id set ("<?php echo $user['connections_post_id']; ?>") but connections post does not exist.</p><?php
 				endif;
@@ -1096,13 +1255,14 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 					// if connections_post_id is set, reset connections_post_id
 		
 				if( $connections_post ):
-					?><button name="delete-post">Delete Post</button><?php
+					?><a href="<?php echo $this->model->get_connections_post_edit_link($connections_post['ID']); ?>" target="_blank">Edit Post</a><?php
+					?><button name="action" value="draft-connections-post">Draft Post</button><?php
 				else:
-					?><button name="create-post">Create Post</button><?php
+					?><button name="action" value="create-connections-post">Create Post</button><?php
 				endif;
 				
 				if( $user['connections_post_id'] ):
-					?><button name="reset-connections-post-id">Reset connections_post_id</button><?php
+					?><button name="action" value="reset-connections-post-id">Reset connections_post_id</button><?php
 				endif;
 				?>		
 			
@@ -1112,7 +1272,11 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		<?php
 		
 		// button: Process User
-		?><button name="process-user" class="process-user bottom">Process User</button><?php
+		submit_button( 'Process User', 'primary', 'action' ); 
+		?>
+		</form>
+		<?php
+		
 	}
 	
 }
