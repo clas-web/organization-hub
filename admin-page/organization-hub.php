@@ -140,29 +140,51 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			background:transparent;
 		}
 		
+		.filter-form {
+			min-width:50%;
+			max-width:100%;
+		}
+		
+		.filter-form table {
+			border:0;
+			border-collapse:collapse;
+			display:block;
+		}
+		
+		.filter-form table tr {
+			width:100%;
+		}
+		
+		.filter-form table th {
+			font-weight:bold;
+		}
+		
+		.filter-form table th,
+		.filter-form table td {
+			width:33%;
+			padding:0em 0.5em;
+		}
+		
+		.filter-form table tr th:first-child,
+		.filter-form table tr td:first-child {
+			padding-left:0em;
+		}
+
+		.filter-form table tr th:last-child,
+		.filter-form table tr td:last-child {
+			padding-right:0em;
+		}
+		
 		.filter-form button {
 			float:left;
 			margin:5px;
-		}
-		
-		.filter-form .filter-box {
-			width:80px;
-			float:left;
-		}
-
-		.filter-form .filter-box.category {
-			width:200px;
-		}
-				
-		.filter-form h5 {
-			margin:0px;
+			margin-left:0;
 		}
 		
 		.filter-form .scroll-box {
 			height:100px;
 			border:solid 1px #ccc;
 			padding:5px;
-			margin-right:5px;
 			overflow-x:hidden;
 			overflow-y:scroll;
 		}
@@ -170,6 +192,10 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		.filter-form .scroll-box .item {
 			display:block;
 			white-space:nowrap;
+		}
+		
+		.errors-checkbox {
+			padding:0.5em 0em;
 		}
 		
 		h4 {
@@ -180,21 +206,81 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			margin:1em 0em;
 		}
 		
-		.wp-user-account-details,
-		.profile-site-details,
-		.connections-post-details {
-			border:solid 1px #ccc;
+		p.exception {
+			color:red;
+		}
+		
+		p.error {
+			color:orange;
+		}
+		
+		.details-box {
+			border:solid 1px #999;
 			padding:1em;
 		}
-
-		.wp-user-account-details .buttons,
-		.profile-site-details .buttons,
-		.connections-post-details .buttons {
-			text-align:right;
+		
+		.details-box > p {
+			margin-top:0;
 		}
+		
+		.details-box > div {
+			display:inline-block;
+			margin-right:1em;
+		}
+
+		.details-box > div > label {
+			display:inline-block;
+			vertical-align:baseline;
+			padding-right:0.3em;
+			font-weight:bold;
+			border-right:solid 1px #ccc;
+		}
+
+		.details-box > div > span {
+			display:inline-block;
+			vertical-align:baseline;
+			padding-left:0.3em;
+		}
+
+		.details-box .buttons {
+			margin:0;
+			margin-top:1em;
+			padding-top:1em;
+			border-top:solid 1px #ccc;
+			text-align:right;
+			display:block;
+		}
+		
+		.details-box .buttons a {
+			float:left;
+		}
+
 		
 		.buttons button {
 			margin-left:0.5em;
+		}
+		
+		form.upload {
+			padding:1em;
+			margin-bottom:2em;
+			border:dotted 1px #ccc;
+		}
+		
+		form.upload h4 {
+			margin-top:0;
+		}
+		
+		form.upload p.submit {
+			margin:0; padding:0;
+			text-align:right;
+		}
+		
+		#users-table {
+			margin-top:2em;
+		}
+		
+		#users-table .user-exception {
+			color:red;
 		}
 		
 		</style>
@@ -545,6 +631,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 	public function process_users()
 	{
 		$users = $this->model->get_users();
+		//orghub_print($users, 'users');
 		
 		foreach( $users as $user )
 		{
@@ -702,24 +789,22 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 	//------------------------------------------------------------------------------------
 	public function print_list_section()
 	{
-		echo '<p>print_list_section</p>';
-		// action="options.php"
 		?>
 		
-		<h3>Upload New List</h3>
 		
-		<form method="post" action="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&action=upload" enctype="multipart/form-data">
-			<?php settings_fields( $this->slug ); ?>
+		<form class="upload" method="post" action="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&action=upload" enctype="multipart/form-data">
+
+		<h4>Upload New List</h4>
+
+			<?php //settings_fields( $this->slug ); ?>
  	    	<input type="file"
  			       name="<?php orghub_input_name_e( $this->tab, 'upload-list' ); ?>"
  			       accept=".csv" />
- 			<div class="upload-submit"><?php submit_button( 'Upload List' ); ?></div>
+ 			<div class="upload-submit"><?php submit_button( 'Upload List', 'small' ); ?></div>
  			<div style="clear:both"></div>
 		</form>
 		
 		
-		<h3>User List</h3>
-
 		<?php if( $this->process_results ): ?>
 			<div class="process-results">
 				<?php echo $this->process_results; ?>
@@ -729,7 +814,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		<form action="admin.php">
 			<input type="hidden" name="page" value="<?php echo $this->slug; ?>" />
 			<input type="hidden" name="tab" value="<?php echo $this->tab; ?>" />
-			<button name="action" value="process">Process All Users</button>
+			<?php submit_button( 'Process All Users', 'primary', 'action' ); ?>
 		</form>
 		
 		<?php
@@ -787,7 +872,11 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			$this->users_table = new OrganizationsHub_ListTable();
 		}
 		
-		$this->users_table->prepare_items( $filter );
+		$only_errors = false;
+		if( $_REQUEST['show-only-errors'] === '1' )
+			$only_errors = true;
+		
+		$this->users_table->prepare_items( $filter, $only_errors );
 		?>
 		
 		<form action="admin.php" class="filter-form">
@@ -800,12 +889,23 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 				<?php endforeach; ?>
 			<?php endif; ?>
 
+			<table>
+			<tr>
 			
 			<?php foreach( $filter_types as $key => $type ): ?>
 			
-				<div class="<?php echo $key; ?> filter-box">
-				<h5><?php echo $type['name']; ?></h5>
-				
+				<th class="<?php echo $key; ?>">
+				<?php echo $type['name']; ?>
+				</th>
+			
+			<?php endforeach; ?>
+			
+			</tr>
+			<tr>
+			
+			<?php foreach( $filter_types as $key => $type ): ?>
+			
+				<td class="<?php echo $key; ?>">	
 				<div class="scroll-box">
 				<?php foreach( $type['values'] as $value ): ?>
 					<div class="item">
@@ -820,9 +920,23 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 					</div>
 				<?php endforeach; ?>
 				</div>
-				</div>
+				</td>
 			
 			<?php endforeach; ?>
+			
+			</tr>
+			</table>
+			
+			<div class="errors-checkbox">
+			<input type="checkbox"
+			       name="show-only-errors"
+			       id="<?php orghub_input_name_e( 'show-only-errors' ); ?>"
+			       value="1"
+			       <?php checked( '1', $_REQUEST['show-only-errors'] ); ?> />
+			<label for="<?php orghub_input_name_e( 'show-only-errors' ); ?>" >
+			       Only show users that have errors.
+			</label>
+			</div>
 			
 			<button>Apply Filters</button>
 			
@@ -843,7 +957,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			
 		</form>
 
-		<form id="events-filter" action="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>" method="post">
+		<form id="users-table" action="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>" method="post">
 			<?php $this->users_table->search_box('search','users-table-search'); ?>
 			<?php $this->users_table->display(); ?>
 		</form>
@@ -999,6 +1113,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			<?php
 			return;
 		}
+		?>
 		
 		<form action="admin.php">
 			<input type="hidden" name="page" value="<?php echo $this->slug; ?>" />
