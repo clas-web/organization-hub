@@ -32,7 +32,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		
 		$this->tabs = array(
 			'settings' => 'Settings',
-			'list' => 'List',
+			'list' => 'Users List',
 			'log' => 'Log',
 			'edit-user' => 'User',
 		);
@@ -244,7 +244,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		//
 		
 		add_settings_section(
-			'list', 'List', array( $this, 'print_list_section' ),
+			'list', 'Users List', array( $this, 'print_list_section' ),
 			$this->slug.':list'
 		);
 
