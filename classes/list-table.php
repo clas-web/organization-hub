@@ -20,7 +20,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
 	/**
 	 * 
 	 */
-	function prepare_items( $filter = array() )
+	function prepare_items( $filter = array(), $only_errors = false )
 	{
 		parent::__construct(
             array(
@@ -66,7 +66,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
 				break;
 		}
 		
-		$users_count = $model->get_users_count( $filter, $search, $orderby );
+		$users_count = $model->get_users_count( $filter, $search, $only_errors, $orderby );
 	
 		$current_page = $this->get_pagenum();
 		$per_page = $this->get_items_per_page('users_per_page', 100);
@@ -76,7 +76,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
     		'per_page'    => $per_page
   		) );
   		
-  		$this->items = $model->get_users( $filter, $search, $orderby, ($current_page-1)*$per_page, $per_page );
+  		$this->items = $model->get_users( $filter, $search, $only_errors, $orderby, ($current_page-1)*$per_page, $per_page );
 	}
 
 
@@ -111,7 +111,9 @@ class OrganizationsHub_ListTable extends WP_List_Table
 	 */
 	function get_hidden_columns()
 	{
-		return array();
+		return array(
+			
+		);
 	}
 
 	
@@ -172,7 +174,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
 	function column_username( $item )
 	{
 		$actions = array(
-            'edit' => sprintf( '<a href="%s" target="_blank">Edit</a>', 'admin.php?page=organization-hub&tab=edit-user&id='.$item['id'] ),
+            'edit' => sprintf( '<a href="%s">Edit</a>', 'admin.php?page=organization-hub&tab=edit-user&id='.$item['id'] ),
         );
 
 		return sprintf( '%1$s<br/>%2$s', $item['username'],  $this->row_actions($actions) );
@@ -207,21 +209,32 @@ class OrganizationsHub_ListTable extends WP_List_Table
 	{
 		$html = $item['domain'].'<br/>';
 		
+		$model = OrganizationHub_Model::get_instance();
+		$username_class = ($model->get_user_exception($item['id'], 'username') ? 'user-exception' : '');
+		$site_class = ($model->get_user_exception($item['id'], 'site') ? 'user-exception' : '');
+		$connections_class = ($model->get_user_exception($item['id'], 'connections') ? 'user-exception' : '');
+		
+		$html .= '<div class="'.$username_class.'">';
 		if( $item['wp_user_id'] == null )
-			$html .= 'User does NOT exist.<br/>';
+			$html .= 'NO Username';
 		else
-			$html .= 'User exists: '.$item['wp_user_id'].'<br/>';
+			$html .= 'Username: '.$item['wp_user_id'];
+		$html .= '</div>';
 
-		if( $item['connections_post_id'] == null )
-			$html .= 'Connections post does NOT exist.<br/>';
-		else
-			$html .= 'Connection post exists: '.$item['connections_post_id'].'<br/>';
-
+		$html .= '<div class="'.$site_class.'">';
 		if( $item['profile_site_id'] == null )
-			$html .= 'Profile site does NOT exist<br/>';
+			$html .= 'NO Profile site';
 		else
-			$html .= 'Profile site exists: '.$item['profile_site_id'].'<br/>';		
+			$html .= 'Profile site: '.$item['profile_site_id'];		
+		$html .= '</div>';
 	
+		$html .= '<div class="'.$connections_class.'">';
+		if( $item['connections_post_id'] == null )
+			$html .= 'NO Connections Post';
+		else
+			$html .= 'Connection Post: '.$item['connections_post_id'];
+		$html .= '</div>';
+
 		return $html;
 	}
 	

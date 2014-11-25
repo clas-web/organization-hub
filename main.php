@@ -60,7 +60,7 @@ class OrganizationHub_Main
 //  		{
  			require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/model.php' );
  			$model = OrganizationHub_Model::get_instance();
- 			$model->create_table();
+ 			$model->create_tables();
 //  		}
  		
  		update_site_option( ORGANIZATION_HUB_VERSION_OPTION, ORGANIZATION_HUB_VERSION );
