@@ -9,6 +9,7 @@ class OrganizationHub_Model
 {
 	const ORGANIZATION_HUB_OPTIONS = 'organization-hub-options';
 	const LOG_PATH = ORGANIZATION_HUB_PLUGIN_PATH;
+	const LOG_FILE = '/log.txt';
 	
 	private static $instance = null;
 	private static $users_table = 'organization_hub_users';
@@ -44,7 +45,7 @@ class OrganizationHub_Model
 	 */
 	public function clear_log()
 	{
-		file_put_contents( self::LOG_PATH.'/log.txt', '' );
+		file_put_contents( self::LOG_PATH.self::LOG_FILE, '' );
 	}
 	
 
@@ -55,7 +56,7 @@ class OrganizationHub_Model
 	{
 		if( $newline ) $text .= "\n";
 		$text = str_pad( $username, 8, ' ', STR_PAD_RIGHT ).' : '.$text;
-		file_put_contents( self::LOG_PATH.'/log.txt', $text, FILE_APPEND );
+		file_put_contents( self::LOG_PATH.self::LOG_FILE, $text, FILE_APPEND );
 	}	
 
 

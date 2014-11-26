@@ -974,7 +974,11 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 	//------------------------------------------------------------------------------------	
 	public function print_log_section()
 	{
-		echo '<p>print_log_section</p>';
+		$contents = file_get_contents( OrganizationHub_Model::LOG_PATH.OrganizationHub_Model::LOG_FILE );
+		
+		echo '<pre>';
+		print_r($contents);
+		echo '</pre>';
 	}
 	
 	
