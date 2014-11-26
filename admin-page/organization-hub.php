@@ -609,12 +609,14 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		
 		$processed_rows = 0;
 		$this->process_results = '';
+		$user_ids = array();
 		foreach( $rows as &$row )
 		{
 			// TODO: check for required fields (here or in add_user).
 			
-			if( $this->model->add_user($row) )
+			if( $uid = $this->model->add_user($row) )
 			{
+				$user_ids[] = $uid;
 				$processed_rows++;
 			}
 			else
@@ -622,6 +624,8 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 				$this->process_results .= $this->model->last_error.'<br/>';
 			}
 		}
+		
+		$this->model->set_inactive_users( $user_ids );
 		
 		$results = count($rows) . ' rows found in file.<br/>';
 		$results .= $processed_rows . ' rows processed successfully.<br/>';

@@ -225,6 +225,20 @@ class OrganizationHub_Model
 	/**
 	 *
 	 */
+	public function set_inactive_users( &$active_user_ids )
+	{
+		global $wpdb;
+		$active_user_ids = array_filter( $active_user_ids, 'intval' );
+// 		orghub_print("UPDATE ".self::$users_table." SET status = 'inactive' WHERE id NOT IN (".implode($active_user_ids, ",").")");
+		return $wpdb->query( 
+			"UPDATE ".self::$users_table." SET status = 'inactive' WHERE id NOT IN (".implode($active_user_ids, ",").")"
+		);
+	}
+	
+	
+	/**
+	 *
+	 */
 	public function update_user( $id, &$args )
 	{
 		global $wpdb;
