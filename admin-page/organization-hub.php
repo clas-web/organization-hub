@@ -570,6 +570,9 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			case 'draft-connections-post':
 				$this->model->draft_connections_post( $user_id );
 				break;
+			case 'publish-connections-post':
+				$this->model->publish_connections_post( $user_id );
+				break;
 			case 'reset-connections-post-id':
 				$this->model->update_connections_post_id( $user_id, null );
 				break;
@@ -1196,7 +1199,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 					// if wp_user_id is set, reset wp_user_id 
 		
 				if( $wp_user ):
-					?><a href="<?php echo network_admin_url( 'user-edit.php?user_id='.$wp_user->ID ); ?>" target="_blank">Edit User</a><?php
+					?><a href="<?php echo network_admin_url( 'users.php?s='.$wp_user->data->user_login ); ?>" target="_blank">Edit User</a><?php
 					/*?><button name="action" value="delete-username">Delete User</button><?php*/
 				else:
 					?><button name="action" value="create-username">Create User</button><?php
@@ -1256,10 +1259,10 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 // 					orghub_print($profile_site->siteurl);
 
 					?>
-					<div class="site-id"><label>ID</label><span><?php echo $profile_site->blog_id; ?></span></div>
-					<div class="site-name"><label>Name</label><span><?php echo $profile_site->blogname; ?></span></div>
-					<div class="site-url"><label>URL</label><span><?php echo $profile_site->siteurl; ?></span></div>
-					<div class="site-archived"><label>Archived</label><span><?php echo ($profile_site->archived == '0' ? 'No' : 'Yes'); ?></span></div>
+					<div class="site-id"><label>ID</label><span><?php echo $profile_site['blog_id']; ?></span></div>
+					<div class="site-name"><label>Name</label><span><?php echo $profile_site['blogname']; ?></span></div>
+					<div class="site-url"><label>URL</label><span><?php echo $profile_site['siteurl']; ?></span></div>
+					<div class="site-archived"><label>Archived</label><span><?php echo ($profile_site['archived'] == '0' ? 'No' : 'Yes'); ?></span></div>
 					<?php
 				else:
 					?><p class="error">ERROR: profile_site_id set ("<?php echo $user['profile_site_id']; ?>") but site does not exist.</p><?php
@@ -1278,8 +1281,8 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 					// if profile_site_id is set, reset profile_site_id
 		
 				if( $profile_site ):
-					?><a href="<?php echo network_admin_url( 'site-info.php?id='.$profile_site->blog_id ); ?>" target="_blank">Edit Site</a><?php
-					if( $profile_site->archived == '0' ):
+					?><a href="<?php echo network_admin_url( 'site-info.php?id='.$profile_site['blog_id'] ); ?>" target="_blank">Edit Site</a><?php
+					if( $profile_site['archived'] == '0' ):
 						?><button name="action" value="archive-site">Archive Site</button><?php
 					else:
 						?><button name="action" value="publish-site">Publish Site</button><?php
@@ -1379,7 +1382,11 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		
 				if( $connections_post ):
 					?><a href="<?php echo $this->model->get_connections_post_edit_link($connections_post['ID']); ?>" target="_blank">Edit Post</a><?php
-					?><button name="action" value="draft-connections-post">Draft Post</button><?php
+					if( $connections_post['post_status'] != 'draft' ):
+						?><button name="action" value="draft-connections-post">Draft Post</button><?php
+					else:
+						?><button name="action" value="publish-connections-post">Publish Post</button><?php
+					endif;
 				else:
 					?><button name="action" value="create-connections-post">Create Post</button><?php
 				endif;

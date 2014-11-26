@@ -822,8 +822,8 @@ class OrganizationHub_Model
 					}
 					else
 					{
-						$this->write_to_log( $db_user['username'], 'Profile site already exists, but user does not exist.' );
-						$this->add_user_exception( $db_user['id'], 'site', 'Profile site already exists, but user does not exist.' );
+						$this->write_to_log( $db_user['username'], 'Profile site ("'.$path.'") already exists, but '.$db_user['username'].' user does not exist on the site.' );
+						$this->add_user_exception( $db_user['id'], 'site', 'Profile site ("<a href="'.$blog_details->siteurl.'/wp-admin/users.php" target="_blank">'.$path.'</a>") already exists, but '.$db_user['username'].' user does not exist on the site.' );
 						return null;
 					}
 				}
@@ -1100,6 +1100,48 @@ class OrganizationHub_Model
 		$this->remove_user_exception( $db_user['id'], 'connections' );
 		return $connections_post_id;
 	}	
+	
+	
+	public function publish_connections_post( $db_user )
+	{
+		global $wpdb;
+		
+		if( is_numeric($db_user) )
+		{
+			$db_user = $this->get_user_by_id( $db_user );
+			if( !$db_user ) return null;
+		}
+		
+		if( !$db_user['wp_user_id'] ) return null;
+		if( !$db_user['connections_post_id'] ) return null;
+		
+		$connections_blog_id = $this->check_connections_site();
+		
+		if( !$connections_blog_id )
+		{
+			$this->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			$this->add_user_exception( $db_user['id'], 'connections', 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			return null;
+		}
+		
+		switch_to_blog( $connections_blog_id );
+		
+		$post = get_post( $db_user['connections_post_id'], ARRAY_A );
+		
+		if( $post )
+		{
+			$connections_post = array(
+				'ID'           => $db_user['connections_post_id'],
+				'post_status'  => 'publish',
+			);
+			wp_update_post( $connections_post );
+		}
+
+		restore_current_blog();
+		
+		$this->remove_user_exception( $db_user['id'], 'connections' );
+		return $connections_post_id;
+	}	
 
 
 	/**
@@ -1245,8 +1287,6 @@ class OrganizationHub_Model
 
 
 
-
-
 	
 	
 	
@@ -1351,8 +1391,24 @@ class OrganizationHub_Model
 	 */
 	public function get_profile_site( $id )
 	{
+		// does not work due to caching issues.		
+		//return get_blog_details( intval($id) );
 		
-		return get_blog_details( intval($id) );
+		global $wpdb;
+		$blog_info = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM '.$wpdb->blogs.' WHERE blog_id = %d',
+				$id
+			),
+			ARRAY_A
+		);
+		
+		$blog_details = get_blog_details( intval($id) );
+		
+		$blog_info['siteurl'] = $blog_details->siteurl;
+		$blog_info['blogname'] = $blog_details->blogname;
+		
+		return $blog_info;
 	}
 	
 	
