@@ -243,7 +243,9 @@ class OrganizationsHub_ListTable extends WP_List_Table
 		$actions = array(
 			'create-users' => 'Create User Accounts',
 			'create-sites' => 'Create Profile Sites',
-			'create-connection-posts' => 'Create Connection Posts',
+			'create-connections-posts' => 'Create Connections Posts',
+			'archive-sites' => 'Archive Sites',
+			'draft-connections-posts' => 'Draft Connections Posts',
 			'process-users' => 'Process Users',
 		);
   		return $actions;
@@ -252,32 +254,41 @@ class OrganizationsHub_ListTable extends WP_List_Table
 	function process_batch_action()
 	{
 		$action = $this->current_action();
-		$users = ( $_REQUEST['users'] ? $_REQUEST['users'] : array() );
+		$users = ( isset($_REQUEST['user']) ? $_REQUEST['user'] : array() );
 		
+		$model = OrganizationHub_Model::get_instance();
 		
 		switch( $action )
 		{
 			case 'create-users':
 				foreach( $users as $user_id )
-					$this->create_user( $user_id );
+					$model->create_user( $user_id );
 				break;
 			
 			case 'create-sites':
 				foreach( $users as $user_id )
-					$this->create_site( $user_id );
+					$model->create_site( $user_id, false, true );
 				break;
 			
 			case 'create-connections-posts':
 				foreach( $users as $user_id )
-					$this->create_connection_post( $user_id );
+					$model->create_connections_post( $user_id, true );
+				break;
+			
+			case 'archive-sites':
+				foreach( $users as $user_id )
+					$model->archive_site( $user_id );
+				break;
+			
+			case 'draft-connections-posts':
+				foreach( $users as $user_id )
+					$model->draft_connections_post( $user_id );
 				break;
 			
 			case 'process-users':
 				foreach( $users as $user_id )
 				{
-					$this->create_user( $user_id );
-					$this->create_site( $user_id );
-					$this->create_connection_post( $user_id );
+					$model->process_user( $user_id );
 				}
 				break;
 		}
