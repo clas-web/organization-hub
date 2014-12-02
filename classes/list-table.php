@@ -55,6 +55,10 @@ class OrganizationsHub_ListTable extends WP_List_Table
 		
 		switch( $orderby )
 		{
+			case 'namedesc':
+				$orderby = 'last_name '.$order;
+				break;
+				
 			case 'username':
 			case 'type':
 			case 'category':
@@ -124,31 +128,10 @@ class OrganizationsHub_ListTable extends WP_List_Table
 	{
 		return array(
 			'username' => array( 'username', false ),
-			'type'     => array( 'type', false ),
-			'category' => array( 'category', false ),
+			'namedesc' => array( 'namedesc', false ),
+// 			'type'     => array( 'type', false ),
+// 			'category' => array( 'category', false ),
 		);
-	}
-	
-
-	/**
-	 * 
-	 */
-	function sort_data( $a, $b )
-	{
-		$orderby = ( !empty($_GET['orderby']) ? $_GET['orderby'] : 'username' );
-		$order = ( !empty($_GET['order']) ? $_GET['order'] : 'asc' );
-
-		switch( $orderby )
-		{
-			case 'username':
-			case 'type':
-			case 'category':
-			default:
-				$result = strcmp( $a[$orderby], $b[$orderby] );
-				break;
-		}
-		
-		return ( $order === 'asc' ) ? $result : -$result;
 	}
 
 
