@@ -175,12 +175,26 @@ class OrganizationsHub_ListTable extends WP_List_Table
 	
 	function column_type( $item )
 	{
-		return $item['type'];
+		$html = '';
+		
+		foreach( $item['type'] as $t )
+		{
+			$html .= '<div>'.$t.'</div>';
+		}
+		
+		return $html;
 	}
 	
 	function column_category( $item )
 	{
-		return $item['category'];
+		$html = '';
+		
+		foreach( $item['category'] as $c )
+		{
+			$html .= '<div>'.$c.'</div>';
+		}
+		
+		return $html;
 	}
 	
 	function column_status( $item )
@@ -193,30 +207,42 @@ class OrganizationsHub_ListTable extends WP_List_Table
 		$html = $item['domain'].'<br/>';
 		
 		$model = OrganizationHub_Model::get_instance();
-		$username_class = ($model->get_user_exception($item['id'], 'username') ? 'user-exception' : '');
-		$site_class = ($model->get_user_exception($item['id'], 'site') ? 'user-exception' : '');
-		$connections_class = ($model->get_user_exception($item['id'], 'connections') ? 'user-exception' : '');
+		$username_class = ''; //($model->get_user_exception($item['id'], 'username') ? 'user-exception' : '');
+		$site_class = ''; //($model->get_user_exception($item['id'], 'site') ? 'user-exception' : '');
+		$connections_class = ''; //($model->get_user_exception($item['id'], 'connections') ? 'user-exception' : '');
 		
-		$html .= '<div class="'.$username_class.'">';
+		$class = 'wp_user_id';
+		if( $model->get_wp_user_error( $item['id'] ) ) $class .= ' error';
+		elseif( $model->get_wp_user_warning( $item['id'] ) ) $class .= ' warning';
+		$html .= '<div class="'.$class.'">';
 		if( $item['wp_user_id'] == null )
 			$html .= 'NO Username';
 		else
 			$html .= 'Username: '.$item['wp_user_id'];
 		$html .= '</div>';
 
-		$html .= '<div class="'.$site_class.'">';
+		$class = 'profile_site_id';
+		if( $model->get_profile_site_error( $item['id'] ) ) $class .= ' error';
+		elseif( $model->get_profile_site_warning( $item['id'] ) ) $class .= ' warning';
+		$html .= '<div class="'.$class.'">';
 		if( $item['profile_site_id'] == null )
 			$html .= 'NO Profile site';
 		else
 			$html .= 'Profile site: '.$item['profile_site_id'];		
 		$html .= '</div>';
 	
-		$html .= '<div class="'.$connections_class.'">';
-		if( $item['connections_post_id'] == null )
-			$html .= 'NO Connections Post';
-		else
-			$html .= 'Connection Post: '.$item['connections_post_id'];
-		$html .= '</div>';
+		foreach( $item['connections-sites'] as $cs )
+		{
+			$class = 'connections_site_id';
+			if( $model->get_connections_error( $item['id'], $cs['site'] ) ) $class .= ' error';
+			elseif( $model->get_connections_warning( $item['id'], $cs['site'] ) ) $class .= ' warning';
+			$html .= '<div class="'.$class.'">';
+			if( $cs['post_id'] == null )
+				$html .= 'NO Connections Post for '.$cs['site'];
+			else
+				$html .= 'Connection Post for '.$cs['site'].': '.$cs['post_id'];
+			$html .= '</div>';
+		}
 
 		return $html;
 	}
@@ -255,7 +281,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
 			
 			case 'create-connections-posts':
 				foreach( $users as $user_id )
-					$model->create_connections_post( $user_id, true );
+					$model->create_connections_posts( $user_id, true );
 				break;
 			
 			case 'archive-sites':
@@ -265,7 +291,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
 			
 			case 'draft-connections-posts':
 				foreach( $users as $user_id )
-					$model->draft_connections_post( $user_id );
+					$model->process_connections_posts( $user_id, true );
 				break;
 			
 			case 'process-users':

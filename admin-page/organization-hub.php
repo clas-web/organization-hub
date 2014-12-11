@@ -376,13 +376,13 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		);
 
 		add_settings_field( 
-			'connections-site-categories', 'Connections site categories', array( $this, 'print_categories' ),
-			$this->slug.':settings', 'settings', array( $this->tab, 'connections-site-categories' )
+			'connections-site-types', 'Connections site types', array( $this, 'print_categories' ),
+			$this->slug.':settings', 'settings', array( $this->tab, 'connections-site-types' )
 		);
 
 		add_settings_field( 
-			'profile-site-categories', 'Profile site categories', array( $this, 'print_categories' ),
-			$this->slug.':settings', 'settings', array( $this->tab, 'profile-site-categories' )
+			'profile-site-types', 'Profile site types', array( $this, 'print_categories' ),
+			$this->slug.':settings', 'settings', array( $this->tab, 'profile-site-types' )
 		);
 
 		//
@@ -468,17 +468,6 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 
 	public function process()
 	{
-		$users = $this->model->get_users();
-		
-		foreach( $users as $u )
-		{
-			$exceptions = $this->model->get_exceptions( $u['id'] );
-			if( count($exceptions) == 0 )
-			{
-				$this->model->clear_user_exceptions( $u['id'] );
-			}
-		}
-		
 		if( empty($_REQUEST['action']) ) return;
 		
 		switch( $this->tab )
@@ -502,7 +491,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 	{
 		switch( $_REQUEST['action'] )
 		{
-			case 'save':
+			case 'update':
 				$this->save_settings();
 				break;
 		}
@@ -513,7 +502,6 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		switch( $_REQUEST['action'] )
 		{
 			case 'upload':
-				echo 'upload : ';
 				$this->upload_file();
 				break;
 			case 'Process All Users':
@@ -533,6 +521,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 	{
 		$user_id = intval($_REQUEST['id']);
 		if( !$user_id ) return;
+		$db_user = $this->model->get_user_by_id($user_id);
 		
 		switch( $_REQUEST['action'] )
 		{
@@ -553,7 +542,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 				$this->model->update_wp_user_id( $user_id, null );
 				break;
 			case 'create-site':
-				$this->model->create_site( $user_id, $_REQUEST['site-path'], true );
+				$this->model->create_site( $user_id, $db_user['domain'], $_REQUEST['site-path'], true );
 				break;
 			case 'archive-site':
 				$this->model->archive_site( $user_id );
@@ -565,25 +554,34 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 				$this->model->update_profile_site_id( $user_id, null );
 				break;
 			case 'create-connections-post':
-				$this->model->create_connections_post( $user_id, true );
+				$this->model->create_connections_post( $user_id, $_REQUEST['site'], true );
 				break;
 			case 'draft-connections-post':
-				$this->model->draft_connections_post( $user_id );
+				$this->model->draft_connections_post( $user_id, $_REQUEST['site'] );
 				break;
 			case 'publish-connections-post':
-				$this->model->publish_connections_post( $user_id );
+				$this->model->publish_connections_post( $user_id, $_REQUEST['site'] );
 				break;
 			case 'reset-connections-post-id':
-				$this->model->update_connections_post_id( $user_id, null );
+				$this->model->update_connections_post_id( $user_id, $_REQUEST['site'], null );
 				break;
 			case 'clear-username-error':
-				$this->model->remove_user_exception( $user_id, 'username' );
+				$this->model->set_wp_user_error( $user_id, null );
+				break;
+			case 'clear-username-warning':
+				$this->model->set_wp_user_warning( $user_id, null );
 				break;
 			case 'clear-site-error':
-				$this->model->remove_user_exception( $user_id, 'site' );
+				$this->model->set_profile_site_error( $user_id, null );
+				break;
+			case 'clear-site-warning':
+				$this->model->set_profile_site_warning( $user_id, null );
 				break;
 			case 'clear-connections-error':
-				$this->model->remove_user_exception( $user_id, 'connections' );
+				$this->model->set_connections_error( $user_id, $_REQUEST['site'], null );
+				break;
+			case 'clear-connections-warning':
+				$this->model->set_connections_warning( $user_id, $_REQUEST['site'], null );
 				break;
 		}
 		
@@ -611,12 +609,10 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		}
 		
 		$processed_rows = 0;
-		$this->process_results = '';
+		$process_results = '';
 		$user_ids = array();
 		foreach( $rows as &$row )
 		{
-			// TODO: check for required fields (here or in add_user).
-			
 			if( $uid = $this->model->add_user($row) )
 			{
 				$user_ids[] = $uid;
@@ -624,15 +620,24 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			}
 			else
 			{
-				$this->process_results .= $this->model->last_error.'<br/>';
+				$process_results .= $this->model->last_error.'<br/>';
 			}
 		}
 		
 		$this->model->set_inactive_users( $user_ids );
 		
 		$results = count($rows) . ' rows found in file.<br/>';
-		$results .= $processed_rows . ' rows processed successfully.<br/>';
-		$this->process_results = $results . $this->process_results;
+		$results .= $processed_rows . ' rows added or updated successfully.<br/>';
+		//$this->process_results = $results . $this->process_results;
+
+		$this->model->update_options(
+			array(
+				'last-upload' => date('Y-m-d H:i:s'),
+				'last-upload-results' => $results . $process_results,
+			),
+			true
+		);
+
 	}
 	
 	public function process_users()
@@ -645,11 +650,20 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			$this->model->process_user( $user );
 		}
 		
-		$this->process_results = 'Done processing the user list.';
+		$this->model->update_options(
+			array(
+				'last-process' => date('Y-m-d H:i:s'),
+				'last-process-results' => 'Successfully done processing the user list.',
+			),
+			true
+		);
+		
+		//$this->process_results = 'Done processing the user list.';
 	}
 	
 	public function save_settings()
 	{
+		orghub_print($options, 'save_settings');
 		$options = $_POST['organization-hub-options'][$this->tab];
 		if( !$options ) return;
 
@@ -728,7 +742,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		global $wp_settings_sections;
 		?>
 		
-		<form method="post" action="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&action=save">
+		<form method="post" action="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>">
 			<div class="top-submit"><?php submit_button(); ?></div>
 			<div style="clear:both"></div>
 			<?php settings_fields( $this->slug ); ?>
@@ -811,12 +825,40 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
  			<div style="clear:both"></div>
 		</form>
 		
+
+		<div class="process-results">
 		
-		<?php if( $this->process_results ): ?>
-			<div class="process-results">
-				<?php echo $this->process_results; ?>
+		<div class="last-upload">
+		<?php if( $this->model->get_option('last-upload') ): ?>
+			<div class="date">
+				The last upload was preformed on <?php echo $this->model->get_option('last-upload'); ?>.
+			</div>
+			<div class="results">
+				<?php echo $this->model->get_option('last-upload-results'); ?>
+			</div>
+		<?php else: ?>
+			<div class="no results">
+				No users have been uploaded.
 			</div>
 		<?php endif; ?>
+		</div>
+
+		<div class="last-process">
+		<?php if( $this->model->get_option('last-process') ): ?>
+			<div class="date">
+				The last process users was preformed on <?php echo $this->model->get_option('last-process'); ?>.
+			</div>
+			<div class="results">
+				<?php echo $this->model->get_option('last-process-results'); ?>
+			</div>
+		<?php else: ?>
+			<div class="no results">
+				No users have been processed.
+			</div>
+		<?php endif; ?>
+		</div>
+		
+		</div>
 		
 		<form action="admin.php">
 			<input type="hidden" name="page" value="<?php echo $this->slug; ?>" />
@@ -828,19 +870,29 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		$filter_types = array(
 			'status' => array(
 				'name' => 'Status',
-				'values' => $this->model->get_all_status_types(),
+				'values' => $this->model->get_all_status_values(),
 				'filter' => array(),
 			),
-			'user' => array(
-				'name' => 'User',
-				'values' => $this->model->get_all_user_types(),
+			'type' => array(
+				'name' => 'Type',
+				'values' => $this->model->get_all_type_values(),
 				'filter' => array(),
 			),
 			'category' => array(
 				'name' => 'Category',
-				'values' => $this->model->get_all_category_types(),
+				'values' => $this->model->get_all_category_values(),
 				'filter' => array(),
-			)
+			),
+			'domain' => array(
+				'name' => 'Domain',
+				'values' => $this->model->get_all_domain_values(),
+				'filter' => array(),
+			),
+			'site' => array(
+				'name' => 'Connections Sites',
+				'values' => $this->model->get_all_connections_sites_values(),
+				'filter' => array(),
+			),
 		);
 		
 		foreach( array_keys($filter_types) as $type )
@@ -856,23 +908,12 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		foreach( $filter_types as $type => $f )
 		{
 			if( count($f['filter']) > 0 )
-			{
-				switch($type)
-				{
-					case 'user':
-						$filter['type'] = $f['filter'];
-						break;
-					default:
-						$filter[$type] = $f['filter'];
-						break;
-				}
-			}
+				$filter[$type] = $f['filter'];
 		}
 		
-		//orghub_print($filter);
-		
+		//orghub_print( $filter );
 		//orghub_print( $filter_types );
-
+		
 		if( $this->users_table == null )
 		{
 			require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/list-table.php' );
@@ -964,7 +1005,7 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 			
 		</form>
 
-		<form id="users-table" action="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>" method="post">
+		<form id="users-table" action="admin.php?<?php echo $_SERVER['QUERY_STRING']; ?>" method="post">
 			<?php $this->users_table->search_box('search','users-table-search'); ?>
 			<?php $this->users_table->display(); ?>
 		</form>
@@ -1134,24 +1175,40 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 		<?php
 		// button: Process User
 		submit_button( 'Process User', 'primary', 'action' ); ?>
+		</form>
 		<?php
 		
 		
 		// WP User account
 		?>
+					<form action="admin.php">
+			<input type="hidden" name="page" value="<?php echo $this->slug; ?>" />
+			<input type="hidden" name="tab" value="<?php echo $this->tab; ?>" />
+			<input type="hidden" name="id" value="<?php echo $id; ?>" />
+
 		<h4>WordPress User Account</h4>
 		
 		<div id="wp-user-account-details" class="details-box">
 			
+
 			<?php
 
-			$exception = $this->model->get_user_exception( $id, 'username' );
-			if( $exception )
+			$class = '';
+			if( $error = $this->model->get_wp_user_error( $user['id'] ) ) $class .= 'exception error';
+			elseif( $warning = $this->model->get_wp_user_warning( $user['id'] ) ) $class .= 'exception warning';
+			if( $class )
 			{
 				?>
-				<p class="exception">
-					<?php echo $exception; ?>
-					<a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&action=clear-username-error">Clear Error</a>
+				<p class="<?php echo $class; ?>">
+					<?php
+					if( $error ):
+						echo $error;
+						?><a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&action=clear-user-error">Clear Error</a><?php
+					else:
+						echo $warning;
+						?><a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&action=clear-user-warning">Clear Warning</a><?php
+					endif;
+					?>
 				</p>
 				<?php
 			}
@@ -1211,28 +1268,42 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 				?>		
 			
 			</div>
-		
 		</div>
+			</form>
 		
 		<?php
 		// Profile Site
 		?>
+					<form action="admin.php">
+			<input type="hidden" name="page" value="<?php echo $this->slug; ?>" />
+			<input type="hidden" name="tab" value="<?php echo $this->tab; ?>" />
+			<input type="hidden" name="id" value="<?php echo $id; ?>" />
+
 		<h4>Profile Site</h4>
 		
 		<div id="profile-site-details" class="details-box">
 			
+
 			<?php
 
-			$exception = $this->model->get_user_exception( $id, 'site' );
-			if( $exception )
-			{
+			$class = '';
+			if( $error = $this->model->get_profile_site_error( $user['id'] ) ) $class .= 'exception error';
+			elseif( $warning = $this->model->get_profile_site_warning( $user['id'] ) ) $class .= 'exception warning';
+			if( $class ):
 				?>
-				<p class="exception">
-					<?php echo $exception; ?>
-					<a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&action=clear-site-error">Clear Error</a>
+				<p class="<?php echo $class; ?>">
+					<?php
+					if( $error ):
+						echo $error;
+						?><a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&action=clear-site-error">Clear Error</a><?php
+					else:
+						echo $warning;
+						?><a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&action=clear-site-warning">Clear Warning</a><?php
+					endif;
+					?>
 				</p>
 				<?php
-			}
+			endif;
 
 			// if profile_site_id is set
 				// if profile site exists, then list site details
@@ -1300,7 +1371,11 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 							$path = $user['username'];
 							break;
 					}
+					$domain = '[default]';
+					if( $user['domain'] ) $domain = $user['domain'];
 					?>
+
+					<label for="site-domain">Domain: <?php echo $domain; ?></label>
 					<label for="site-path">Path:</label>
 					<input type="text" id="site-path" name="site-path" value="<?php echo $path; ?>" />
 					<button name="action" value="create-site">Create Site</button>
@@ -1313,94 +1388,118 @@ class OrganizationHub_AdminPage_Main extends OrganizationHub_AdminPage
 				?>		
 			
 			</div>
-		
 		</div>		
+			</form>
 
 		<?php
 		// Connections Post
 		?>
-		<h4>Connections Post</h4>
 		
-		<div id="connections-post-details" class="details-box">
-			
-			<?php
-			$exception = $this->model->get_user_exception( $id, 'connections' );
-			if( $exception )
-			{
-				?>
-				<p class="exception">
-					<?php echo $exception; ?>
-					<a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&action=clear-connections-error">Clear Error</a>
-				</p>
+		<?php foreach( $user['connections-sites'] as $cs ): ?>
+		
+						<form action="admin.php">
+			<input type="hidden" name="page" value="<?php echo $this->slug; ?>" />
+			<input type="hidden" name="tab" value="<?php echo $this->tab; ?>" />
+			<input type="hidden" name="id" value="<?php echo $id; ?>" />
+			<h4>Connections Post: <?php echo $cs['site']; ?></h4>
+
+			<div id="connections-post-details" class="details-box">
+
+
 				<?php
-			}
-
-			// if connections_post_id is set
-				// if connection post exists, then list connection post details
-				// else ERROR, connections_post_id is set but does not exist.
-
-			$connections_post = null;
-			if( $user['connections_post_id'] ):
-				$connections_post = $this->model->get_connections_post( $user['connections_post_id'] );
-			
-				if( $connections_post ):
-					/*
-					["ID"]=>int(2000)
-					["post_author"]=>string(3) "294"
-					["post_title"]=>string(17) "Ishwar   Aggarwal"				  
-  					["post_status"]=>string(5) "draft"
-    				*/
-    				//orghub_print($connections_post);
-// 					orghub_print($connections_post['ID']);
-// 					orghub_print($connections_post['post_author']);
-// 					orghub_print($connections_post['post_title']);
-// 					orghub_print($connections_post['post_status']);
-					
-					$author = get_user_by( 'id', $connections_post['post_author'] );
-
+				$class = '';
+				if( $error = $this->model->get_connections_error( $user['id'], $cs['site'] ) ) $class .= 'exception error';
+				elseif( $warning = $this->model->get_connections_warning( $user['id'], $cs['site'] ) ) $class .= 'exception warning';
+				if( $class ):
 					?>
-					<div class="connections-id"><label>ID</label><span><?php echo $connections_post['ID']; ?></span></div>
-					<div class="connections-title"><label>Title</label><span><?php echo $connections_post['post_title']; ?></span></div>
-					<div class="connections-author"><label>Author</label><span><?php echo $author->display_name; ?></span></div>
-					<div class="connections-draft"><label>Status</label><span><?php echo $connections_post['post_status']; ?></span></div>
+					<p class="<?php echo $class; ?>">
+						<?php
+						if( $error ):
+							echo $error;
+							?><a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&site=<?php echo $cs['site']; ?>&action=clear-connections-error">Clear Error</a><?php
+						else:
+							echo $warning;
+							?><a href="admin.php?page=<?php echo $this->slug; ?>&tab=<?php echo $this->tab; ?>&id=<?php echo $id; ?>&site=<?php echo $cs['site']; ?>&action=clear-connections-warning">Clear Warning</a><?php
+						endif;
+						?>
+					</p>
 					<?php
-
-				else:
-					?><p class="error">ERROR: connections_post_id set ("<?php echo $user['connections_post_id']; ?>") but connections post does not exist.</p><?php
 				endif;
-			else:
-				?><p>No connections post set.</p><?php
-			endif;
-			?>
+	
+				// if connections_post_id is set
+					// if connection post exists, then list connection post details
+					// else ERROR, connections_post_id is set but does not exist.
+
+				$connections_post = null;
+				if( $cs['post_id'] ):
+					$connections_post = $this->model->get_connections_post( $cs['post_id'], $cs['site'] );
 		
-			<div class="buttons">
-			
-				<?php
-				// buttons:
-					// if connection post exists, draft & delete connection post; else create post
-					// if connections_post_id is set, reset connections_post_id
-		
-				if( $connections_post ):
-					?><a href="<?php echo $this->model->get_connections_post_edit_link($connections_post['ID']); ?>" target="_blank">Edit Post</a><?php
-					if( $connections_post['post_status'] != 'draft' ):
-						?><button name="action" value="draft-connections-post">Draft Post</button><?php
+					if( $connections_post ):
+						/*
+						["ID"]=>int(2000)
+						["post_author"]=>string(3) "294"
+						["post_title"]=>string(17) "Ishwar   Aggarwal"				  
+						["post_status"]=>string(5) "draft"
+						*/
+						//orghub_print($connections_post);
+	// 					orghub_print($connections_post['ID']);
+	// 					orghub_print($connections_post['post_author']);
+	// 					orghub_print($connections_post['post_title']);
+	// 					orghub_print($connections_post['post_status']);
+				
+						$author = get_user_by( 'id', $connections_post['post_author'] );
+
+						?>
+						<div class="connections-id"><label>ID</label><span><?php echo $connections_post['ID']; ?></span></div>
+						<div class="connections-title"><label>Title</label><span><?php echo $connections_post['post_title']; ?></span></div>
+						<div class="connections-author"><label>Author</label><span><?php echo $author->display_name; ?></span></div>
+						<div class="connections-draft"><label>Status</label><span><?php echo $connections_post['post_status']; ?></span></div>
+						<?php
+
 					else:
-						?><button name="action" value="publish-connections-post">Publish Post</button><?php
+						?><p class="error">ERROR: connections_post_id set ("<?php echo $cs['post_id']; ?>") but connections post does not exist.</p><?php
 					endif;
 				else:
-					?><button name="action" value="create-connections-post">Create Post</button><?php
+					?><p>No connections post set.</p><?php
 				endif;
-				
-				if( $user['connections_post_id'] ):
-					?><button name="action" value="reset-connections-post-id">Reset connections_post_id</button><?php
-				endif;
-				?>		
+				?>
+	
+				<div class="buttons">
+		
+					<input type="hidden" name="site" value="<?php echo $cs['site']; ?>" />
+					<?php
+					// buttons:
+						// if connection post exists, draft & delete connection post; else create post
+						// if connections_post_id is set, reset connections_post_id
+	
+					if( $connections_post ):
+						?><a href="<?php echo $this->model->get_connections_post_edit_link($connections_post['ID'], $cs['site']); ?>" target="_blank">Edit Post</a><?php
+						if( $connections_post['post_status'] != 'draft' ):
+							?><button name="action" value="draft-connections-post">Draft Post</button><?php
+						else:
+							?><button name="action" value="publish-connections-post">Publish Post</button><?php
+						endif;
+					else:
+						?><button name="action" value="create-connections-post">Create Post</button><?php
+					endif;
 			
+					if( $cs['post_id'] ):
+						?><button name="action" value="reset-connections-post-id">Reset connections_post_id</button><?php
+					endif;
+					?>		
+		
+				</div>
 			</div>
+				</form>
 		
-		</div>
-		<?php
-		
+		<?php endforeach; ?>
+
+				<form action="admin.php">
+			<input type="hidden" name="page" value="<?php echo $this->slug; ?>" />
+			<input type="hidden" name="tab" value="<?php echo $this->tab; ?>" />
+			<input type="hidden" name="id" value="<?php echo $id; ?>" />
+
+		<?php		
 		// button: Process User
 		submit_button( 'Process User', 'primary', 'action' ); 
 		?>
