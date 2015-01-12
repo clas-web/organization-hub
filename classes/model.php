@@ -5,11 +5,8 @@
 /**
  * The main model class for the Origanization Hub plugin.  This is a singleton class.
  */
-class OrganizationHub_Model
+class OrgHub_Model
 {
-	const ORGANIZATION_HUB_OPTIONS = 'organization-hub-options';
-	const LOG_PATH = ORGANIZATION_HUB_PLUGIN_PATH;
-	const LOG_FILE = '/log.txt';
 	
 	private static $instance = null;
 	private static $user_table 			= 'orghub_user';
@@ -22,6 +19,7 @@ class OrganizationHub_Model
 	
 	/**
 	 * Private Constructor.  Needed for a Singleton class.
+	 * Creates an OrgHub_Model object.
 	 */
 	private function __construct()
 	{
@@ -35,13 +33,12 @@ class OrganizationHub_Model
 
 	/**
 	 * Get the only instance of this class.
-	 *
-	 * @return  OrganizationHub_Model  A singleton instance of the model class.
+	 * @return  OrgHub_Model  A singleton instance of the model class.
 	 */
 	public static function get_instance()
 	{
 		if( self::$instance	=== null )
-			self::$instance = new OrganizationHub_Model();
+			self::$instance = new OrgHub_Model();
 		return self::$instance;
 	}
 
@@ -55,7 +52,7 @@ class OrganizationHub_Model
 	 */
 	public function clear_log()
 	{
-		file_put_contents( self::LOG_PATH.self::LOG_FILE, '' );
+		file_put_contents( ORGANIZATION_HUB_LOG_FILE );
 	}
 	
 
@@ -71,7 +68,7 @@ class OrganizationHub_Model
 	{
 		if( $newline ) $text .= "\n";
 		$text = str_pad( $username, 8, ' ', STR_PAD_RIGHT ).' : '.$text;
-		file_put_contents( self::LOG_PATH.self::LOG_FILE, $text, FILE_APPEND );
+		file_put_contents( ORGANIZATION_HUB_LOG_FILE, $text, FILE_APPEND );
 	}	
 
 
@@ -84,13 +81,13 @@ class OrganizationHub_Model
 	 *
 	 * @param  string       $name     The name of the option.
 	 * @param  bool|string  $default  The default value for the option used if the option
-	 *                                  doesn't currently exist.
+	 *                                doesn't currently exist.
 	 *
 	 * @return bool|string  The value of the option, if it exists, otherwise the default.
 	 */
 	public function get_option( $name, $default = false )
 	{
-		$options = get_site_option( self::ORGANIZATION_HUB_OPTIONS, array() );
+		$options = get_site_option( ORGANIZATION_HUB_OPTIONS, array() );
 		
 		if( isset($options[$name]) ) return $options[$name];
 		return $default;
@@ -109,7 +106,7 @@ class OrganizationHub_Model
 		if( $merge === true )
 			$options = array_merge( get_site_option(ORGANIZATION_HUB_OPTIONS, array()), $options );
 			
-		update_site_option( self::ORGANIZATION_HUB_OPTIONS, $options );
+		update_site_option( ORGANIZATION_HUB_OPTIONS, $options );
 	}
 
 
@@ -170,7 +167,8 @@ class OrganizationHub_Model
 				  last_name text NOT NULL DEFAULT '',
 				  email text NOT NULL DEFAULT '',
 				  description text NOT NULL DEFAULT '',
-				  domain text NOT NULL DEFAULT '',
+				  site_domain text NOT NULL DEFAULT '',
+				  site_path text NOT NULL DEFAULT '',
 				  status varchar(16) NOT NULL,
 				  warning text DEFAULT NULL,
 				  error text DEFAULT NULL,
@@ -287,27 +285,27 @@ class OrganizationHub_Model
 		if( !$this->check_multiple_value_arg('category', $args['category']) ) return false;
 		
 		//
-		// If not specified, populate domain column with its default value.
-		// If domain is specified, then verify that the value is valid.
+		// If not specified, populate site_domain column with its default value.
+		// If site_domain is specified, then verify that the value is valid.
 		//
-		if( (!in_array('domain', array_keys($args))) || (!$args['domain']) )
+		if( (!in_array('site_domain', array_keys($args))) || (!$args['site_domain']) )
 		{
-			$args['domain'] = get_site_url( 1 );
+			$args['site_domain'] = get_site_url( 1 );
 		}
-		elseif( !$this->is_valid_domain_name($args['domain']) )
+		elseif( !$this->is_valid_site_domain_name($args['site_domain']) )
 		{
-			$this->last_error = 'Invalid field value for field "domain".';
+			$this->last_error = 'Invalid field value for field "site_domain".';
 			return false;
 		}
 		
 		//
 		// If not specified, populate connections_sites column with its default value.
 		//
-		if( (!in_array('connections-sites', array_keys($args))) || (!$args['connections-sites']) )
+		if( (!in_array('connections_sites', array_keys($args))) || (!$args['connections_sites']) )
 		{
-			$args['connections-sites'] = '';
+			$args['connections_sites'] = '';
 		}
-		elseif( !$this->check_multiple_value_arg('connections-sites', $args['connections-sites']) )
+		elseif( !$this->check_multiple_value_arg('connections_sites', $args['connections_sites']) )
 		{
 			return false;
 		}
@@ -347,11 +345,11 @@ class OrganizationHub_Model
 	/**
 	 * 
 	 */
-	private function is_valid_domain_name($domain_name)
+	private function is_valid_site_domain_name($site_domain_name)
 	{
-    	return (preg_match("/^([a-z\d](-*[a-z\d])*)(\.([a-z\d](-*[a-z\d])*))*$/i", $domain_name) //valid chars check
-            && preg_match("/^.{1,253}$/", $domain_name) //overall length check
-            && preg_match("/^[^\.]{1,63}(\.[^\.]{1,63})*$/", $domain_name)   ); //length of each label
+    	return (preg_match("/^([a-z\d](-*[a-z\d])*)(\.([a-z\d](-*[a-z\d])*))*$/i", $site_domain_name) //valid chars check
+            && preg_match("/^.{1,253}$/", $site_domain_name) //overall length check
+            && preg_match("/^[^\.]{1,63}(\.[^\.]{1,63})*$/", $site_domain_name)   ); //length of each label
 	}
 	
 	
@@ -380,7 +378,7 @@ class OrganizationHub_Model
  			)
  		);
  		
- 		$user['connections-sites'] = $wpdb->get_results(
+ 		$user['connections_sites'] = $wpdb->get_results(
  			$wpdb->prepare(
  				'SELECT site, post_id, required FROM '.self::$connections_table.' WHERE user_id=%d',
  				$user['id']
@@ -398,7 +396,7 @@ class OrganizationHub_Model
 	public function add_user( &$args )
 	{
 		if( !$this->check_user_args( $args ) ) return false;
-		
+
 		$db_user = $this->get_user_by_username( $args['username'] );
 		if( $db_user )
 		{
@@ -420,7 +418,7 @@ class OrganizationHub_Model
 				'last_name'			=> $args['last_name'],
 				'email'				=> $args['email'],
 				'description'		=> $args['description'],
-				'domain'			=> $args['domain'],
+				'site_domain'			=> $args['site_domain'],
 				'status'			=> 'new',
 			),
 			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
@@ -469,7 +467,7 @@ class OrganizationHub_Model
 		//
 		// Insert the user's connections sites.
 		//
-		foreach( $args['connections-sites'] as $site )
+		foreach( $args['connections_sites'] as $site )
 		{
 			$wpdb->insert(
 				self::$connections_table,
@@ -517,11 +515,12 @@ class OrganizationHub_Model
 				'last_name'			=> $args['last_name'],
 				'email'				=> $args['email'],
 				'description'		=> $args['description'],
-				'domain'			=> $args['domain'],
+				'site_domain'		=> $args['site_domain'],
+				'site_path'			=> $args['site_path'],
 				'status'			=> $args['status'],
 			),
 			array( 'id' => intval( $id ) ),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 
@@ -627,7 +626,7 @@ class OrganizationHub_Model
 		
 		foreach( $current_values as $cv )
 		{
-			if( !in_array($cv['site'], $args['connections-sites']) )
+			if( !in_array($cv['site'], $args['connections_sites']) )
 			{
 				if( !$cs['post_id'] )
 				{
@@ -658,7 +657,7 @@ class OrganizationHub_Model
 			}
 		}
 		
-		foreach( $args['connections-sites'] as $acs )
+		foreach( $args['connections_sites'] as $acs )
 		{
 			if( !$this->in_array_field($acs, 'site', $current_values) )
 			{
@@ -1319,7 +1318,7 @@ class OrganizationHub_Model
 		{
 			$result = $this->update_wp_user_id( $db_user['id'], $user_id );
 			$this->update_profile_site_id( $db_user['id'], null );
-			foreach( $db_user['connections-sites'] as $cs )
+			foreach( $db_user['connections_sites'] as $cs )
 			{
 				$this->update_connections_post_id( $db_user['id'], $cs['site'], null );
 			}
@@ -1346,7 +1345,7 @@ class OrganizationHub_Model
 	/**
 	 *
 	 */	
-	public function create_site( $db_user, $domain = false, $path = false, $force_create = false )
+	public function create_site( $db_user, $force_create = false )
 	{
 		global $wpdb;
 		
@@ -1390,40 +1389,8 @@ class OrganizationHub_Model
 			}
 		}
 
-		//
-		// Verify the domain is set, unless force creating.
-		//
-		if( !$domain ) $domain = $db_user['domain'];
-		if( !$domain && !$force_create ) return null;
-		
-		//
-		// Verify the path is set. 
-		//
-		if( !$path )
-		{
-			$path_creation_type = $this->get_option( 'path-creation-type', 'username-slug' );
-			switch( $path_creation_type )
-			{
-				case 'full-name-slug':
-					$path = sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] );
-					break;
-				
-				case 'username-slug':
-					$path = $db_user['username'];
-					break;
-
-				default:
-					$this->write_to_log( $db_user['username'], 'Invalid path creation type ("'.$path_creation_type.'").' );
-					$this->set_profile_site_error( $db_user['id'], 'Invalid path creation type ("'.$path_creation_type.'").' );
-					return null;
-					break;
-			}
-		}
-		
-		//orghub_print('DOMAIN: '.$domain.'<br/>PATH: '.$path.'<br/>');
-		
 		// check if site already exists.
-		$blog_id = $this->get_blog_by_path( $path );
+		$blog_id = $this->get_blog_by_path( $db_user['site_path'] );
 		
 		if( $blog_id )
 		{
@@ -1455,8 +1422,8 @@ class OrganizationHub_Model
 					}
 					else
 					{
-						$this->write_to_log( $db_user['username'], 'Profile site ("'.$path.'") already exists, but '.$db_user['username'].' user does not exist on the site.' );
-						$this->set_profile_site_error( $db_user['id'], 'Profile site ("<a href="'.$blog_details->siteurl.'/wp-admin/users.php" target="_blank">'.$path.'</a>") already exists, but '.$db_user['username'].' user does not exist on the site.' );
+						$this->write_to_log( $db_user['username'], 'Profile site ("'.$db_user['site_path'].'") already exists, but '.$db_user['username'].' user does not exist on the site.' );
+						$this->set_profile_site_error( $db_user['id'], 'Profile site ("<a href="'.$blog_details->siteurl.'/wp-admin/users.php" target="_blank">'.$db_user['site_path'].'</a>") already exists, but '.$db_user['username'].' user does not exist on the site.' );
 						return null;
 					}
 				}
@@ -1480,11 +1447,11 @@ class OrganizationHub_Model
 		}
 		else
 		{
-			$blog_id = wpmu_create_blog( $domain, '/'.$path, $db_user['first_name'].' '.$db_user['last_name'], $db_user['wp_user_id'] );
+			$blog_id = wpmu_create_blog( $db_user['site_domain'], '/'.$db_user['site_path'], $db_user['first_name'].' '.$db_user['last_name'], $db_user['wp_user_id'] );
 			if( is_wp_error($blog_id))
 			{
 				$this->write_to_log( $db_user['username'], $blog_id->get_error_message() );
-				$this->write_to_log( '', 'Site: '.$domain.'/'.$path );
+				$this->write_to_log( '', 'Site: '.$db_user['site_domain'].'/'.$db_user['site_path'] );
 				$this->set_profile_site_error( $db_user['id'], $blog_id->get_error_message() );
 				return null;
 			}
@@ -1526,7 +1493,7 @@ class OrganizationHub_Model
 			if( !$db_user ) return null;
 		}
 		
-		foreach( $db_user['connections-sites'] as $cs )
+		foreach( $db_user['connections_sites'] as $cs )
 		{
 			$this->process_connections_post( $db_user, $cs, $override_type_restriction );
 		}
@@ -1550,7 +1517,7 @@ class OrganizationHub_Model
 			return null;
 		}
 		
-		foreach( $db_user['connections-sites'] as $cs )
+		foreach( $db_user['connections_sites'] as $cs )
 		{
 			$this->create_connections_post( $db_user, $cs['site'], $force_create );
 		}
@@ -1583,7 +1550,7 @@ class OrganizationHub_Model
 		}
 	
 		$connections_info = null;
-		foreach( $db_user['connections-sites'] as $cs )
+		foreach( $db_user['connections_sites'] as $cs )
 		{
 			if( $cs['site'] == $connections_site )
 			{
@@ -1941,7 +1908,7 @@ class OrganizationHub_Model
 		if( !$db_user['wp_user_id'] ) return null;
 
 		$connections_info = null;
-		foreach( $db_user['connections-sites'] as $cs )
+		foreach( $db_user['connections_sites'] as $cs )
 		{
 			if( $cs['site'] == $connections_site )
 			{
@@ -1995,7 +1962,7 @@ class OrganizationHub_Model
 		if( !$db_user['wp_user_id'] ) return null;
 
 		$connections_info = null;
-		foreach( $db_user['connections-sites'] as $cs )
+		foreach( $db_user['connections_sites'] as $cs )
 		{
 			if( $cs['site'] == $connections_site )
 			{
@@ -2243,10 +2210,10 @@ class OrganizationHub_Model
 	/**
 	 *
 	 */
-	public function get_all_domain_values()
+	public function get_all_site_domain_values()
 	{
 		global $wpdb;
-		return $wpdb->get_col( "SELECT DISTINCT domain FROM ".self::$user_table );
+		return $wpdb->get_col( "SELECT DISTINCT site_domain FROM ".self::$user_table );
 	}
 
 

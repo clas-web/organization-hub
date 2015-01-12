@@ -5,17 +5,14 @@ if( !defined('ORGANIZATION_HUB_PLUGIN_PATH') ) return;
 if( !class_exists('WP_List_Table') )
 	require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 
-if( !class_exists('OrganizationHub_Model') )
+if( !class_exists('OrgHub_Model') )
 	require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/model.php' );
 
 /**
  * 
  */
-class OrganizationsHub_ListTable extends WP_List_Table
+class OrgHub_UsersListTable extends WP_List_Table
 {
-
-	private $_nonce_field;
-	
 	
 	/**
 	 * 
@@ -24,23 +21,19 @@ class OrganizationsHub_ListTable extends WP_List_Table
 	{
 		parent::__construct(
             array(
-                'singular' => 'organization-hub-user',
-                'plural'   => 'organization-hub-users',
+                'singular' => 'orghub-user',
+                'plural'   => 'orghub-users',
                 'ajax'     => false
             )
         );
+
+		$model = OrgHub_Model::get_instance();
+
+		$this->process_batch_action();
 		
-		$this->_nonce_field = wp_nonce_field( ORGANIZATION_HUB_PLUGIN_PATH, 'organization-hub-form', false, false );
-		
-// 		$columns = $this->get_columns();
-// 		$hidden = $this->get_hidden_columns();
-// 		$sortable = $this->get_sortable_columns();
-// 		$this->_column_headers = array($columns, $hidden, $sortable);
 		$this->_column_headers = $this->get_column_info();
 		
-		$this->process_batch_action();
 
-		$model = OrganizationHub_Model::get_instance();
 
 		$search = array();
 		if( !empty($_REQUEST['s']) )
@@ -157,7 +150,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
 	function column_username( $item )
 	{
 		$actions = array(
-            'edit' => sprintf( '<a href="%s">Edit</a>', 'admin.php?page=organization-hub&tab=edit-user&id='.$item['id'] ),
+            'edit' => sprintf( '<a href="%s">Edit</a>', 'admin.php?page=orghub-users&tab=edit&id='.$item['id'] ),
         );
 
 		return sprintf( '%1$s<br/>%2$s', $item['username'],  $this->row_actions($actions) );
@@ -166,9 +159,9 @@ class OrganizationsHub_ListTable extends WP_List_Table
 
 	function column_namedesc( $item )
 	{
-		$html = $item['first_name'].' '.$item['last_name'].'<br/>';
-		$html .= $item['email'].'<br/>';
-		$html .= $item['description'].'<br/>';
+		$html =  '<span class="name" title="'.$item['first_name'].' '.$item['last_name'].'">'.$item['first_name'].' '.$item['last_name'].'</span><br/>';
+		$html .= '<span class="email" title="'.$item['email'].'">'.$item['email'].'</span><br/>';
+		$html .= '<span class="description" title="'.$item['description'].'">'.$item['description'].'</span><br/>';
 		
 		return $html;
 	}
@@ -179,7 +172,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
 		
 		foreach( $item['type'] as $t )
 		{
-			$html .= '<div>'.$t.'</div>';
+			$html .= '<span title="'.$c.'">'.$t.'</span><br/>';
 		}
 		
 		return $html;
@@ -191,7 +184,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
 		
 		foreach( $item['category'] as $c )
 		{
-			$html .= '<div>'.$c.'</div>';
+			$html .= '<span title="'.$c.'">'.$c.'</span><br/>';
 		}
 		
 		return $html;
@@ -204,9 +197,9 @@ class OrganizationsHub_ListTable extends WP_List_Table
 	
 	function column_info( $item )
 	{
-		$html = $item['domain'].'<br/>';
+		$html = '<span class="url" title="'.$item['site_domain'].'/'.$item['site_path'].'">'.$item['site_domain'].'/'.$item['site_path'].'</span><br/>';
 		
-		$model = OrganizationHub_Model::get_instance();
+		$model = OrgHub_Model::get_instance();
 		$username_class = ''; //($model->get_user_exception($item['id'], 'username') ? 'user-exception' : '');
 		$site_class = ''; //($model->get_user_exception($item['id'], 'site') ? 'user-exception' : '');
 		$connections_class = ''; //($model->get_user_exception($item['id'], 'connections') ? 'user-exception' : '');
@@ -214,50 +207,47 @@ class OrganizationsHub_ListTable extends WP_List_Table
 		$class = 'wp_user_id';
 		if( $model->get_wp_user_error( $item['id'] ) ) $class .= ' error';
 		elseif( $model->get_wp_user_warning( $item['id'] ) ) $class .= ' warning';
-		$html .= '<div class="'.$class.'">';
 		if( $item['wp_user_id'] == null )
-			$html .= 'username: NONE';
+			$text = 'username: NONE';
 		else
-			$html .= 'username: '.$item['wp_user_id'];
-		$html .= '</div>';
+			$text = 'username: '.$item['wp_user_id'];
+		$html .= '<span class="'.$class.'" title="'.$text.'">'.$text.'</span><br/>';
 
 		$class = 'profile_site_id';
 		if( $model->get_profile_site_error( $item['id'] ) ) $class .= ' error';
 		elseif( $model->get_profile_site_warning( $item['id'] ) ) $class .= ' warning';
-		$html .= '<div class="'.$class.'">';
 		if( $item['profile_site_id'] == null )
 		{
-			$html .= 'profile site: NONE';
+			$text = 'profile site: NONE';
 		}
 		else
 		{
 			$profile_site = $model->get_profile_site( $item['profile_site_id'] );
 			if( $profile_site['archived'] )
-				$html .= '<strike>profile site</strike>: '.$item['profile_site_id'];
+				$text = '<strike>profile site</strike>: '.$item['profile_site_id'];
 			else
-				$html .= 'profile site: '.$item['profile_site_id'];
+				$text = 'profile site: '.$item['profile_site_id'];
 		}
-		$html .= '</div>';
+		$html .= '<span class="'.$class.'" title="'.$text.'">'.$text.'</span><br/>';
 	
-		foreach( $item['connections-sites'] as $cs )
+		foreach( $item['connections_sites'] as $cs )
 		{
 			$class = 'connections_site_id';
 			if( $model->get_connections_error( $item['id'], $cs['site'] ) ) $class .= ' error';
 			elseif( $model->get_connections_warning( $item['id'], $cs['site'] ) ) $class .= ' warning';
-			$html .= '<div class="'.$class.'">';
 			if( $cs['post_id'] == null )
 			{
-				$html .= $cs['site'].' post: NONE';
+				$text = $cs['site'].' post: NONE';
 			}
 			else
 			{			
 				$connections_post = $model->get_connections_post( $cs['post_id'], $cs['site'] );
 				if( $connections_post['post_status'] == 'draft' )
-					$html .= '<strike>'.$cs['site'].' post</strike>: '.$cs['post_id'];
+					$text = '<strike>'.$cs['site'].' post</strike>: '.$cs['post_id'];
 				else
-					$html .= $cs['site'].' post: '.$cs['post_id'];
+					$text = $cs['site'].' post: '.$cs['post_id'];
 			}
-			$html .= '</div>';
+			$html .= '<span class="'.$class.'" title="'.$text.'">'.$text.'</span><br/>';
 		}
 
 		return $html;
@@ -281,7 +271,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
 		$action = $this->current_action();
 		$users = ( isset($_REQUEST['user']) ? $_REQUEST['user'] : array() );
 		
-		$model = OrganizationHub_Model::get_instance();
+		$model = OrgHub_Model::get_instance();
 		
 		switch( $action )
 		{
@@ -292,7 +282,7 @@ class OrganizationsHub_ListTable extends WP_List_Table
 			
 			case 'create-sites':
 				foreach( $users as $user_id )
-					$model->create_site( $user_id, false, false, true );
+					$model->create_site( $user_id, true );
 				break;
 			
 			case 'create-connections-posts':
