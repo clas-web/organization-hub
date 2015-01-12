@@ -11,6 +11,10 @@ Author URI: http://www.crystalbarton.com
 
 //error_reporting(-1);
 
+if( !defined('ORGANIZATION_HUB') ):
+
+define( 'ORGANIZATION_HUB', 'Organization Hub' );
+
 define( 'ORGANIZATION_HUB_PLUGIN_PATH', dirname(__FILE__) );
 define( 'ORGANIZATION_HUB_PLUGIN_URL', plugins_url('', __FILE__) );
 
@@ -22,6 +26,8 @@ define( 'ORGANIZATION_HUB_DB_VERSION_OPTION', 'organization-hub-db-version' );
 
 define( 'ORGANIZATION_HUB_OPTIONS', 'organization-hub-options' );
 define( 'ORGANIZATION_HUB_LOG_FILE', dirname(__FILE__).'/log.txt' );
+
+endif;
 
 
 
@@ -61,7 +67,6 @@ class OrgHub_Main
 		$menu->add_page( new OrgHub_UsersAdminPage );
 		$menu->add_page( new OrgHub_UploadAdminPage );
 		$menu->add_page( new OrgHub_SitesAdminPage );
-		$menu->add_page( new OrgHub_SettingsAdminPage );
 		$menu->add_page( new OrgHub_LogAdminPage );
 		
 		$orghub_pages->add_menu( $menu );
