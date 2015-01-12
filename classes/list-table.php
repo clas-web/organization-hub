@@ -216,9 +216,9 @@ class OrganizationsHub_ListTable extends WP_List_Table
 		elseif( $model->get_wp_user_warning( $item['id'] ) ) $class .= ' warning';
 		$html .= '<div class="'.$class.'">';
 		if( $item['wp_user_id'] == null )
-			$html .= 'NO Username';
+			$html .= 'username: NONE';
 		else
-			$html .= 'Username: '.$item['wp_user_id'];
+			$html .= 'username: '.$item['wp_user_id'];
 		$html .= '</div>';
 
 		$class = 'profile_site_id';
@@ -226,9 +226,17 @@ class OrganizationsHub_ListTable extends WP_List_Table
 		elseif( $model->get_profile_site_warning( $item['id'] ) ) $class .= ' warning';
 		$html .= '<div class="'.$class.'">';
 		if( $item['profile_site_id'] == null )
-			$html .= 'NO Profile site';
+		{
+			$html .= 'profile site: NONE';
+		}
 		else
-			$html .= 'Profile site: '.$item['profile_site_id'];		
+		{
+			$profile_site = $model->get_profile_site( $item['profile_site_id'] );
+			if( $profile_site['archived'] )
+				$html .= '<strike>profile site</strike>: '.$item['profile_site_id'];
+			else
+				$html .= 'profile site: '.$item['profile_site_id'];
+		}
 		$html .= '</div>';
 	
 		foreach( $item['connections-sites'] as $cs )
@@ -238,9 +246,17 @@ class OrganizationsHub_ListTable extends WP_List_Table
 			elseif( $model->get_connections_warning( $item['id'], $cs['site'] ) ) $class .= ' warning';
 			$html .= '<div class="'.$class.'">';
 			if( $cs['post_id'] == null )
-				$html .= 'NO Connections Post for '.$cs['site'];
+			{
+				$html .= $cs['site'].' post: NONE';
+			}
 			else
-				$html .= 'Connection Post for '.$cs['site'].': '.$cs['post_id'];
+			{			
+				$connections_post = $model->get_connections_post( $cs['post_id'], $cs['site'] );
+				if( $connections_post['post_status'] == 'draft' )
+					$html .= '<strike>'.$cs['site'].' post</strike>: '.$cs['post_id'];
+				else
+					$html .= $cs['site'].' post: '.$cs['post_id'];
+			}
 			$html .= '</div>';
 		}
 
@@ -271,12 +287,12 @@ class OrganizationsHub_ListTable extends WP_List_Table
 		{
 			case 'create-users':
 				foreach( $users as $user_id )
-					$model->create_user( $user_id );
+					$model->create_username( $user_id );
 				break;
 			
 			case 'create-sites':
 				foreach( $users as $user_id )
-					$model->create_site( $user_id, false, true );
+					$model->create_site( $user_id, false, false, true );
 				break;
 			
 			case 'create-connections-posts':
