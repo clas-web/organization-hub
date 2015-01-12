@@ -66,5 +66,50 @@ class OrgHub_CsvHandler
         return true;
     }
     
+    
+    public static function export( $filename, &$headers, &$rows )
+    {
+		$delimiter_esc = preg_quote(self::$delimiter, '/'); 
+		$enclosure_esc = preg_quote(self::$enclosure, '/');
+		$space_esc = preg_quote(' ', '/');
+		
+		foreach( $rows as &$row )
+		{
+			foreach( $row as &$column )
+			{
+				if( is_array($column) )
+				{
+    				foreach( $column as &$c )
+    				{
+    					if( preg_match("/(?:${delimiter_esc}|${enclosure_esc}|${space_esc}|\s)/", $c) )
+    					{
+	    					$c = self::$enclosure.str_replace(self::$enclosure, self::$enclosure.self::$enclosure, $c).self::$enclosure;
+//	    					$c = str_replace(self::$enclosure, self::$enclosure.self::$enclosure, $c);
+	    				}
+    				}
+
+//					$column = self::$enclosure.implode( self::$enclosure.self::$delimiter.self::$enclosure, $column ).self::$enclosure;
+					$column = implode( self::$delimiter, $column );
+				}
+			}
+		}
+		
+     	header( 'Content-type: text/csv' );
+ 		header( 'Content-Disposition: attachment; filename='.$filename.'.csv' );
+ 		header( 'Pragma: no-cache' );
+ 		header( 'Expires: 0' );
+		
+		$outfile = fopen( 'php://output', 'w' );
+		
+		fputcsv( $outfile, $headers );
+		
+		for( $i = 0; $i < count($rows); $i++ )
+		{
+			fputcsv( $outfile, $rows[$i] );
+		}
+		
+		fclose( $outfile );
+    }
+
 }
 

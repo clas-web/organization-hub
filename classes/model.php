@@ -2320,6 +2320,43 @@ class OrgHub_Model
 	}
 
 
+	public function get_csv_export( $filter = array(), $search = array(), $only_errors = false, $orderby = null )
+	{
+		$users = $this->get_users( $filter, $search, $only_errors, $orderby );
+		
+		$headers = array(
+			'username',
+			'category',
+			'first_name',
+			'last_name',
+			'description',
+			'email',
+			'site_domain',
+			'site_path',
+			'connections_sites',
+			'type',
+		);
+
+		foreach( $users as &$user )
+		{
+			$u = $user;
+			$user = array(
+				$u['username'], // username
+				$u['category'], // category
+				$u['first_name'], // first name
+				$u['last_name'], // last name
+				$u['description'], // description
+				$u['email'], // email
+				$u['site_domain'], // site domain
+				$u['site_path'], // site path
+				array_map( function($cs) { return $cs['site']; }, $u['connections_sites'] ), // connections sites
+				$u['type'], // type
+			);
+		}
+		
+		OrgHub_CsvHandler::export( 'users', $headers, $users );
+		exit;
+	}
 
 
 

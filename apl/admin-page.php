@@ -324,27 +324,30 @@ abstract class APL_AdminPage
 	 */
 	public function process_page()
 	{
-		if( empty($_POST) ) return;
+		if( !isset($_REQUEST['action']) ) return;
 		
-		if( !isset($_REQUEST['_wpnonce']) || !wp_verify_nonce($_REQUEST['_wpnonce'], $this->get_name().'-options') )
+		if( !empty($_POST) )
 		{
-			$this->set_error( 'The submitted data cannot be verified: '.$_REQUEST['_wpnonce'] );
-			return;
-		}
-
-		if( ($this->use_custom_settings) && ($_REQUEST['action'] == 'update') )
-		{
-			foreach( $this->settings as $setting )
+			if( !isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], $this->get_name().'-options') )
 			{
-				if( !isset($_REQUEST[$setting]) ) continue;
+				$this->set_error( 'The submitted data cannot be verified.' );
+				return;
+			}
+
+			if( ($this->use_custom_settings) && ($_POST['action'] == 'update') )
+			{
+				foreach( $this->settings as $setting )
+				{
+					if( !isset($_POST[$setting]) ) continue;
 				
-				if( is_network_admin() )
-				{
-					update_site_option( $setting, $_REQUEST[$setting] );
-				}
-				else
-				{
-					update_option( $setting, $_REQUEST[$setting] );
+					if( is_network_admin() )
+					{
+						update_site_option( $setting, $_POST[$setting] );
+					}
+					else
+					{
+						update_option( $setting, $_POST[$setting] );
+					}
 				}
 			}
 		}
@@ -521,6 +524,49 @@ abstract class APL_AdminPage
 		endif;
 		
 		wp_nonce_field( $this->get_name().'-options');
+	}
+	
+	
+	public function form_start_get( $class = null, $attributes = array(), $action = null, $query = array() )
+	{
+		if( !is_array($attributes) ) $attributes = array();
+		if( !is_array($query) ) $query = array();
+		
+		?>
+		<form action="<?php echo apl_get_page_url( false ); ?>" 
+		      class="<?php echo $class; ?>"
+		      <?php foreach( $attributes as $key => $value ) { echo $key.'="'.$value.'" '; } ?>
+		      >
+		<?php
+		$page = $this->handler->get_page_name();
+		$tab = $this->handler->get_tab_name();
+		
+		if( isset($query['page']) ) $page = $query['page'];
+		if( isset($query['tab']) ) $tab = $query['tab'];
+		
+		if( $page ):
+			?>
+			<input type="hidden" name="page" value="<?php echo $page; ?>" />
+			<?php
+		endif;
+
+		if( $tab ):
+			?>
+			<input type="hidden" name="tab" value="<?php echo $tab; ?>" />
+			<?php
+		endif;
+		
+		if( $action ):
+			?>
+			<input type="hidden" name="action" value="<?php echo $action; ?>" />
+			<?php
+		endif;
+		
+		foreach( $query as $k => $v ):
+			?>
+			<input type="hidden" name="<?php echo $k; ?>" value="<?php echo $v; ?>" />
+			<?php
+		endforeach;
 	}
 	
 	

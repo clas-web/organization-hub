@@ -16,6 +16,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	{
 		parent::__construct( 'list', 'Users List', $parent );
 		$this->model = OrgHub_Model::get_instance();
+		$this->setup_users_table();
 	}
 	
 
@@ -272,9 +273,6 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 			'option' => 'users_per_page'
 		);
 		add_screen_option( $option, $args );
-		
-		require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/users-list-table.php' );
-		$this->users_table = new OrgHub_UsersListTable();
 	}
 	
 	
@@ -289,6 +287,10 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		{
 			case 'Process All Users':
 				$this->process_users();
+				break;
+			
+			case 'export':
+				$this->export_users();
 				break;
 		}
 	}
@@ -316,38 +318,21 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	}
 	
 	
-	/**
-	 * 
-	 */
-	public function display()
+	public function export_users()
 	{
-		?>
+        require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
+		$this->model->get_csv_export( $this->get_filters(), $this->get_search(), $this->get_errors(), $this->get_orderby() );
+		exit;
+	}
+	
+	
+	
+	
+	private function set_filter_types()
+	{
+		if( isset($this->filter_types) ) return $this->filter_types;
 		
-		<div class="last-process">
-		<?php if( $this->model->get_option('last-process') ): ?>
-			<div class="date">
-				The last process users was preformed on <?php echo $this->model->get_option('last-process'); ?>.
-			</div>
-			<div class="results">
-				<?php echo $this->model->get_option('last-process-results'); ?>
-			</div>
-		<?php else: ?>
-			<div class="no results">
-				No users have been processed.
-			</div>
-		<?php endif; ?>
-		</div>
-
-		
-		<form action="admin.php">
-			<input type="hidden" name="page" value="<?php echo $this->name; ?>" />
-			<input type="hidden" name="tab" value="<?php echo $this->tab; ?>" />
-			<?php submit_button( 'Process All Users', 'primary', 'action' ); ?>
-		</form>
-		
-		
-		<?php
-		$filter_types = array(
+		$this->filter_types = array(
 			'status' => array(
 				'name' => 'Status',
 				'values' => $this->model->get_all_status_values(),
@@ -375,119 +360,180 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 			),
 		);
 		
-		foreach( array_keys($filter_types) as $type )
+		foreach( array_keys($this->filter_types) as $type )
 		{
 			if( !empty($_GET[$type]) )
 			{
-				if( is_array($_GET[$type]) ) $filter_types[$type]['filter'] = $_GET[$type];
-				else $filter_types[$type]['filter'] = array( $_GET[$type] );
+				if( is_array($_GET[$type]) ) $this->filter_types[$type]['filter'] = $_GET[$type];
+				else $this->filter_types[$type]['filter'] = array( $_GET[$type] );
 			}
 		}
 		
+		return $this->filter_types;
+	}
+	
+	
+	private function get_filters()
+	{
+		$this->set_filter_types();
+		
 		$filter = array();
-		foreach( $filter_types as $type => $f )
+		foreach( $this->filter_types as $type => $f )
 		{
 			if( count($f['filter']) > 0 )
 				$filter[$type] = $f['filter'];
 		}
 		
-		//orghub_print( $filter );
-		//orghub_print( $filter_types );
-		
-		if( $this->users_table == null )
+		return $filter;
+	}
+	
+	
+	private function get_search()
+	{
+		$search = array();
+		if( !empty($_REQUEST['s']) )
 		{
-			require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/users-list-table.php' );
-			$this->users_table = new OrgHub_UsersListTable();
+			$search['username'] = array( $_REQUEST['s'] );
+			$search['first_name'] = array( $_REQUEST['s'] );
+			$search['last_name'] = array( $_REQUEST['s'] );
 		}
 		
+		return $search;
+	}
+	
+	
+	private function get_errors()
+	{
 		$only_errors = false;
 		if( isset($_REQUEST['show-only-errors']) && $_REQUEST['show-only-errors'] === '1' )
 			$only_errors = true;
 		
-		$this->users_table->prepare_items( $filter, $only_errors );
+		return $only_errors;
+	}
+	
+	
+	private function get_orderby()
+	{
+		$orderby = ( !empty($_GET['orderby']) ? $_GET['orderby'] : 'username' );
+		$order = ( !empty($_GET['order']) ? $_GET['order'] : 'asc' );
 		
+		switch( $orderby )
+		{
+			case 'namedesc':
+				$orderby = 'last_name '.$order;
+				break;
+				
+			case 'username':
+			case 'type':
+			case 'category':
+				$orderby .= ' '.$order;
+				break;
+
+			default:
+				$orderby = '';
+				break;
+		}
 		
-		?>	
-		<form action="admin.php" class="filter-form">
-
-			<?php if( !empty($_GET) ): ?>
-				<?php foreach( $_GET as $k => $v ): ?>
-					<?php if( (!in_array($k, array_keys($filter_types))) && ($k !== 'action') ): ?>
-						<input type="hidden" name="<?php echo $k; ?>" value="<?php echo $v; ?>" />
-					<?php endif; ?>
-				<?php endforeach; ?>
-			<?php endif; ?>
-
-			<table>
-			<tr>
-			
-			<?php foreach( $filter_types as $key => $type ): ?>
-			
-				<th class="<?php echo $key; ?>">
-				<?php echo $type['name']; ?>
-				</th>
-			
-			<?php endforeach; ?>
-			
-			</tr>
-			<tr>
-			
-			<?php foreach( $filter_types as $key => $type ): ?>
-			
-				<td class="<?php echo $key; ?>">	
-				<div class="scroll-box">
-				<?php foreach( $type['values'] as $value ): ?>
-					<div class="item">
-					<input type="checkbox"
-						   name="<?php echo $key; ?>[]"
-						   id="<?php apl_name_e( $key, $value ); ?>"
-						   value="<?php echo $value; ?>"
-				           <?php checked( true, in_array($value, $type['filter']) ); ?> />
-					<label for="<?php apl_name_e( $key, $value ); ?>">
-						<?php echo $value; ?>
-					</label>
-					</div>
-				<?php endforeach; ?>
-				</div>
-				</td>
-			
-			<?php endforeach; ?>
-			
-			</tr>
-			</table>
-			
-			<div class="errors-checkbox">
-			<input type="checkbox"
-			       name="show-only-errors"
-			       id="<?php apl_name_e( 'show-only-errors' ); ?>"
-			       value="1"
-			       <?php checked( true, $only_errors ); ?> />
-			<label for="<?php apl_name_e( 'show-only-errors' ); ?>" >
-			       Only show users that have errors.
-			</label>
+		return $orderby;
+	}
+	
+	
+	public function setup_users_table()
+	{
+		require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/users-list-table.php' );
+		$this->users_table = new OrgHub_UsersListTable();
+		$this->users_table->process_batch_action();
+		$this->users_table->prepare_items( $this->get_filters(), $this->get_search(), $this->get_errors(), $this->get_orderby() );
+	}
+	
+	
+	/**
+	 * 
+	 */
+	public function display()
+	{
+		?>
+		
+		<div class="last-process">
+		<?php if( $this->model->get_option('last-process') ): ?>
+			<div class="date">
+				The last process users was preformed on <?php echo $this->model->get_option('last-process'); ?>.
 			</div>
+			<div class="results">
+				<?php echo $this->model->get_option('last-process-results'); ?>
+			</div>
+		<?php else: ?>
+			<div class="no results">
+				No users have been processed.
+			</div>
+		<?php endif; ?>
+		</div>
+
+		
+		<?php $this->form_start_get(); ?>
+			<?php submit_button( 'Process All Users', 'primary', 'action' ); ?>
+		<?php $this->form_end(); ?>
+		
+		
+		<?php $this->form_start_get( 'filter-form' ); ?>
+			
+			
+			
+			<?php foreach( $this->filter_types as $key => $type ): ?>
+			
+				<div class="<?php echo $key; ?> filter-box">
+				
+					<div class="title"><?php echo $type['name']; ?></div>
+	
+					<div class="scroll-box">
+					<?php foreach( $type['values'] as $value ): ?>
+						<div class="item">
+						<input type="checkbox"
+							   name="<?php echo $key; ?>[]"
+							   id="<?php apl_name_e( $key, $value ); ?>"
+							   value="<?php echo $value; ?>"
+							   <?php checked( true, in_array($value, $type['filter']) ); ?> />
+						<label for="<?php apl_name_e( $key, $value ); ?>">
+							<?php echo $value; ?>
+						</label>
+						</div>
+					<?php endforeach; ?>
+					</div>
+				
+				</div>
+			
+			<?php endforeach; ?>
+			
+			
+						
+			<div class="errors-checkbox">
+				<input type="checkbox"
+					   name="show-only-errors"
+					   id="<?php apl_name_e( 'show-only-errors' ); ?>"
+					   value="1"
+					   <?php checked( true, $this->get_errors() ); ?> />
+				<label for="<?php apl_name_e( 'show-only-errors' ); ?>" >
+					   Only show users that have errors.
+				</label>
+			</div>
+			
+			
 			
 			<button>Apply Filters</button>
 			
-		</form>
+			
+			
+		<?php $this->form_end(); ?>
 		
 
-		<form action="admin.php" class="filter-form">
-			
-			<?php if( !empty($_GET) ): ?>
-				<?php foreach( $_GET as $k => $v ): ?>
-					<?php if( (!in_array($k, array_keys($filter_types))) && ($k !== 'action') ): ?>
-						<input type="hidden" name="<?php echo $k; ?>" value="<?php echo $v; ?>" />
-					<?php endif; ?>
-				<?php endforeach; ?>
-			<?php endif; ?>
-		
+		<?php $this->form_start_get( 'filter-form' ); ?>
 			<button>Clear Filters</button>
-			
-		</form>
+		<?php $this->form_end(); ?>
+		
+		<a href="<?php echo apl_get_page_url(); ?>&action=export" />Export</a>
 
-		<form id="users-table" action="admin.php?<?php echo $_SERVER['QUERY_STRING']; ?>" method="post">
-			<?php $this->users_table->search_box('search','users-table-search'); ?>
+		<form id="users-table" action="<?php echo apl_get_page_url(); ?>" method="post">
+			<?php $this->users_table->search_box( 'search', 'users-table-search' ); ?>
 			<?php $this->users_table->display(); ?>
 		</form>
 		<?php

@@ -13,11 +13,10 @@ if( !class_exists('OrgHub_Model') )
  */
 class OrgHub_UsersListTable extends WP_List_Table
 {
+
+	private $model;
 	
-	/**
-	 * 
-	 */
-	function prepare_items( $filter = array(), $only_errors = false )
+	public function __construct()
 	{
 		parent::__construct(
             array(
@@ -27,43 +26,17 @@ class OrgHub_UsersListTable extends WP_List_Table
             )
         );
 
-		$model = OrgHub_Model::get_instance();
-
-		$this->process_batch_action();
-		
+		$this->model = OrgHub_Model::get_instance();
+	}
+	
+	/**
+	 * 
+	 */
+	function prepare_items( $filter = array(), $search = array(), $only_errors = false, $orderby = null )
+	{
 		$this->_column_headers = $this->get_column_info();
 		
-
-
-		$search = array();
-		if( !empty($_REQUEST['s']) )
-		{
-			$search['username'] = array( $_REQUEST['s'] );
-			$search['first_name'] = array( $_REQUEST['s'] );
-			$search['last_name'] = array( $_REQUEST['s'] );
-		}
-
-		$orderby = ( !empty($_GET['orderby']) ? $_GET['orderby'] : 'username' );
-		$order = ( !empty($_GET['order']) ? $_GET['order'] : 'asc' );
-		
-		switch( $orderby )
-		{
-			case 'namedesc':
-				$orderby = 'last_name '.$order;
-				break;
-				
-			case 'username':
-			case 'type':
-			case 'category':
-				$orderby .= ' '.$order;
-				break;
-
-			default:
-				$orderby = '';
-				break;
-		}
-		
-		$users_count = $model->get_users_count( $filter, $search, $only_errors, $orderby );
+		$users_count = $this->model->get_users_count( $filter, $search, $only_errors, $orderby );
 	
 		$current_page = $this->get_pagenum();
 		$per_page = $this->get_items_per_page('users_per_page', 100);
@@ -73,19 +46,10 @@ class OrgHub_UsersListTable extends WP_List_Table
     		'per_page'    => $per_page
   		) );
   		
-  		$this->items = $model->get_users( $filter, $search, $only_errors, $orderby, ($current_page-1)*$per_page, $per_page );
+  		$this->items = $this->model->get_users( $filter, $search, $only_errors, $orderby, ($current_page-1)*$per_page, $per_page );
 	}
 
 
-	/**
-	 * 
-	 */
-	function get_items( $filter = array(), $orderby = null )
-	{
-		
-	}
-	
-	
 	/**
 	 * 
 	 */
@@ -172,7 +136,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 		
 		foreach( $item['type'] as $t )
 		{
-			$html .= '<span title="'.$c.'">'.$t.'</span><br/>';
+			$html .= '<span title="'.$t.'">'.$t.'</span><br/>';
 		}
 		
 		return $html;
@@ -199,14 +163,13 @@ class OrgHub_UsersListTable extends WP_List_Table
 	{
 		$html = '<span class="url" title="'.$item['site_domain'].'/'.$item['site_path'].'">'.$item['site_domain'].'/'.$item['site_path'].'</span><br/>';
 		
-		$model = OrgHub_Model::get_instance();
-		$username_class = ''; //($model->get_user_exception($item['id'], 'username') ? 'user-exception' : '');
-		$site_class = ''; //($model->get_user_exception($item['id'], 'site') ? 'user-exception' : '');
-		$connections_class = ''; //($model->get_user_exception($item['id'], 'connections') ? 'user-exception' : '');
+		$username_class = ''; //($this->model->get_user_exception($item['id'], 'username') ? 'user-exception' : '');
+		$site_class = ''; //($this->model->get_user_exception($item['id'], 'site') ? 'user-exception' : '');
+		$connections_class = ''; //($this->model->get_user_exception($item['id'], 'connections') ? 'user-exception' : '');
 		
 		$class = 'wp_user_id';
-		if( $model->get_wp_user_error( $item['id'] ) ) $class .= ' error';
-		elseif( $model->get_wp_user_warning( $item['id'] ) ) $class .= ' warning';
+		if( $this->model->get_wp_user_error( $item['id'] ) ) $class .= ' error';
+		elseif( $this->model->get_wp_user_warning( $item['id'] ) ) $class .= ' warning';
 		if( $item['wp_user_id'] == null )
 			$text = 'username: NONE';
 		else
@@ -214,15 +177,15 @@ class OrgHub_UsersListTable extends WP_List_Table
 		$html .= '<span class="'.$class.'" title="'.$text.'">'.$text.'</span><br/>';
 
 		$class = 'profile_site_id';
-		if( $model->get_profile_site_error( $item['id'] ) ) $class .= ' error';
-		elseif( $model->get_profile_site_warning( $item['id'] ) ) $class .= ' warning';
+		if( $this->model->get_profile_site_error( $item['id'] ) ) $class .= ' error';
+		elseif( $this->model->get_profile_site_warning( $item['id'] ) ) $class .= ' warning';
 		if( $item['profile_site_id'] == null )
 		{
 			$text = 'profile site: NONE';
 		}
 		else
 		{
-			$profile_site = $model->get_profile_site( $item['profile_site_id'] );
+			$profile_site = $this->model->get_profile_site( $item['profile_site_id'] );
 			if( $profile_site['archived'] )
 				$text = '<strike>profile site</strike>: '.$item['profile_site_id'];
 			else
@@ -233,15 +196,15 @@ class OrgHub_UsersListTable extends WP_List_Table
 		foreach( $item['connections_sites'] as $cs )
 		{
 			$class = 'connections_site_id';
-			if( $model->get_connections_error( $item['id'], $cs['site'] ) ) $class .= ' error';
-			elseif( $model->get_connections_warning( $item['id'], $cs['site'] ) ) $class .= ' warning';
+			if( $this->model->get_connections_error( $item['id'], $cs['site'] ) ) $class .= ' error';
+			elseif( $this->model->get_connections_warning( $item['id'], $cs['site'] ) ) $class .= ' warning';
 			if( $cs['post_id'] == null )
 			{
 				$text = $cs['site'].' post: NONE';
 			}
 			else
 			{			
-				$connections_post = $model->get_connections_post( $cs['post_id'], $cs['site'] );
+				$connections_post = $this->model->get_connections_post( $cs['post_id'], $cs['site'] );
 				if( $connections_post['post_status'] == 'draft' )
 					$text = '<strike>'.$cs['site'].' post</strike>: '.$cs['post_id'];
 				else
@@ -271,39 +234,37 @@ class OrgHub_UsersListTable extends WP_List_Table
 		$action = $this->current_action();
 		$users = ( isset($_REQUEST['user']) ? $_REQUEST['user'] : array() );
 		
-		$model = OrgHub_Model::get_instance();
-		
 		switch( $action )
 		{
 			case 'create-users':
 				foreach( $users as $user_id )
-					$model->create_username( $user_id );
+					$this->model->create_username( $user_id );
 				break;
 			
 			case 'create-sites':
 				foreach( $users as $user_id )
-					$model->create_site( $user_id, true );
+					$this->model->create_site( $user_id, true );
 				break;
 			
 			case 'create-connections-posts':
 				foreach( $users as $user_id )
-					$model->create_connections_posts( $user_id, true );
+					$this->model->create_connections_posts( $user_id, true );
 				break;
 			
 			case 'archive-sites':
 				foreach( $users as $user_id )
-					$model->archive_site( $user_id );
+					$this->model->archive_site( $user_id );
 				break;
 			
 			case 'draft-connections-posts':
 				foreach( $users as $user_id )
-					$model->process_connections_posts( $user_id, true );
+					$this->model->process_connections_posts( $user_id, true );
 				break;
 			
 			case 'process-users':
 				foreach( $users as $user_id )
 				{
-					$model->process_user( $user_id );
+					$this->model->process_user( $user_id );
 				}
 				break;
 		}
