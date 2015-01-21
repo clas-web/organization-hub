@@ -1,10 +1,21 @@
 <?php
-
+/**
+ * OrgHub_UsersAdminPage
+ * 
+ * 
+ * 
+ * @package    orghub
+ * @subpackage admin-pages/pages
+ * @author     Crystal Barton <cbarto11@uncc.edu>
+ */
 
 if( !class_exists('OrgHub_UsersAdminPage') ):
 class OrgHub_UsersAdminPage extends APL_AdminPage
 {
 	
+	/**
+	 * 
+	 */
 	public function __construct()
 	{
 		parent::__construct( 'users', 'Users', 'Users' );
@@ -15,6 +26,9 @@ class OrgHub_UsersAdminPage extends APL_AdminPage
 	}
 	
 	
+	/**
+	 * 
+	 */
 	public function display()
 	{
 		// Using tabs, so display should never be called.

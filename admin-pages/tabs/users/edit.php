@@ -1,5 +1,13 @@
 <?php
-
+/**
+ * OrgHub_UsersEditTabAdminPage
+ * 
+ * 
+ * 
+ * @package    orghub
+ * @subpackage admin-pages/tabs/users
+ * @author     Crystal Barton <cbarto11@uncc.edu>
+ */
 
 if( !class_exists('OrgHub_UsersEditTabAdminPage') ):
 class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
@@ -18,7 +26,9 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 	}
 
 
-
+	/**
+	 * 
+	 */
 	public function add_head_script()
 	{
 		?>
@@ -235,6 +245,9 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 	}
 	
 	
+	/**
+	 * 
+	 */
 	public function process()
 	{
 		apl_print($_REQUEST);

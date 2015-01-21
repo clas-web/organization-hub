@@ -1,4 +1,13 @@
 <?php
+/**
+ * OrgHub_CsvHandler
+ * 
+ * 
+ * 
+ * @package    orghub
+ * @subpackage classes
+ * @author     Crystal Barton <cbarto11@uncc.edu>
+ */
 
 
 class OrgHub_CsvHandler
@@ -67,6 +76,9 @@ class OrgHub_CsvHandler
     }
     
     
+	/**
+	 * 
+	 */
     public static function export( $filename, &$headers, &$rows )
     {
 		$delimiter_esc = preg_quote(self::$delimiter, '/'); 

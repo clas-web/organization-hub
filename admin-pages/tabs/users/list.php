@@ -1,6 +1,17 @@
 <?php
 
 
+
+/**
+ * OrgHub_UsersListTabAdminPage
+ * 
+ * 
+ * 
+ * @package    orghub
+ * @subpackage admin-pages/tabs/users
+ * @author     Crystal Barton <cbarto11@uncc.edu>
+ */
+
 if( !class_exists('OrgHub_UsersListTabAdminPage') ):
 class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 {

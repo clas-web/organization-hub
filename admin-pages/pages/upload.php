@@ -1,5 +1,13 @@
 <?php
-
+/**
+ * OrgHub_UploadAdminPage
+ * 
+ * 
+ * 
+ * @package    orghub
+ * @subpackage admin-pages/pages
+ * @author     Crystal Barton <cbarto11@uncc.edu>
+ */
 
 if( !class_exists('OrgHub_UploadAdminPage') ):
 class OrgHub_UploadAdminPage extends APL_AdminPage
@@ -11,12 +19,19 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 	private $process_results = '';
 
 
+	/**
+	 * 
+	 */
 	public function __construct()
 	{
 		parent::__construct( 'upload', 'Upload', 'Upload' );
         $this->model = OrgHub_Model::get_instance();
 	}
 	
+	
+	/**
+	 * 
+	 */
 	public function add_head_script()
 	{
 		?>
@@ -233,6 +248,9 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 	}
 
 
+	/**
+	 * 
+	 */
 	public function process()
 	{
 		if( empty($_REQUEST['action']) ) return;
@@ -246,6 +264,9 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 	}
 
 
+	/**
+	 * 
+	 */
 	public function upload_file()
 	{
 		if( !isset($_FILES) || !isset($_FILES['upload']) )
@@ -298,6 +319,9 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 	}
 		
 	
+	/**
+	 * 
+	 */
 	public function display()
 	{
 		$this->form_start( 'upload', array('enctype' => 'multipart/form-data'), 'upload', null );

@@ -1,6 +1,17 @@
 <?php
 
 
+
+/**
+ * OrgHub_SitesAdminPage
+ * 
+ * 
+ * 
+ * @package    orghub
+ * @subpackage admin-pages/pages
+ * @author     Crystal Barton <cbarto11@uncc.edu>
+ */
+
 if( !class_exists('OrgHub_SitesAdminPage') ):
 class OrgHub_SitesAdminPage extends APL_AdminPage
 {

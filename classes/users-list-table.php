@@ -9,8 +9,16 @@ if( !class_exists('OrgHub_Model') )
 	require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/model.php' );
 
 /**
+ * OrgHub_UsersListTable
  * 
+ * 
+ * 
+ * @package    orghub
+ * @subpackage classes
+ * @author     Crystal Barton <cbarto11@uncc.edu>
  */
+
+if( !class_exists('OrgHub_UsersListTable') ):
 class OrgHub_UsersListTable extends WP_List_Table
 {
 
@@ -276,5 +284,5 @@ class OrgHub_UsersListTable extends WP_List_Table
 	}
 	
 }
-
+endif;
 
