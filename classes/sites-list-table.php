@@ -148,54 +148,77 @@ class OrgHub_SitesListTable extends WP_List_Table
 	 */
 	public function column_default( $item, $column_name )
 	{
+		$html = '';
+
 		switch( $column_name )
 		{
 			case 'site_num_comments':
-				return $item['num_comments'];
+				$html = $item['num_comments'];
+				break;
 				
 			case 'site_num_posts':
-				return $item['num_posts'];
+				$html = $item['num_posts'];
+				break;
 
 			case 'site_num_pages':
-				return $item['num_pages'];
+				$html = $item['num_pages'];
+				break;
 			
 			case 'site_comment_post':
 				if( $item['num_posts'] > 0 )
-					return number_format( (float)$item['num_comments'] / $item['num_posts'], 2, '.', '' );
-				return number_format(0, 2, '.', '');
+					$html = number_format( (float)$item['num_comments'] / $item['num_posts'], 2, '.', '' );
+				else
+					$html = number_format(0, 2, '.', '');
+				break;
 			
 			case 'site_post_page':
 				if( $item['num_pages'] > 0 )
-					return number_format( (float)$item['num_posts'] / $item['num_pages'], 2, '.', '' );
-				return number_format(0, 2, '.', '');
+					$html = number_format( (float)$item['num_posts'] / $item['num_pages'], 2, '.', '' );
+				else
+					$html = number_format(0, 2, '.', '');
+				break;
 			
 			case 'site_last_post_date':
 				if( !empty($item['last_post_url']) )
-					return '<a href="'.$item['last_post_url'].'">'.$item['last_post_date'].'</a>';
+				{
+					$html = '<a href="'.$item['last_post_url'].'">'.$item['last_post_date'].'</a>';
+					$html .= '<br/>';
+					$html .= 'Post Status: '.$item['last_post_status'];
+				}
 				else
-					return 'No Posts';
+					$html = 'No Posts';
+				break;
 				
 			case 'site_last_comment_date':
 				if( !empty($item['last_comment_url']) )
-					return '<a href="'.$item['last_comment_url'].'">'.$item['last_comment_date'].'</a>';
+					$html = '<a href="'.$item['last_comment_url'].'">'.$item['last_comment_date'].'</a>';
 				else
-					return 'No Comments';
+					$html = 'No Comments';
+				break;
 			
 			case 'site_administrator':
-				if( empty($item['admin_email']) ) return 'NO ADMIN EMAIL';
-				
-				if( $item['display_name'] )
+				if( empty($item['admin_email']) )
+				{
+					$html = 'NO ADMIN EMAIL';
+				}
+				elseif( $item['display_name'] )
 				{
 					$url = network_admin_url( 'users.php?s='.$item['user_login'] );
 					$html = '';
 					$html .= '<a href="'.$url.'" target="_blank">'.$item['display_name'].'</a><br/>';
 					$html .= $item['admin_email'];
 				}
-				
-				return 'INVALID ADMIN EMAIL: '.$item['admin_email'];
+				else
+				{
+					$html = 'INVALID ADMIN EMAIL: '.$item['admin_email'];
+				}
+				break;
+			
+			default:
+				$html = '<strong>ERROR:</strong><br/>'.$column_name;
 		}
 		
-		return '<strong>ERROR:</strong><br/>'.$column_name;
+		return $html;
 	}
 	
 	
