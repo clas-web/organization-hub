@@ -171,6 +171,27 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 				),
 				'default' => 1,
 			),
+			'filter_by_pages' => array( 'default' => false ),
+			'pages_compare' => array(
+				'values' => array( 'greater', 'less' ),
+				'default' => 'greater'
+			),
+			'pages' => array(
+				'values' => array(
+					1,
+					2,
+					5,
+					10,
+					15,
+					20,
+					25,
+					50,
+					100,
+					1000,
+					10000,
+				),
+				'default' => 1,
+			),
 		);
 		
 		$this->filters = array();
@@ -241,6 +262,18 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		$this->list_table->prepare_items( $this->filters, $this->search, $this->orderby );
 		
 		?>
+		
+		<div class="notice notice-success">
+		<?php if( $this->model->get_option('sites-refresh-time') ): ?>
+			<div class="time">
+				The last sites listing refresh happened on <span id="orghub-sites-time"><?php echo $this->model->get_option('sites-refresh-time'); ?></span>.
+			</div>
+		<?php else: ?>
+			<div class="no results">
+				The sites lists has never been cached.
+			</div>
+		<?php endif; ?>
+		</div>
 		
 		<a href="<?php echo $this->get_page_url( array('action'=>'refresh') ); ?>" />Refresh</a>
 
@@ -328,7 +361,37 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 					</select>
 					
 				</div>
-			
+
+				<div class="pages-count">
+					<div class="title">
+						<input type="checkbox"
+						       name="filter_by_pages"
+						       value="1"
+						       <?php checked( true, $this->filters['filter_by_pages'] !== false ); ?> />
+						# of Pages
+					</div>
+					
+					<select name="pages_compare">
+						<option value="greater"
+							<?php selected( 'greater', $this->filters['pages_compare'] ); ?> >
+							more than
+						</option>
+						<option value="less"
+							<?php selected( 'less', $this->filters['pages_compare'] ); ?> >
+							less than
+						</option>
+					</select>
+					
+					<select name="pages">
+						<?php foreach( $this->filter_types['pages']['values'] as $value ): ?>
+							<option value="<?php echo $value; ?>"
+								    <?php selected( $value, $this->filters['pages'] ); ?> >
+								<?php echo $value; ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+					
+				</div>			
 			</div>
 			
 			

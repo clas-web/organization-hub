@@ -2530,6 +2530,27 @@ class OrgHub_Model
 						break;
 				}
 			}
+			
+			if( $filter['filter_by_pages'] !== false )
+			{
+				if( empty($where_string) ) $where_string = 'WHERE ';
+				else $where_string .= ' AND ';
+				
+				$posts_count = intval($filter['pages']);
+				switch( $filter['pages_compare'] )
+				{
+					case 'greater':
+						$where_string .= 'num_pages > '.$posts_count;
+						break;
+					
+					case 'less':
+						$where_string .= 'num_pages < '.$posts_count;
+						break;
+					
+					default:
+						break;
+				}
+			}		
 		}
 
 		if( is_array($search) && count($search) > 0 )
