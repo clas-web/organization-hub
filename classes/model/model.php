@@ -232,6 +232,7 @@ class OrgHub_Model
 				  num_comments bigint(20) NOT NULL DEFAULT 0,
 				  last_post_url text NOT NULL DEFAULT '',
 				  last_post_date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				  last_post_status text NOT NULL DEFAULT '',
 				  last_comment_url text NOT NULL DEFAULT '',
 				  last_comment_date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 				  admin_email text NOT NULL DEFAULT '',
@@ -2404,6 +2405,7 @@ class OrgHub_Model
 			'num_comments',
 			'last_post_url',
 			'last_post_date', 
+			'last_post_status',
 			'last_comment_url',
 			'last_comment_date',
 			'admin_email',
@@ -2423,6 +2425,7 @@ class OrgHub_Model
 				$u['num_comments'], // num_comments
 				$u['last_post_url'], // last_post_url
 				$u['last_post_date'], // last_post_date
+				$u['last_post_status'], // last_post_status
 				$u['last_comment_url'], // last_comment_url
 				$u['last_comment_date'], // last_comment_date
 				$u['admin_email'], // admin_email
@@ -2470,7 +2473,7 @@ class OrgHub_Model
 		$list = array();
 		$list[self::$site_table] = array(
 			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
-			'last_post_url', 'last_post_date', 
+			'last_post_url', 'last_post_date', 'last_post_status',
 			'last_comment_url', 'last_comment_date', 'admin_email',
 		);
 		$list[$wpdb->users] = array(
@@ -2648,11 +2651,13 @@ class OrgHub_Model
 			{
 				$site['last_post_url'] = get_permalink( $recent_post[0]['ID'] );
 				$site['last_post_date'] = $recent_post[0]['post_modified'];
+				$site['last_post_status'] = $recent_post[0]['post_status'];
 			}
 			else
 			{
 				$site['last_post_url'] = '';
 				$site['last_post_date'] = '0000-00-00 00:00:00';
+				$sits['last_post_status'] = '';
 			}
 			
 			$recent_comment = get_comments( array('number' => 1) );
@@ -2688,7 +2693,7 @@ class OrgHub_Model
 		$list = array();
 		$list[self::$site_table] = array(
 			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
-			'last_post_url', 'last_post_date', 
+			'last_post_url', 'last_post_date', 'last_post_status',
 			'last_comment_url', 'last_comment_date', 'admin_email',
 		);
 		$list[$wpdb->users] = array(
@@ -2735,12 +2740,13 @@ class OrgHub_Model
 				'num_comments'		=> $args['num_comments'],
 				'last_post_url'		=> $args['last_post_url'],
 				'last_post_date'	=> $args['last_post_date'],
+				'last_post_status'	=> $args['last_post_status'],
 				'last_comment_url'	=> $args['last_comment_url'],
 				'last_comment_date'	=> $args['last_comment_date'],
 				'admin_email'		=> $args['admin_email'],
 				'status'			=> $args['status'],
 			),
-			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 		
 		//
@@ -2774,13 +2780,14 @@ class OrgHub_Model
 				'num_comments'		=> $args['num_comments'],
 				'last_post_url'		=> $args['last_post_url'],
 				'last_post_date'	=> $args['last_post_date'],
+				'last_post_status'	=> $args['last_post_status'],
 				'last_comment_url'	=> $args['last_comment_url'],
 				'last_comment_date'	=> $args['last_comment_date'],
 				'admin_email'		=> $args['admin_email'],
 				'status'			=> $args['status'],
 			),
 			array( 'id' => intval( $id ) ),
-			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 
@@ -2838,11 +2845,13 @@ class OrgHub_Model
 		{
 			$site['last_post_url'] = '';
 			$site['last_post_date'] = '0000-00-00 00:00:00';
+			$site['last_post_status'] = '';
 		}
 		else
 		{
 			$site['last_post_url'] = get_permalink( $recent_post->ID );
 			$site['last_post_date'] = $recent_post->post_modified;
+			$site['last_post_status'] = $recent_post->post_status;
 		}
 		
 		$recent_comment = get_comments( array('number' => 1) );
