@@ -116,6 +116,13 @@ class OrgHub_Model
 			
 		update_site_option( ORGANIZATION_HUB_OPTIONS, $options );
 	}
+	
+	
+	public function update_option( $key, $value )
+	{
+		$options = array_merge( get_site_option(ORGANIZATION_HUB_OPTIONS, array()), array( $key => $value ) );
+		update_site_option( ORGANIZATION_HUB_OPTIONS, $options );
+	}
 
 
 //========================================================================================
@@ -2682,7 +2689,9 @@ class OrgHub_Model
 		foreach( $sites as &$site )
 		{
 			$this->add_site( $site );
-		}		
+		}
+		
+		$this->update_option( 'sites-refresh-time', date('Y-m-d H:i:s') );
 	}
 	
 	
