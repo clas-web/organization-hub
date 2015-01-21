@@ -1,6 +1,6 @@
 <?php
 
-if( !defined('ORGANIZATION_HUB_PLUGIN_PATH') ) return;
+if( !defined('ORGANIZATION_HUB') ) return;
 
 if( !class_exists('WP_List_Table') )
 	require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
@@ -22,9 +22,21 @@ if( !class_exists('OrgHub_UsersListTable') ):
 class OrgHub_UsersListTable extends WP_List_Table
 {
 
-	private $model;
+	private $parent;
+	private $model;				// 
 	
-	public function __construct()
+	
+	/**
+	 * 
+	 */
+	public function __construct( $parent )
+	{
+		$this->parent = $parent;
+		$this->model = OrgHub_Model::get_instance();
+	}
+	
+
+	public function load()
 	{
 		parent::__construct(
             array(
@@ -34,20 +46,21 @@ class OrgHub_UsersListTable extends WP_List_Table
             )
         );
 
-		$this->model = OrgHub_Model::get_instance();
+		$columns = $this->get_columns();
+		$hidden = $this->get_hidden_columns();
+		$sortable = $this->get_sortable_columns();
+		$this->_column_headers = array( $columns, $hidden, $sortable );
 	}
 	
 	/**
 	 * 
 	 */
-	function prepare_items( $filter = array(), $search = array(), $only_errors = false, $orderby = null )
+	public function prepare_items( $filter = array(), $search = array(), $only_errors = false, $orderby = null )
 	{
-		$this->_column_headers = $this->get_column_info();
-		
 		$users_count = $this->model->get_users_count( $filter, $search, $only_errors, $orderby );
 	
 		$current_page = $this->get_pagenum();
-		$per_page = $this->get_items_per_page('users_per_page', 100);
+		$per_page = $this->parent->get_screen_option( 'orghub_users_per_page' );
 
 		$this->set_pagination_args( array(
     		'total_items' => $users_count,
@@ -61,7 +74,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	/**
 	 * 
 	 */
-	function get_columns()
+	public function get_columns()
 	{
 		return array(
 			'cb'       => '<input type="checkbox" />',
@@ -73,29 +86,46 @@ class OrgHub_UsersListTable extends WP_List_Table
 			'info'     => 'Site Info',
 		);
 	}
-
+	
 	
 	/**
 	 * 
 	 */
-	function get_hidden_columns()
+	public function get_hidden_columns()
 	{
-		return array(
-			
-		);
+		$screen = get_current_screen();
+		$hidden = get_user_option( 'manage' . $screen->id . 'columnshidden' );
+		
+		if( $hidden === false )
+		{
+			$hidden = array(
+			);
+		}
+		
+		return $hidden;
 	}
 
 	
 	/**
 	 * 
 	 */
-	function get_sortable_columns()
+	public function get_sortable_columns()
 	{
 		return array(
 			'username' => array( 'username', false ),
 			'namedesc' => array( 'namedesc', false ),
-// 			'type'     => array( 'type', false ),
-// 			'category' => array( 'category', false ),
+		);
+	}
+	
+	
+	public function get_selectable_columns()
+	{
+		return array(
+			'namedesc' => 'Name / Description',
+			'type'     => 'Type',
+			'category' => 'Category',
+			'status'   => 'Status',
+			'info'     => 'Site Info',
 		);
 	}
 
@@ -103,23 +133,27 @@ class OrgHub_UsersListTable extends WP_List_Table
 	/**
 	 * 
 	 */
-	function column_default( $item, $column_name )
+	public function column_default( $item, $column_name )
 	{
 		return '<strong>ERROR:</strong><br/>'.$column_name;
 	}
 	
 	
-	function column_cb($item)
+	/**
+	 * 
+	 */
+	public function column_cb($item)
 	{
         return sprintf(
             '<input type="checkbox" name="user[]" value="%s" />', $item['id']
         );
     }
-
+	
+	
 	/**
 	 * 
 	 */
-	function column_username( $item )
+	public function column_username( $item )
 	{
 		$actions = array(
             'edit' => sprintf( '<a href="%s">Edit</a>', 'admin.php?page=orghub-users&tab=edit&id='.$item['id'] ),
@@ -128,8 +162,11 @@ class OrgHub_UsersListTable extends WP_List_Table
 		return sprintf( '%1$s<br/>%2$s', $item['username'],  $this->row_actions($actions) );
 	}
 	
-
-	function column_namedesc( $item )
+	
+	/**
+	 * 
+	 */
+	public function column_namedesc( $item )
 	{
 		$html =  '<span class="name" title="'.$item['first_name'].' '.$item['last_name'].'">'.$item['first_name'].' '.$item['last_name'].'</span><br/>';
 		$html .= '<span class="email" title="'.$item['email'].'">'.$item['email'].'</span><br/>';
@@ -138,7 +175,11 @@ class OrgHub_UsersListTable extends WP_List_Table
 		return $html;
 	}
 	
-	function column_type( $item )
+	
+	/**
+	 * 
+	 */
+	public function column_type( $item )
 	{
 		$html = '';
 		
@@ -150,7 +191,11 @@ class OrgHub_UsersListTable extends WP_List_Table
 		return $html;
 	}
 	
-	function column_category( $item )
+	
+	/**
+	 * 
+	 */
+	public function column_category( $item )
 	{
 		$html = '';
 		
@@ -162,12 +207,20 @@ class OrgHub_UsersListTable extends WP_List_Table
 		return $html;
 	}
 	
-	function column_status( $item )
+	
+	/**
+	 * 
+	 */
+	public function column_status( $item )
 	{
 		return $item['status'];
 	}
 	
-	function column_info( $item )
+	
+	/**
+	 * 
+	 */
+	public function column_info( $item )
 	{
 		$html = '<span class="url" title="'.$item['site_domain'].'/'.$item['site_path'].'">'.$item['site_domain'].'/'.$item['site_path'].'</span><br/>';
 		
@@ -224,7 +277,11 @@ class OrgHub_UsersListTable extends WP_List_Table
 		return $html;
 	}
 	
-	function get_bulk_actions()
+	
+	/**
+	 * 
+	 */
+	protected function get_bulk_actions()
 	{
 		$actions = array(
 			'create-users' => 'Create User Accounts',
@@ -237,7 +294,11 @@ class OrgHub_UsersListTable extends WP_List_Table
   		return $actions;
 	}
 	
-	function process_batch_action()
+	
+	/**
+	 * 
+	 */
+	public function process_batch_action()
 	{
 		$action = $this->current_action();
 		$users = ( isset($_REQUEST['user']) ? $_REQUEST['user'] : array() );
@@ -278,9 +339,24 @@ class OrgHub_UsersListTable extends WP_List_Table
 		}
 	}
 	
-	function no_items()
+	
+	/**
+	 * 
+	 */
+	public function no_items()
 	{
   		_e( 'No users found.' );
+	}
+	
+	
+	/**
+	 * 
+	 */
+	protected function extra_tablenav( $which )
+	{
+		?>
+		<a href="<?php echo apl_get_page_url(); ?>&action=export" class="export" />Export Users</a>
+		<?php				
 	}
 	
 }

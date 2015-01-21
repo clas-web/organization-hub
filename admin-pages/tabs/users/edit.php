@@ -34,203 +34,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 		?>
 		<style>
 		
-		.nav-tab.active {
-			color:#000;
-			background-color:#fff;
-		}
-		
-		.position-controller {
-			display:block;
-			clear:both;
-			text-align:center;
-			border:solid 1px #000;
-			background-color:#fff;
-			padding:0px 5px;
-		}
-		
-		.position-controller > div {
-			display:inline-block;
-			width:20%;
-			height:30px;
-			border:solid 1px #ccc;
-			background-color:#eee;
-			margin:10px 5px;
-			cursor:pointer;
-		}
-		
-		.position-controller > div.selected {
-			border:solid 1px #000;
-		}
-		
-		.position-controller > div:hover {
-			background-color:#ffc;
-		}
-		
-		.position-controller .hleft {
-			float:left;
-		}
-
-		.position-controller .hright {
-			float:right;
-		}
-		
-		.position-controller > div.selected {
-			background-color:#000;
-		}
-		
-		.top-submit {
-			float:right;
-		}
-		
-		input.no-border {
-			border:none;
-			outline:none;
-			box-shadow:none;
-			background:transparent;
-		}
-		
-		.filter-form {
-			min-width:50%;
-			max-width:100%;
-		}
-		
-		.filter-form table {
-			border:0;
-			border-collapse:collapse;
-			display:block;
-		}
-		
-		.filter-form table tr {
-			width:100%;
-		}
-		
-		.filter-form table th {
-			font-weight:bold;
-		}
-		
-		.filter-form table th,
-		.filter-form table td {
-			width:33%;
-			padding:0em 0.5em;
-		}
-		
-		.filter-form table tr th:first-child,
-		.filter-form table tr td:first-child {
-			padding-left:0em;
-		}
-
-		.filter-form table tr th:last-child,
-		.filter-form table tr td:last-child {
-			padding-right:0em;
-		}
-		
-		.filter-form button {
-			float:left;
-			margin:5px;
-			margin-left:0;
-		}
-		
-		.filter-form .scroll-box {
-			height:100px;
-			border:solid 1px #ccc;
-			padding:5px;
-			overflow-x:hidden;
-			overflow-y:scroll;
-		}
-		
-		.filter-form .scroll-box .item {
-			display:block;
-			white-space:nowrap;
-		}
-		
-		.errors-checkbox {
-			padding:0.5em 0em;
-		}
-		
-		h4 {
-			margin-bottom:0.2em;
-		}
-		
-		button.process-user {
-			margin:1em 0em;
-		}
-		
-		p.exception {
-			color:red;
-		}
-		
-		p.error {
-			color:orange;
-		}
-		
-		.details-box {
-			border:solid 1px #999;
-			padding:1em;
-		}
-		
-		.details-box > p {
-			margin-top:0;
-		}
-		
-		.details-box > div {
-			display:inline-block;
-			margin-right:1em;
-		}
-
-		.details-box > div > label {
-			display:inline-block;
-			vertical-align:baseline;
-			padding-right:0.3em;
-			font-weight:bold;
-			border-right:solid 1px #ccc;
-		}
-
-		.details-box > div > span {
-			display:inline-block;
-			vertical-align:baseline;
-			padding-left:0.3em;
-		}
-
-		.details-box .buttons {
-			margin:0;
-			margin-top:1em;
-			padding-top:1em;
-			border-top:solid 1px #ccc;
-			text-align:right;
-			display:block;
-		}
-		
-		.details-box .buttons a {
-			float:left;
-		}
-
-		
-		.buttons button {
-			margin-left:0.5em;
-		}
-		
-		form.upload {
-			padding:1em;
-			margin-bottom:2em;
-			border:dotted 1px #ccc;
-		}
-		
-		form.upload h4 {
-			margin-top:0;
-		}
-		
-		form.upload p.submit {
-			margin:0; padding:0;
-			text-align:right;
-		}
-		
-		#users-table {
-			margin-top:2em;
-		}
-		
-		#users-table .user-exception {
-			color:red;
-		}
+			
 		
 		</style>
   		<script type="text/javascript">
@@ -250,7 +54,6 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 	 */
 	public function process()
 	{
-		apl_print($_REQUEST);
 		if( empty($_REQUEST['action']) ) return;
 		
 		$user_id = intval($_REQUEST['id']);
@@ -409,7 +212,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 					<?php
 				else:
 					?>
-					<p class="error">ERROR: wp_user_id set ("<?php echo $user['wp_user_id']; ?>") but user does not exist.</p>
+					<p class="notice notice-error">ERROR: wp_user_id set ("<?php echo $user['wp_user_id']; ?>") but user does not exist.</p>
 					<?php
 				endif;
 			else:
@@ -493,7 +296,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 					<?php
 				else:
 					?>
-					<p class="error">ERROR: profile_site_id set ("<?php echo $user['profile_site_id']; ?>") but site does not exist.</p>
+					<p class="notice notice-error">ERROR: profile_site_id set ("<?php echo $user['profile_site_id']; ?>") but site does not exist.</p>
 					<?php
 				endif;
 			else:
@@ -591,7 +394,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 					<?php
 				else:
 					?>
-					<p class="error">ERROR: connections_post_id set ("<?php echo $cs['post_id']; ?>") but connections post does not exist.</p>
+					<p class="notice notice-error">ERROR: connections_post_id set ("<?php echo $cs['post_id']; ?>") but connections post does not exist.</p>
 					<?php
 				endif;
 			else:

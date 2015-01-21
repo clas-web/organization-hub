@@ -33,6 +33,8 @@ abstract class APL_AdminPage
 	protected $settings;			// All settings that have been registered.
 	
 	public $display_page_tab_list;  // True if the tab list should be displayed.
+	
+	public $screen_options;
 
 	
 	/**
@@ -66,13 +68,18 @@ abstract class APL_AdminPage
 		$this->settings = array();
 		
 		$this->display_page_tab_list = true;
+		
+		$this->screen_options = array();
 	}
-
+	
+	
+	public function init() { }
+	
 	
 	/**
 	 * Adds the admin page to the main menu and sets up all values, actions and filters.
 	 */
-	public function setup()
+	public function admin_menu_setup()
 	{
 		$menu_name = $this->menu;
 		if( $this->menu instanceof APL_AdminMenu ) $menu_name = $this->menu->name;
@@ -103,28 +110,23 @@ abstract class APL_AdminPage
 
 		if( $this->handler->controller )
 		{
-			add_action( "load-$hook", array($this->handler->controller, 'add_screen_options') );
+			add_action( "load-$hook", array($this->handler->controller, 'load') );
+ 			add_action( "load-$hook", array($this->handler->controller, 'setup_screen_options') );
 		}
 				
 		$this->is_current_page = true;
 		
-		global $pagenow;
-		switch( $pagenow )
-		{
-			case 'options.php':
-				break;
-			
-			default:
-				add_action( 'admin_enqueue_scripts', array($this, 'enqueue_scripts') );
-				add_action( 'admin_head', array($this, 'add_head_script') );
-				break;
-		}
-		
 		foreach( $this->tabs as $tab )
 		{
-			if( $tab instanceof APL_TabAdminPage ) $tab->setup();
+			if( $tab instanceof APL_TabAdminPage ) $tab->admin_menu_setup();
  		}
 	}
+	
+	
+	/**
+	 * 
+	 */
+	public function load() { }
 	
 	
 	/**
@@ -231,6 +233,117 @@ abstract class APL_AdminPage
 		}
 		return null;
 	}
+
+
+	/**
+	 *
+	 */
+	public function add_screen_options() { }
+	
+	
+
+
+	/**
+	 *
+	 */
+	public function setup_screen_options()
+	{
+		$this->add_screen_options();
+		
+		foreach( $this->screen_options as $so )
+		{
+			add_screen_option( $so['screen_option'], $so );
+		}
+		
+		$screen = get_current_screen();
+		add_filter( "manage_{$screen->id}_columns", array($this, 'get_selectable_columns') );
+	}
+	
+	
+	/**
+	 *
+	 */
+	public function add_per_page_screen_option( $option, $label, $default )
+	{
+		$this->add_screen_option( 'per_page', $option, $label, $default );
+	}
+	
+	
+	/**
+	 *
+	 */
+	public function add_screen_option( $screen_option, $option, $label, $default, $other = array() )
+	{
+		$this->screen_options[$option] = array(
+			'screen_option' => $screen_option,
+			'option' => $option,
+			'label' => $label,
+			'default' => $default,
+		);
+		
+		if( is_array($other) )
+		{
+			foreach( $other as $k => $v )
+			{
+				$this->screen_options[$option][$k] = $v;
+			}
+		}
+	}
+	
+	
+	/**
+	 *
+	 */
+	public function add_selectable_columns( $columns )
+	{
+		if( is_array($columns) )
+		{
+			$this->selectable_columns = array_merge( $this->selectable_columns, $columns );
+		}
+		else
+		{
+			$this->selectable_columns[]  = $columns;
+		}
+	}
+
+
+	/**
+	 *
+	 */
+	public function get_selectable_columns()
+	{
+		return $this->selectable_columns;
+	}
+	
+	
+	/**
+	 *
+	 */
+	public function get_screen_option( $option )
+	{
+		if( !in_array($option, array_keys($this->screen_options)) ) return false;
+		
+		$value = get_user_option($option);
+		if( $value === false && isset($this->screen_options[$option]['default']) )
+			$value = $this->screen_options[$option]['default'];
+			
+		return $value;
+	}
+	
+	
+	/**
+	 *
+	 */
+	public function save_screen_options( $status, $option, $value )
+	{
+		update_user_option( get_current_user_id(), $option, $value );
+		return $value;
+// 		apl_print(array_keys($this->screen_options), $option);
+// 		if( !in_array($option, array_keys($this->screen_options)) ) return $status;
+// 		
+// 		update_user_option( get_current_user_id(), $option, $value );
+// 		return $value;
+	}
 	
 	
 	/**
@@ -310,12 +423,6 @@ abstract class APL_AdminPage
 			$name, $title, array( $this, $callback ), $this->get_name().':'.$section, $section, $args
 		);
 	}
-	
-	
-	/**
-	 * Add the admin page's screen options.  
-	 */
-	public function add_screen_options() { }
 	
 	
 	/**

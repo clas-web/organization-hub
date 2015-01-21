@@ -1,6 +1,9 @@
 <?php
 
 
+if( !class_exists('OrgHub_UsersListTable') ):
+require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/users-list-table.php' );
+endif;
 
 /**
  * OrgHub_UsersListTabAdminPage
@@ -16,8 +19,15 @@ if( !class_exists('OrgHub_UsersListTabAdminPage') ):
 class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 {
 	
-	private $model = null;
-	private $users_table = null;
+	private $model = null;	
+	private $list_table = null;
+	
+	private $filter_types;
+	private $filter;
+	private $search;
+	private $orderby;
+	private $show_errors;
+	
 	
 	
 	/**
@@ -27,7 +37,21 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	{
 		parent::__construct( 'list', 'Users List', $parent );
 		$this->model = OrgHub_Model::get_instance();
-		$this->setup_users_table();
+	}
+
+	
+	public function init()
+	{
+		$this->setup_filters();
+		$this->list_table = new OrgHub_UsersListTable( $this );
+	}
+	
+	/**
+	 * 
+	 */
+	public function load()
+	{
+		$this->list_table->load();
 	}
 	
 
@@ -262,41 +286,30 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		<?php
 	}
 	
-		
-	/**
-	 *
-	 */
-	public function enqueue_scripts()
-	{
-		//wp_enqueue_script( 'test-apl-ajax', APL_EXAMPLE_PLUGIN_URL.'/admin-pages/scripts/ajax-action.js' );
-	}
-	
 	
 	/**
-	 *
+	 * 
 	 */
 	public function add_screen_options()
 	{
-		$option = 'per_page';
-		$args = array(
-			'label' => 'Users',
-			'default' => 100,
-			'option' => 'users_per_page'
-		);
-		add_screen_option( $option, $args );
+		$this->add_per_page_screen_option( 'orghub_users_per_page', 'Users', 100 );
+		$this->add_selectable_columns( $this->list_table->get_selectable_columns() );
 	}
 	
 	
 	/**
-	 *
+	 * 
 	 */
 	public function process()
 	{
+		$this->list_table->process_batch_action();
+
 		if( empty($_REQUEST['action']) ) return;
 		
 		switch( $_REQUEST['action'] )
 		{
 			case 'Process All Users':
+			case 'process-users':
 				$this->process_users();
 				break;
 			
@@ -308,7 +321,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	
 
 	/**
-	 *
+	 * 
 	 */
 	public function process_users()
 	{
@@ -337,9 +350,10 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	}
 	
 	
-	
-	
-	private function set_filter_types()
+	/**
+	 * 
+	 */
+	private function setup_filters()
 	{
 		if( isset($this->filter_types) ) return $this->filter_types;
 		
@@ -360,7 +374,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 				'filter' => array(),
 			),
 			'site_domain' => array(
-				'name' => 'site_domain',
+				'name' => 'Domain',
 				'values' => $this->model->get_all_site_domain_values(),
 				'filter' => array(),
 			),
@@ -380,81 +394,59 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 			}
 		}
 		
-		return $this->filter_types;
-	}
-	
-	
-	private function get_filters()
-	{
-		$this->set_filter_types();
-		
-		$filter = array();
+		$this->filters = array();
 		foreach( $this->filter_types as $type => $f )
 		{
 			if( count($f['filter']) > 0 )
-				$filter[$type] = $f['filter'];
+				$this->filters[$type] = $f['filter'];
 		}
 		
-		return $filter;
-	}
-	
-	
-	private function get_search()
-	{
-		$search = array();
+		$this->search = array();
 		if( !empty($_REQUEST['s']) )
 		{
-			$search['username'] = array( $_REQUEST['s'] );
-			$search['first_name'] = array( $_REQUEST['s'] );
-			$search['last_name'] = array( $_REQUEST['s'] );
+			$this->search['username'] = array( $_REQUEST['s'] );
+			$this->search['first_name'] = array( $_REQUEST['s'] );
+			$this->search['last_name'] = array( $_REQUEST['s'] );
 		}
 		
-		return $search;
-	}
-	
-	
-	private function get_errors()
-	{
-		$only_errors = false;
+		$this->show_errors = false;
 		if( isset($_REQUEST['show-only-errors']) && $_REQUEST['show-only-errors'] === '1' )
-			$only_errors = true;
+			$this->show_errors = true;
 		
-		return $only_errors;
-	}
-	
-	
-	private function get_orderby()
-	{
-		$orderby = ( !empty($_GET['orderby']) ? $_GET['orderby'] : 'username' );
+		$this->orderby = ( !empty($_GET['orderby']) ? $_GET['orderby'] : 'username' );
 		$order = ( !empty($_GET['order']) ? $_GET['order'] : 'asc' );
 		
-		switch( $orderby )
+		switch( $order )
+		{
+			case 'asc': case 'desc': break;
+			default: $order = null; break;
+		}
+
+		switch( $this->orderby )
 		{
 			case 'namedesc':
-				$orderby = 'last_name '.$order;
+				$this->orderby = 'last_name';
+				if( !$order ) $order = 'asc';
 				break;
 				
 			case 'username':
 			case 'type':
 			case 'category':
-				$orderby .= ' '.$order;
+				if( !$order ) $order = 'asc';
 				break;
 
 			default:
-				$orderby = '';
+				$this->orderby = 'username';
+				if( !$order ) $order = 'asc';
 				break;
 		}
 		
-		return $orderby;
-	}
-	
-	
-	public function setup_users_table()
-	{
-		require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/users-list-table.php' );
-		$this->users_table = new OrgHub_UsersListTable();
-		$this->users_table->process_batch_action();
-		$this->users_table->prepare_items( $this->get_filters(), $this->get_search(), $this->get_errors(), $this->get_orderby() );
+
+		if( !isset($_GET) ) $_GET = array();
+		$_GET['orderby'] = $this->orderby;
+		$_GET['order'] = $order;
+		
+		$this->orderby .= ' '.$order;
 	}
 	
 	
@@ -463,6 +455,8 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	 */
 	public function display()
 	{
+		$this->list_table->prepare_items( $this->filters, $this->search, $this->show_errors, $this->orderby );
+
 		?>
 		
 		<div class="last-process">
@@ -481,14 +475,14 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		</div>
 
 		
-		<?php $this->form_start_get(); ?>
-			<?php submit_button( 'Process All Users', 'primary', 'action' ); ?>
+		<?php $this->form_start_get( 'process-users', null, 'process-users' ); ?>
+			<button>Process All Users</button>
 		<?php $this->form_end(); ?>
-		
 		
 		<?php $this->form_start_get( 'filter-form' ); ?>
 			
 			
+			<div class="filter-boxes">
 			
 			<?php foreach( $this->filter_types as $key => $type ): ?>
 			
@@ -515,6 +509,8 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 			
 			<?php endforeach; ?>
 			
+			</div>
+			
 			
 						
 			<div class="errors-checkbox">
@@ -522,7 +518,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 					   name="show-only-errors"
 					   id="<?php apl_name_e( 'show-only-errors' ); ?>"
 					   value="1"
-					   <?php checked( true, $this->get_errors() ); ?> />
+					   <?php checked( true, $this->show_errors ); ?> />
 				<label for="<?php apl_name_e( 'show-only-errors' ); ?>" >
 					   Only show users that have errors.
 				</label>
@@ -532,13 +528,16 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 			
 			<button>Apply Filters</button>
 			
+			<a href="<?php echo $this->get_page_url(); ?>" />Clear Filters</a>
 			
-			
-		<?php $this->form_end(); ?>
-		
+			<?php $this->list_table->search_box( 'search', 'users-table-search' ); ?>
 
-		<?php $this->form_start_get( 'filter-form' ); ?>
-			<button>Clear Filters</button>
+		<?php $this->form_end(); ?>
+
+
+
+		<?php $this->form_start( 'users-table' ); ?>
+			<?php $this->list_table->display(); ?>
 		<?php $this->form_end(); ?>
 		
 		<a href="<?php echo apl_get_page_url(); ?>&action=export" />Export</a>
@@ -549,6 +548,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		</form>
 		<?php
 		
+		<?php
 	}
 	
 	

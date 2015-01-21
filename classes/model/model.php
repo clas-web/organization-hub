@@ -1,10 +1,15 @@
 <?php
-
-
-
 /**
- * The main model class for the Origanization Hub plugin.  This is a singleton class.
+ * OrgHub_Model
+ * 
+ * 
+ * 
+ * @package    orghub
+ * @subpackage classes
+ * @author     Crystal Barton <cbarto11@uncc.edu>
  */
+
+if( !class_exists('OrgHub_Model') ):
 class OrgHub_Model
 {
 	
@@ -13,6 +18,8 @@ class OrgHub_Model
 	private static $type_table 			= 'orghub_type';
 	private static $category_table 		= 'orghub_category';
 	private static $connections_table 	= 'orghub_connections';
+	
+	private static $site_table			= 'orghub_site';
 	
 	public $last_error = null;
 
@@ -24,10 +31,11 @@ class OrgHub_Model
 	private function __construct()
 	{
 		global $wpdb;
-		self::$user_table        = $wpdb->base_prefix . self::$user_table;
-		self::$type_table        = $wpdb->base_prefix . self::$type_table;
-		self::$category_table    = $wpdb->base_prefix . self::$category_table;
-		self::$connections_table = $wpdb->base_prefix . self::$connections_table;
+		self::$user_table        = $wpdb->base_prefix.self::$user_table;
+		self::$type_table        = $wpdb->base_prefix.self::$type_table;
+		self::$category_table    = $wpdb->base_prefix.self::$category_table;
+		self::$connections_table = $wpdb->base_prefix.self::$connections_table;
+		self::$site_table        = $wpdb->base_prefix.self::$site_table;
 	}
 	
 
@@ -151,15 +159,15 @@ class OrgHub_Model
 	public function create_users_table()
 	{
 		global $wpdb;
-	
+		
         $db_charset_collate = '';
         if( !empty($wpdb->charset) )
 			$db_charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
         if( !empty($wpdb->collate) )
 			$db_charset_collate .= " COLLATE $wpdb->collate";
-
+		
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-
+		
 		$sql = "CREATE TABLE ".self::$user_table." (
 				  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				  username varchar(16) NOT NULL UNIQUE,
@@ -180,27 +188,27 @@ class OrgHub_Model
 				  profile_site_id_error text DEFAULT NULL,
 				  PRIMARY KEY  (id)
 				) ENGINE=InnoDB $db_charset_collate;";
-
+		
         dbDelta($sql);
-
+		
 		$sql = "CREATE TABLE ".self::$type_table." (
 				  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				  user_id bigint(20) NOT NULL,
 				  type text NOT NULL DEFAULT '',
 				  PRIMARY KEY  (id)
 				) ENGINE=InnoDB $db_charset_collate;";
-
+		
         dbDelta($sql);
-
+		
 		$sql = "CREATE TABLE ".self::$category_table." (
 				  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				  user_id bigint(20) NOT NULL,
 				  category text NOT NULL DEFAULT '',
 				  PRIMARY KEY  (id)
 				) ENGINE=InnoDB $db_charset_collate;";
-
+		
         dbDelta($sql);
-
+		
 		$sql = "CREATE TABLE ".self::$connections_table." (
 				  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				  user_id bigint(20) NOT NULL,
@@ -211,7 +219,26 @@ class OrgHub_Model
 				  post_id_error text DEFAULT NULL,
 				  PRIMARY KEY  (id)
 				) ENGINE=InnoDB $db_charset_collate;";
+		
+        dbDelta($sql);
 
+		$sql = "CREATE TABLE ".self::$site_table." (
+				  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				  blog_id bigint(20) unsigned NOT NULL UNIQUE,
+				  url text NOT NULL DEFAULT '',
+				  title text NOT NULL DEFAULT '',
+				  num_posts bigint(20) NOT NULL DEFAULT 0,
+				  num_pages bigint(20) NOT NULL DEFAULT 0,
+				  num_comments bigint(20) NOT NULL DEFAULT 0,
+				  last_post_url text NOT NULL DEFAULT '',
+				  last_post_date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				  last_comment_url text NOT NULL DEFAULT '',
+				  last_comment_date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				  admin_email text NOT NULL DEFAULT '',
+				  status text NOT NULL DEFAULT '',
+				  PRIMARY KEY  (id)
+				) ENGINE=InnoDB $db_charset_collate;";
+		
         dbDelta($sql);
 	}
 	
@@ -222,10 +249,11 @@ class OrgHub_Model
 	public function delete_users_table()
 	{
 		global $wpdb;
-		$wpdb->query( "DROP TABLE ".self::$connections_table.";" );
-		$wpdb->query( "DROP TABLE ".self::$category_table.";" );
-		$wpdb->query( "DROP TABLE ".self::$type_table.";" );
-		$wpdb->query( "DROP TABLE ".self::$user_table.";" );
+		$wpdb->query( 'DROP TABLE '.self::$connections_table.';' );
+		$wpdb->query( 'DROP TABLE '.self::$category_table.';' );
+		$wpdb->query( 'DROP TABLE '.self::$type_table.';' );
+		$wpdb->query( 'DROP TABLE '.self::$user_table.';' );
+		$wpdb->query( 'DROP TABLE '.self::$site_table.';' );
 	}
 
 
@@ -235,10 +263,11 @@ class OrgHub_Model
 	public function clear_users_table()
 	{
 		global $wpdb;
-		$wpdb->query( "DELETE FROM ".self::$connections_table.";" );
-		$wpdb->query( "DELETE FROM ".self::$category_table.";" );
-		$wpdb->query( "DELETE FROM ".self::$type_table.";" );
-		$wpdb->query( "DELETE FROM ".self::$user_table.";" );
+		$wpdb->query( 'DELETE FROM '.self::$connections_table.';' );
+		$wpdb->query( 'DELETE FROM '.self::$category_table.';' );
+		$wpdb->query( 'DELETE FROM '.self::$type_table.';' );
+		$wpdb->query( 'DELETE FROM '.self::$user_table.';' );
+		$wpdb->query( 'DELETE FROM '.self::$site_table.';' );
 	}
 	
 
@@ -418,7 +447,8 @@ class OrgHub_Model
 				'last_name'			=> $args['last_name'],
 				'email'				=> $args['email'],
 				'description'		=> $args['description'],
-				'site_domain'			=> $args['site_domain'],
+				'site_domain'		=> $args['site_domain'],
+				'site_path'			=> $args['site_path'],
 				'status'			=> 'new',
 			),
 			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
@@ -2357,12 +2387,466 @@ class OrgHub_Model
 		OrgHub_CsvHandler::export( 'users', $headers, $users );
 		exit;
 	}
+	
+	
+	public function get_site_csv_export( $filter = array(), $search = array(), $orderby = null )
+	{
+		global $wpdb;
+		$users = $this->get_sites( $filter, $search, $orderby );
 
 
+		$headers = array(
+			'blog_id',
+			'url',
+			'title',
+			'num_posts',
+			'num_pages',
+			'num_comments',
+			'last_post_url',
+			'last_post_date', 
+			'last_comment_url',
+			'last_comment_date',
+			'admin_email',
+			'admin_username',
+			'admin_name',
+		);
 
+		foreach( $users as &$user )
+		{
+			$u = $user;
+			$user = array(
+				$u['blog_id'], // blog_id
+				$u['url'], // url
+				$u['title'], // title
+				$u['num_posts'], // num_posts
+				$u['num_pages'], // num_pages
+				$u['num_comments'], // num_comments
+				$u['last_post_url'], // last_post_url
+				$u['last_post_date'], // last_post_date
+				$u['last_comment_url'], // last_comment_url
+				$u['last_comment_date'], // last_comment_date
+				$u['admin_email'], // admin_email
+				$u['user_login'], // admin_username
+				$u['display_name'], // admin_name
+			);
+		}
+		
+		OrgHub_CsvHandler::export( 'sites', $headers, $users );
+		exit;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	//====================================================================================
+	// SITES
+	//
+	
+	public function get_sites( $filter, $search, $orderby, $offset = 0, $limit = -1 )
+	{
+		global $wpdb;
+		
+		$list = array();
+		$list[self::$site_table] = array(
+			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
+			'last_post_url', 'last_post_date', 
+			'last_comment_url', 'last_comment_date', 'admin_email',
+		);
+		$list[$wpdb->users] = array(
+			'display_name','user_login'
+		);
+		
+		$list = $this->get_column_list( $list );
+		$filter = $this->get_sites_filter($filter, $search, $orderby, $offset, $limit);
+		
+// 		apl_print( 'SELECT '.$list.' FROM '.self::$site_table.' '.$filter );
+		return $wpdb->get_results( 'SELECT '.$list.' FROM '.self::$site_table.' '.$filter, ARRAY_A );
+	}
+	
+	public function get_sites_filter( $filter, $search, $orderby, $offset = 0, $limit = -1 )
+	{
+		$where_string = '';
+		if( is_array($filter) && count($filter) > 0 )
+		{
+			if( $filter['filter_by_time'] !== false )
+			{
+				if( empty($where_string) ) $where_string = 'WHERE ';
+				else $where_string .= ' AND ';
+				
+				$time_frame = new DateTime('today -'.$filter['time']);
+				switch( $filter['time_compare'] )
+				{
+					case 'greater':
+						$where_string .= "last_post_date < '".$time_frame->format('Y-m-d H:i:s')."'";
+						break;
+					
+					case 'less':
+						$where_string .= "last_post_date > '".$time_frame->format('Y-m-d H:i:s')."'";
+						break;
+					
+					default:
+						break;
+				}
+			}
+			
+			if( $filter['filter_by_posts'] !== false )
+			{
+				if( empty($where_string) ) $where_string = 'WHERE ';
+				else $where_string .= ' AND ';
+				
+				$posts_count = intval($filter['posts']);
+				switch( $filter['posts_compare'] )
+				{
+					case 'greater':
+						$where_string .= 'num_posts > '.$posts_count;
+						break;
+					
+					case 'less':
+						$where_string .= 'num_posts < '.$posts_count;
+						break;
+					
+					default:
+						break;
+				}
+			}
+		}
 
+		if( is_array($search) && count($search) > 0 )
+		{
+			$keys = array_keys($search);
+			if( empty($where_string) ) $where_string = 'WHERE ';
+			else $where_string .= ' AND ';
+			
+			$where_string .= ' ( ';
+			for( $i = 0; $i < count($keys); $i++ )
+			{
+				$key = $keys[$i];
+				$where_string .= ' ( ';
+				for( $j = 0; $j < count($search[$key]); $j++ )
+				{
+					$where_string .= $key." LIKE '%".$search[$key][$j]."%' ";
+					if( $j < count($search[$key])-1 ) $where_string .= ' OR ';
+				}
+				$where_string .= ' ) ';
+				
+				if( $i < count($keys)-1 ) $where_string .= ' OR ';
+			}
+			$where_string .= ' ) ';
+		}
+		
+		if( $orderby ) $orderby = 'ORDER BY '.$orderby; else $orderby = '';
+		
+		$limit = intval( $limit );
+		$offset = intval( $offset );
+		
+		$limit_string = '';
+		if( $limit > 0 )
+		{
+			if( $offset > 0 )
+				$limit_string = "LIMIT $offset, $limit";
+			else
+				$limit_string = "LIMIT $limit";
+		}
 
+		$join = '';
+		$join .= 'LEFT JOIN wp_users ON wp_users.user_email = '.self::$site_table.'.admin_email ';
 
+		return $join.' '.$where_string.' '.$orderby.' '.$limit_string;
+	}
+	
+	
+	private function get_column_list( $columns )
+	{
+		$list = '';
+		$i = 0;
+		foreach( $columns as $table => $names )
+		{
+			if( count($names) === 0 ) continue;
+			if( $i > 0 ) $list .= ',';
+			$list .= $table.'.'.implode( ','.$table.'.', $names );
+			$i++;
+		}
+		
+		if( $list === '' ) $list = '*';
+		return $list;
+	}
+	
+	
+	
+	public function get_sites_count( $filter, $search, $orderby )
+	{
+		global $wpdb;
+// 		apl_print("SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->get_sites_filter($filter, $search, $orderby));
+		return $wpdb->get_var( "SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->get_sites_filter($filter, $search, $orderby) );
+	}
+	
+	
+	public function refresh_sites()
+	{
+		$sites = wp_get_sites( array( 'limit' => 10000 ) );
+		
+		foreach( $sites as &$site )
+		{
+			switch_to_blog( $site['blog_id'] );
+
+			$site['url'] = get_bloginfo( 'url' );
+			$site['title'] = get_bloginfo( 'name' );
+			
+			$posts_count = wp_count_posts();
+			$site['num_posts'] = $posts_count->publish;
+			
+			$pages_count = wp_count_posts('page');
+			$site['num_pages'] = $pages_count->publish;
+			
+			$comments = wp_count_comments();
+			$site['num_comments'] = $comments->total_comments;
+
+			$recent_post = wp_get_recent_posts( array('numberposts' => 1) );
+			if( !empty($recent_post) && count($recent_post) > 0 )
+			{
+				$site['last_post_url'] = get_permalink( $recent_post[0]['ID'] );
+				$site['last_post_date'] = $recent_post[0]['post_modified'];
+			}
+			else
+			{
+				$site['last_post_url'] = '';
+				$site['last_post_date'] = '0000-00-00 00:00:00';
+			}
+			
+			$recent_comment = get_comments( array('number' => 1) );
+			if( !empty($recent_comment) && count($recent_comment) > 0 )
+			{
+				$site['last_comment_url'] = get_permalink( $recent_comment[0]->comment_ID );
+				$site['last_comment_date'] = $recent_comment[0]->comment_date;
+			}
+			else
+			{
+				$site['last_comment_url'] = '';
+				$site['last_comment_date'] = '0000-00-00 00:00:00';
+			}
+			
+			$site['admin_email'] = get_bloginfo( 'admin_email' );
+			
+			$site['status'] = 'TO DO';
+
+			restore_current_blog();
+		}
+		
+		foreach( $sites as &$site )
+		{
+			$this->add_site( $site );
+		}		
+	}
+	
+	
+	public function get_site_by_blog_id( $blog_id )
+	{
+		global $wpdb;
+		
+		$list = array();
+		$list[self::$site_table] = array(
+			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
+			'last_post_url', 'last_post_date', 
+			'last_comment_url', 'last_comment_date', 'admin_email',
+		);
+		$list[$wpdb->users] = array(
+			'display_name','user_login'
+		);
+		
+		$list = $this->get_column_list( $list );
+
+		$site = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT '.$list.' FROM '.self::$site_table.' LEFT JOIN wp_users ON wp_users.user_email = '.self::$site_table.'.admin_email WHERE blog_id = %d',
+				$blog_id
+			),
+			ARRAY_A
+		);
+		
+		return $site;
+	}
+	
+	
+	public function add_site( &$args )
+	{
+		//if( !$this->check_user_args( $args ) ) return false;
+
+		$db_site = $this->get_site_by_blog_id( $args['blog_id'] );
+		if( $db_site )
+		{
+			return $this->update_site( $db_site['id'], $args );
+		}
+		
+		global $wpdb;
+		
+		//
+		// Insert new user into Users table.
+		//
+		$result = $wpdb->insert(
+			self::$site_table,
+			array(
+				'blog_id'			=> $args['blog_id'],
+				'url'				=> $args['url'],
+				'title'				=> $args['title'],
+				'num_posts'			=> $args['num_posts'],
+				'num_pages'			=> $args['num_pages'],
+				'num_comments'		=> $args['num_comments'],
+				'last_post_url'		=> $args['last_post_url'],
+				'last_post_date'	=> $args['last_post_date'],
+				'last_comment_url'	=> $args['last_comment_url'],
+				'last_comment_date'	=> $args['last_comment_date'],
+				'admin_email'		=> $args['admin_email'],
+				'status'			=> $args['status'],
+			),
+			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
+		);
+		
+		//
+		// Check to make sure insertion was successful.
+		//
+		$site_id = $wpdb->insert_id;
+		if( !$site_id )
+		{
+			$this->last_error = 'Unable to insert site.';
+			return false;
+		}
+
+		return $site_id;
+	}
+	
+	public function update_site( $id, &$args )
+	{
+		global $wpdb;
+		
+		//
+		// Update user in Users table.
+		//
+		$result = $wpdb->update(
+			self::$site_table,
+			array(
+				'blog_id'			=> $args['blog_id'],
+				'url'				=> $args['url'],
+				'title'				=> $args['title'],
+				'num_posts'			=> $args['num_posts'],
+				'num_pages'			=> $args['num_pages'],
+				'num_comments'		=> $args['num_comments'],
+				'last_post_url'		=> $args['last_post_url'],
+				'last_post_date'	=> $args['last_post_date'],
+				'last_comment_url'	=> $args['last_comment_url'],
+				'last_comment_date'	=> $args['last_comment_date'],
+				'admin_email'		=> $args['admin_email'],
+				'status'			=> $args['status'],
+			),
+			array( 'id' => intval( $id ) ),
+			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+
+		//
+		// Check to make sure update was successful.
+		//
+		if( $result === false )
+		{
+			$this->last_error = 'Unable to update site.';
+			return false;
+		}
+		
+		return $id;
+	}
+	
+	
+	public function get_blog_ids()
+	{
+		global $wpdb;
+		return $wpdb->get_col( 'SELECT blog_id FROM '.$wpdb->blogs );
+	}
+	
+	
+	public function refresh_site( $blog_id )
+	{
+		global $wpdb;
+		
+		$site = $wpdb->get_row( 'SELECT * FROM '.$wpdb->blogs.' WHERE blog_id = '.intval($blog_id), ARRAY_A );
+		if( !$site ) return $site;
+		
+		switch_to_blog( $blog_id );
+
+		$site['url'] = get_bloginfo( 'url' );
+		$site['title'] = get_bloginfo( 'name' );
+		
+		$posts_count = wp_count_posts();
+		$site['num_posts'] = $posts_count->publish;
+		
+		$pages_count = wp_count_posts('page');
+		$site['num_pages'] = $pages_count->publish;
+		
+		$comments = wp_count_comments();
+		$site['num_comments'] = $comments->total_comments;
+		
+		$args = array(
+			'public'   => true,
+			'_builtin' => false
+		);
+		
+		$post_types = array( 'post', 'page' );
+		$post_types = array_merge( $post_types, get_post_types($args, 'names', 'and') );
+		
+		$recent_post = $wpdb->get_row( 'SELECT * FROM '.$wpdb->posts." WHERE post_type IN ('".implode("','", $post_types)."') ORDER BY post_modified_gmt LIMIT 1" );
+		if( !$recent_post )
+		{
+			$site['last_post_url'] = '';
+			$site['last_post_date'] = '0000-00-00 00:00:00';
+		}
+		else
+		{
+			$site['last_post_url'] = get_permalink( $recent_post->ID );
+			$site['last_post_date'] = $recent_post->post_modified;
+		}
+		
+		$recent_comment = get_comments( array('number' => 1) );
+		if( !$recent_comment || count($recent_comment) === 0 )
+		{
+			$site['last_comment_url'] = '';
+			$site['last_comment_date'] = '0000-00-00 00:00:00';
+		}
+		else
+		{
+			$site['last_comment_url'] = get_permalink( $recent_comment[0]->comment_ID );
+			$site['last_comment_date'] = $recent_comment[0]->comment_date;
+		}
+		
+		$site['admin_email'] = get_bloginfo( 'admin_email' );
+		
+		$site['status'] = 'TO DO';
+
+		restore_current_blog();
+
+		$this->add_site( $site );
+		
+		return $this->get_site_by_blog_id( $blog_id );
+	}
 
 }
+endif;
 

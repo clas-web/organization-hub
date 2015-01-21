@@ -9,7 +9,7 @@
  * @author     Crystal Barton <cbarto11@uncc.edu>
  */
 
-
+if( !class_exists('OrgHub_CsvHandler') ):
 class OrgHub_CsvHandler
 {
 	public static $length = 99999;
@@ -91,6 +91,7 @@ class OrgHub_CsvHandler
 			{
 				if( is_array($column) )
 				{
+					if( count($column) > 1 ):
     				foreach( $column as &$c )
     				{
     					if( preg_match("/(?:${delimiter_esc}|${enclosure_esc}|${space_esc}|\s)/", $c) )
@@ -99,6 +100,7 @@ class OrgHub_CsvHandler
 //	    					$c = str_replace(self::$enclosure, self::$enclosure.self::$enclosure, $c);
 	    				}
     				}
+    				endif;
 
 //					$column = self::$enclosure.implode( self::$enclosure.self::$delimiter.self::$enclosure, $column ).self::$enclosure;
 					$column = implode( self::$delimiter, $column );
@@ -124,4 +126,5 @@ class OrgHub_CsvHandler
     }
 
 }
+endif;
 

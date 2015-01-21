@@ -34,6 +34,7 @@ endif;
 if( is_admin() ):
 
 add_action( 'wp_loaded', array('OrgHub_Main', 'load') );
+add_action( 'network_admin_menu', array('OrgHub_Main', 'update'), 5 );
 add_action( 'admin_enqueue_scripts', array('OrgHub_Main', 'enqueue_scripts') );
 
 require_once( dirname(__FILE__).'/apl/handler.php' );
@@ -47,19 +48,6 @@ class OrgHub_Main
 {
 	public static function load()
 	{
-//		$version = get_site_option( ORGANIZATION_HUB_DB_VERSION_OPTION );
-//  	if( $version !== ORGANIZATION_HUB_DB_VERSION )
-//  	{
- 			require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/model.php' );
- 			$model = OrgHub_Model::get_instance();
- 			$model->create_tables();
-//  	}
- 		
- 		update_site_option( ORGANIZATION_HUB_VERSION_OPTION, ORGANIZATION_HUB_VERSION );
- 		update_site_option( ORGANIZATION_HUB_DB_VERSION_OPTION, ORGANIZATION_HUB_DB_VERSION );
-
-
-
 		$orghub_pages = new APL_Handler( true );
 		
 		$menu = new APL_AdminMenu( 'orghub', 'Organization Hub' );
@@ -71,10 +59,24 @@ class OrgHub_Main
 		
 		$orghub_pages->add_menu( $menu );
 	}
+	
+	public static function update()
+	{
+//		$version = get_site_option( ORGANIZATION_HUB_DB_VERSION_OPTION );
+//  	if( $version !== ORGANIZATION_HUB_DB_VERSION )
+//  	{
+ 			$model = OrgHub_Model::get_instance();
+ 			$model->create_tables();
+//  	}
+ 		
+ 		update_site_option( ORGANIZATION_HUB_VERSION_OPTION, ORGANIZATION_HUB_VERSION );
+ 		update_site_option( ORGANIZATION_HUB_DB_VERSION_OPTION, ORGANIZATION_HUB_DB_VERSION );
+	}
 
 	public static function enqueue_scripts()
 	{
 		wp_enqueue_script( 'apl-ajax', plugins_url('apl/ajax.js', __FILE__), array('jquery') );
+		wp_enqueue_style( 'orghub-style', plugins_url('admin-pages/styles/style.css', __FILE__) );
 	}
 }
 endif;
