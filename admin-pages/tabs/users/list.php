@@ -342,10 +342,13 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	}
 	
 	
+	/**
+	 * 
+	 */
 	public function export_users()
 	{
         require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
-		$this->model->get_csv_export( $this->get_filters(), $this->get_search(), $this->get_errors(), $this->get_orderby() );
+		$this->model->get_csv_export( $this->filters, $this->search, $this->show_errors, $this->orderby );
 		exit;
 	}
 	
@@ -459,7 +462,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 
 		?>
 		
-		<div class="last-process">
+		<div class="notice notice-success">
 		<?php if( $this->model->get_option('last-process') ): ?>
 			<div class="date">
 				The last process users was preformed on <?php echo $this->model->get_option('last-process'); ?>.
@@ -540,20 +543,13 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 			<?php $this->list_table->display(); ?>
 		<?php $this->form_end(); ?>
 		
-		<a href="<?php echo apl_get_page_url(); ?>&action=export" />Export</a>
-
-		<form id="users-table" action="<?php echo apl_get_page_url(); ?>" method="post">
-			<?php $this->users_table->search_box( 'search', 'users-table-search' ); ?>
-			<?php $this->users_table->display(); ?>
-		</form>
-		<?php
 		
 		<?php
 	}
 	
 	
 	// DO LATER...
-	public function ajax_request( $action, $input, &$output )
+	public function ajax_request( $action, $input )
 	{
 		switch( $action )
 		{

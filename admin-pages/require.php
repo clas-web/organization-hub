@@ -1,10 +1,8 @@
 <?php
 
-// require_once( dirname(__FILE__).'/pages/organization-hub.php' );
-// require_once( dirname(__FILE__).'/tabs/organization-hub/edit-user.php' );
-// require_once( dirname(__FILE__).'/tabs/organization-hub/list.php' );
-// require_once( dirname(__FILE__).'/tabs/organization-hub/log.php' );
-// require_once( dirname(__FILE__).'/tabs/organization-hub/settings.php' );
+require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/model/model.php' );
+require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/model/users-model.php' );
+require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/model/sites-model.php' );
 
 require_once( dirname(__FILE__).'/pages/users.php' );
 require_once( dirname(__FILE__).'/pages/upload.php' );

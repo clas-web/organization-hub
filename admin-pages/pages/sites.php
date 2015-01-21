@@ -100,6 +100,21 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 
+			case 'export':
+				$this->export_sites();
+				break;
+		}
+	}
+
+
+	/**
+	 * 
+	 */
+	public function export_sites()
+	{
+        require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
+		$this->model->get_site_csv_export( $this->filters, $this->search, $this->orderby );
+		exit;
 	}
 	
 	
@@ -335,6 +350,61 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		
 		<?php
 	}
+	
+	
+	/**
+	 * 
+	 */
+	public function ajax_request( $action, $input )
+	{
+		switch( $action )
+		{
+			case 'refresh-all-sites':
+				$ids = $this->model->get_blog_ids();
+				
+				$items = array();
+				foreach( $ids as $id ) $items[] = array( 'blog_id' => $id );
+				
+				$this->ajax_set_items( 'refresh-site', $items, 'refresh_site_start', 'refresh_site_end', 'refresh_site_loop_start', 'refresh_site_loop_end' );
+				break;
+			
+			case 'refresh-site':
+				if( !isset($input['blog_id']) )
+				{
+					$this->ajax_failed( 'No blog id given.' );
+					return;
+				}
+				
+				$site_data = $this->model->refresh_site( $input['blog_id'] );
+				$column_data = array();
+				
+				$this->list_table = new OrgHub_SitesListTable( $this );
+				$columns = $this->list_table->get_columns();
+				foreach( array_keys($columns) as $column_name )
+				{
+					if( 'cb' == $column_name )
+					{
+						continue;
+					}
+					elseif( method_exists($this->list_table, 'column_'.$column_name) )
+					{
+						$column_data[$column_name] = call_user_func( array($this->list_table, 'column_'.$column_name), $site_data );
+					}
+					else
+					{
+						$column_data[$column_name] = $this->list_table->column_default( $site_data, $column_name );
+					}
+				}
+				
+				
+				$this->ajax_set( 'site', $site_data );
+				$this->ajax_set( 'columns', $column_data );
+				break;
+			
+			default:
+				$this->ajax_failed( 'No valid action was given.' );
+				break;
+		}
 	}
 	
 } // class OrgHub_SitesAdminPage extends APL_AdminPage

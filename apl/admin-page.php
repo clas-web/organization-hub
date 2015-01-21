@@ -35,6 +35,9 @@ abstract class APL_AdminPage
 	public $display_page_tab_list;  // True if the tab list should be displayed.
 	
 	public $screen_options;
+	public $selectable_columns;
+	
+	protected $ajax;
 
 	
 	/**
@@ -70,6 +73,9 @@ abstract class APL_AdminPage
 		$this->display_page_tab_list = true;
 		
 		$this->screen_options = array();
+		$this->selectable_columns = array();
+		
+		$this->ajax = array();
 	}
 	
 	
@@ -135,9 +141,23 @@ abstract class APL_AdminPage
 	 */
 	public function perform_ajax_request()
 	{
-		$output = array( 'status' => true, 'message' => '' );
-		$this->ajax_request( $_POST['apl-ajax-action'], $_POST['input'], $output );
-		echo json_encode($output);
+		$this->ajax_success();
+		
+		if( !isset($_POST['apl-ajax-action']) || !isset($_POST['input']) || !isset($_POST['nonce']) )
+		{
+			$this->ajax_failed( 'The submitted data is not complete.' );
+			return;
+		}
+		
+		if( !wp_verify_nonce($_POST['nonce'], $this->get_name().'-'.$_POST['apl-ajax-action'].'-ajax-request') )
+		{
+			$this->ajax_failed( 'The submitted data cannot be verified.' );
+			return;
+		}
+		
+		$this->ajax_request( $_POST['apl-ajax-action'], $_POST['input'] );
+		
+		$this->ajax_output();
 		exit;
 	}
 	
@@ -575,7 +595,7 @@ abstract class APL_AdminPage
 	/**
 	 * Processes and displays the output of an ajax request.
 	 */
-	public function ajax_request( $action, $input, &$output ) { }
+	public function ajax_request( $action, $input ) { }
 
 	
 	/**
@@ -604,7 +624,8 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * Displays the start form tag and mandatory fields when constructing a form using apl.
+	 * Displays the start form tag and mandatory fields for the start of a POST form.
+	 * Most forms should be in this format.
 	 * @param  string|null  $class       The class of the form.
 	 * @param  array|null   $attributes  Additional attributes to add to the start form tag.
 	 * @param  string|null  $action      The action the form will perform.
@@ -634,6 +655,14 @@ abstract class APL_AdminPage
 	}
 	
 	
+	/**
+	 * Displays the start form tag and mandatory fields for the start of a GET form.
+	 * The action and query variables are displayed as hidden tags.
+	 * @param  string|null  $class       The class of the form.
+	 * @param  array|null   $attributes  Additional attributes to add to the start form tag.
+	 * @param  string|null  $action      The action the form will perform.
+	 * @param  array|null   $query       Additional query args for the form url/action.
+	 */
 	public function form_start_get( $class = null, $attributes = array(), $action = null, $query = array() )
 	{
 		if( !is_array($attributes) ) $attributes = array();
@@ -748,7 +777,7 @@ abstract class APL_AdminPage
 	{
 		if( is_array($form_classes) ) $form_classes = implode( ',', $form_classes );
 		if( is_array($input_names) ) $input_names = implode( ',', $input_names );
-		$nonce = wp_create_nonce( $this->handler->get_name().'-'.$action.'-ajax-request' );
+		$nonce = wp_create_nonce( $this->get_name().'-'.$action.'-ajax-request' );
 		
 		?>
 		<button type="button" 
@@ -847,6 +876,51 @@ abstract class APL_AdminPage
 			<?php echo $_SESSION['apl-notice']; ?>
 		</div>
 		<?php
+	}
+	
+	
+	public function ajax_failed( $message = null )
+	{
+		$this->output['success'] = false;
+		$this->output['message'] = $message;
+	}
+	
+	
+	public function ajax_success( $message = null )
+	{
+		$this->output['success'] = true;
+		$this->output['message'] = $message;
+	}
+	
+	
+	public function ajax_set( $key, $value )
+	{
+		$this->output[$key] = $value;
+	}
+	
+	public function ajax_remove( $key )
+	{
+		unset( $this->output[$key] );
+	}
+	
+	public function ajax_set_items( $action, $items, $cb_start = null, $cb_end = null, $cb_loop_start = null, $cb_loop_end = null )
+	{
+		$this->output['ajax'] = array(
+			'page'			=> $this->handler->get_page_name(),
+			'tab'			=> $this->handler->get_tab_name(),
+			'action'		=> $action,
+			'items'			=> $items,
+			'cb_start'		=> $cb_start,
+			'cb_end'		=> $cb_end,
+			'cb_loop_start'	=> $cb_loop_start,
+			'cb_loop_end'	=> $cb_loop_end,
+			'nonce'			=> wp_create_nonce( $this->get_name().'-'.$action.'-ajax-request' ),
+		);
+	}
+	
+	public function ajax_output()
+	{
+		echo json_encode( $this->output );
 	}
 
 
