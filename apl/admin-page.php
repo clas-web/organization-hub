@@ -155,7 +155,7 @@ abstract class APL_AdminPage
 			return;
 		}
 		
-		$this->ajax_request( $_POST['apl-ajax-action'], $_POST['input'] );
+		$this->ajax_request( $_POST['apl-ajax-action'], $_POST['input'], $_POST['count'], $_POST['total'] );
 		
 		$this->ajax_output();
 		exit;
@@ -595,7 +595,7 @@ abstract class APL_AdminPage
 	/**
 	 * Processes and displays the output of an ajax request.
 	 */
-	public function ajax_request( $action, $input ) { }
+	public function ajax_request( $action, $input, $count, $total ) { }
 
 	
 	/**

@@ -340,7 +340,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	
 	
 	// DO LATER...
-	public function ajax_request( $action, $input )
+	public function ajax_request( $action, $input, $count, $total )
 	{
 		switch( $action )
 		{

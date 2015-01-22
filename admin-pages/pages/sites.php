@@ -275,12 +275,9 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		<?php endif; ?>
 		</div>
 		
-		<a href="<?php echo $this->get_page_url( array('action'=>'refresh') ); ?>" />Refresh</a>
-
 		<?php
 		$this->form_start_get( 'refresh', null, 'refresh' );
-			?><button>Non-AJAX Button</button><?php
-			$this->create_ajax_submit_button( 'AJAX Button', 'refresh-all-sites', null, null, 'refresh_all_sites_start', 'refresh_all_sites_end', 'refresh_all_sites_loop_start', 'refresh_all_sites_loop_end' );
+			$this->create_ajax_submit_button( 'Refresh Sites', 'refresh-all-sites', null, null, 'refresh_all_sites_start', 'refresh_all_sites_end', 'refresh_all_sites_loop_start', 'refresh_all_sites_loop_end' );
 		$this->form_end();
 		?>
 		
@@ -418,7 +415,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	/**
 	 * 
 	 */
-	public function ajax_request( $action, $input )
+	public function ajax_request( $action, $input, $count, $total )
 	{
 		switch( $action )
 		{
@@ -462,6 +459,13 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 				
 				$this->ajax_set( 'site', $site_data );
 				$this->ajax_set( 'columns', $column_data );
+				
+				if( $count === $total )
+				{
+					$refresh_date = date('Y-m-d H:i:s');
+					$this->model->update_option( 'sites-refresh-time', $refresh_date );
+					$this->ajax_set( 'refresh_date', $refresh_date );
+				}
 				break;
 			
 			default:

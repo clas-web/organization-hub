@@ -197,6 +197,10 @@
 			text-overflow: ellipsis;
 		}
 		
+		table.orghub-sites td.processing {
+			color:#c60;
+		}
+		
 		
 		.filters .title {
 			display:inline-block;

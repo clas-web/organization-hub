@@ -63,6 +63,8 @@ jQuery(document).ready(
 			data['action'] = 'apl-ajax-action';
 			data['nonce'] = settings.nonce;
 			data['apl-ajax-action'] = settings.action;
+			data['count'] = fi+1;
+			data['total'] = settings.forms.length;
 			
 			// Serialize data from form/input data.
 			if( settings.inputs && settings.inputs.length > 0 )
@@ -155,6 +157,8 @@ jQuery(document).ready(
 			data['nonce'] = ajax.nonce;
 			data['apl-ajax-action'] = ajax.action;
 			data['input'] = ajax.items[ai];
+			data['count'] = ai+1;
+			data['total'] = ajax.items.length;
 						
 			// Perform the AJAX request.
 			$.ajax({
@@ -186,6 +190,7 @@ jQuery(document).ready(
 		return this.each(function() {
 			
 			var settings = {
+				'this'     : this,
 				'page'     : (($(this).attr('page')) ? $(this).attr('page') : null),
 				'tab'      : (($(this).attr('tab')) ? $(this).attr('tab') : null),
 				'action'   : (($(this).attr('action')) ? $(this).attr('action') : null),
