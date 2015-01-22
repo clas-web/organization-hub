@@ -228,7 +228,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	public function column_cb($item)
 	{
         return sprintf(
-            '<input type="checkbox" name="site[]" value="%s" />', $item['id']
+            '<input type="checkbox" name="site[]" value="%s" />', $item['blog_id']
         );
     }
 
@@ -267,6 +267,54 @@ class OrgHub_SitesListTable extends WP_List_Table
 		echo '</tr>';
 	}
 
+
+	/**
+	 * 
+	 */
+	protected function get_bulk_actions()
+	{
+		$actions = array(
+			'delete' => 'Delete',
+			'archive' => 'Archive',
+			'change-theme' => 'Change Theme',
+			'change-site-admin' => 'Change Site Admin',
+		);
+  		return $actions;
+	}
+	
+	
+	/**
+	 * 
+	 */
+	public function process_batch_action()
+	{
+		$action = $this->current_action();
+		$sites = ( isset($_REQUEST['site']) ? $_REQUEST['site'] : array() );
+		
+		switch( $action )
+		{
+			case 'delete':
+				foreach( $sites as $site_id )
+					$this->model->delete_blog( $blog_id );
+				break;
+			
+			case 'archive':
+				foreach( $sites as $site_id )
+					$this->model->archive_blog( $blog_id );
+				break;
+			
+			case 'change-theme':
+				foreach( $sites as $site_id )
+					$this->model->change_theme( $blog_id, $theme );
+				break;
+			
+			case 'change-site-admin':
+				foreach( $sites as $site_id )
+					$this->model->change_site_admin( $blog_id, $admin );
+				break;
+		}
+	}
+	
 
 	/**
 	 * 
