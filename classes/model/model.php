@@ -2886,57 +2886,52 @@ class OrgHub_Model
 		return $this->get_site_by_blog_id( $blog_id );
 	}
 
-}
-endif;
 
 
 
-
-if( !function_exists('delete_blog') ):
-function delete_blog( $blog_id )
-{
-	do_action( 'deactivate_blog', $blog_id );
-	update_blog_status( $blog_id, 'deleted', '1' );
-}
-endif;
+	function delete_blog( $blog_id )
+	{
+		do_action( 'deactivate_blog', $blog_id );
+		update_blog_status( $blog_id, 'deleted', '1' );
+	}
 
 
 
-if( !function_exists('archive_blog') ):
-function archive_blog( $blog_id )
-{
-	update_blog_status( $blog_id, 'archived', '1' );
-}
-endif;
+	function archive_blog( $blog_id )
+	{
+		update_blog_status( $blog_id, 'archived', '1' );
+	}
 
 
-if( !function_exists('change_theme') ):
-function change_theme( $blog_id, $theme )
-{
-	switch_to_blog( $blog_id );
+	function change_theme( $blog_id, $theme )
+	{
+		switch_to_blog( $blog_id );
 
-	switch_theme( $theme );
+		switch_theme( $theme );
 	
-	restore_current_blog();
+		restore_current_blog();
+	}
+
+
+
+	function change_site_admin( $blog_id, $admin )
+	{
+		switch_to_blog( $blog_id );
+
+		// add user if not present.
+	
+		// make user administrator if not currently.
+	
+		// change admin email to new administrator's email.
+
+		restore_current_blog();
+	}
+
 }
 endif;
 
 
 
-if( !function_exists('change_site_admin') ):
-function change_site_admin( $blog_id, $admin )
-{
-	switch_to_blog( $blog_id );
-
-	// add user if not present.
-	
-	// make user administrator if not currently.
-	
-	// change admin email to new administrator's email.
-
-	restore_current_blog();
-}
-endif;
 
 
 

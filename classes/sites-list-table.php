@@ -295,22 +295,22 @@ class OrgHub_SitesListTable extends WP_List_Table
 		{
 			case 'delete':
 				foreach( $sites as $site_id )
-					$this->model->delete_blog( $blog_id );
+					$this->model->delete_blog( $site_id );
 				break;
 			
 			case 'archive':
 				foreach( $sites as $site_id )
-					$this->model->archive_blog( $blog_id );
+					$this->model->archive_blog( $site_id );
 				break;
 			
 			case 'change-theme':
 				foreach( $sites as $site_id )
-					$this->model->change_theme( $blog_id, $theme );
+					$this->model->change_theme( $site_id, $theme );
 				break;
 			
 			case 'change-site-admin':
 				foreach( $sites as $site_id )
-					$this->model->change_site_admin( $blog_id, $admin );
+					$this->model->change_site_admin( $site_id, $admin );
 				break;
 		}
 	}
@@ -324,7 +324,83 @@ class OrgHub_SitesListTable extends WP_List_Table
 		?>
 		<a href="<?php echo apl_get_page_url(); ?>&action=export" class="export" />Export Sites</a>
 		<?php				
-	}	
+	}
+	
+
+	public function inline_change_admin()
+	{
+		?>
+		<form method="get" action="">
+			<table id="inline-change-admin" style="display: none">
+			<tbody>
+
+			<tr class="inline-change-admin-row" style="display:none">
+				<td colspan="<?php echo $this->get_column_count(); ?>" class="colspanchange">
+					<fieldset class="inline-change-admin-col-left">
+					<div class="inline-change-admin-col">
+						<h4>Change Administrator</h4>
+						
+						<?php // select administrator dropdown ?>
+						
+					</div>
+					</fieldset>
+				</td>
+			</tr>
+			
+			</tbody>
+			</table>
+		</form>
+		<?php
+	}
+	
+	
+	public function inline_change_theme()
+	{
+		?>
+		<form method="get" action="">
+			<table id="inline-change-theme" style="display: none">
+			<tbody>
+
+			<tr id="inline-change-theme" class="inline-change-theme-row" style="display:none">
+				<td colspan="<?php echo $this->get_column_count(); ?>" class="colspanchange">
+					<fieldset class="inline-change-theme-col-left">
+					<div class="inline-change-theme-col">
+						<h4>Change Theme</h4>
+						
+						<?php // select theme dropdown ?>
+						
+					</div>
+					</fieldset>
+				</td>
+			</tr>
+			
+			</tbody>
+			</table>
+		</form>
+		<?php
+	}
+	
+	
+	
+	protected function display_tablenav( $which )
+	{
+?>
+	<div class="tablenav <?php echo esc_attr( $which ); ?>">
+
+		<div class="alignleft actions bulkactions">
+			<?php $this->bulk_actions( $which ); ?>
+		</div>
+<?php
+		$this->extra_tablenav( $which );
+		$this->pagination( $which );
+?>
+
+		<br class="clear" />
+	</div>
+<?php
+	}
+	
+	
 }
 endif;
 

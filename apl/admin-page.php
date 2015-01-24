@@ -451,7 +451,7 @@ abstract class APL_AdminPage
 	 */
 	public function process_page()
 	{
-		if( !isset($_REQUEST['action']) ) return;
+		if( !isset($_REQUEST['action']) && !isset($_REQUEST['action2']) ) return;
 		
 		if( !empty($_POST) )
 		{
@@ -643,7 +643,7 @@ abstract class APL_AdminPage
 		      <?php foreach( $attributes as $key => $value ) { echo $key.'="'.$value.'" '; } ?>
 		      >
 		<input type="hidden" name="option_page" value="<?php echo $this->handler->get_page_name(); ?>" />
-		
+
 		<?php
 		if( $action ):
 			?>
@@ -651,7 +651,7 @@ abstract class APL_AdminPage
 			<?php
 		endif;
 		
-		wp_nonce_field( $this->get_name().'-options');
+		wp_nonce_field( $this->get_name().'-options' );
 	}
 	
 	

@@ -91,6 +91,8 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	 */
 	public function process()
 	{
+		$this->list_table->process_batch_action();
+
 		if( empty($_REQUEST['action']) ) return;
 		
 		switch( $_REQUEST['action'] )

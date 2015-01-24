@@ -358,7 +358,27 @@ class OrgHub_UsersListTable extends WP_List_Table
 		<a href="<?php echo apl_get_page_url(); ?>&action=export" class="export" />Export Users</a>
 		<?php				
 	}
+
+
+	protected function display_tablenav( $which )
+	{
+?>
+	<div class="tablenav <?php echo esc_attr( $which ); ?>">
+
+		<div class="alignleft actions bulkactions">
+			<?php $this->bulk_actions( $which ); ?>
+		</div>
+<?php
+		$this->extra_tablenav( $which );
+		$this->pagination( $which );
+?>
+
+		<br class="clear" />
+	</div>
+<?php
+	}
 	
+		
 }
 endif;
 
