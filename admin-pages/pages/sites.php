@@ -405,12 +405,15 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		
 				
 		
-		<?php $this->form_start( 'sites-table' ); ?>
-			<?php $this->list_table->display(); ?>
-		<?php $this->form_end(); ?>
-		
-		
 		<?php
+		$this->form_start( 'sites-table' );
+			$this->list_table->display();
+		$this->form_end();
+		
+		if( $this->list_table->has_items() ):
+			$this->list_table->inline_change_admin();
+			$this->list_table->inline_change_theme();
+		endif;
 	}
 	
 	
