@@ -2473,7 +2473,7 @@ class OrgHub_Model
 	// SITES
 	//
 	
-	public function get_sites( $filter, $search, $orderby, $offset = 0, $limit = -1 )
+	public function get_sites( $filter = array(), $search = array(), $orderby = array(), $offset = 0, $limit = -1 )
 	{
 		global $wpdb;
 		
@@ -2603,7 +2603,7 @@ class OrgHub_Model
 		$join = '';
 		$join .= 'LEFT JOIN wp_users ON wp_users.user_email = '.self::$site_table.'.admin_email ';
 
-		return $join.' '.$where_string.' '.$orderby.' '.$limit_string;
+		return $join.' '.$where_string.' GROUP BY blog_id '.$orderby.' '.$limit_string;
 	}
 	
 	
@@ -2630,6 +2630,13 @@ class OrgHub_Model
 		global $wpdb;
 // 		apl_print("SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->get_sites_filter($filter, $search, $orderby));
 		return $wpdb->get_var( "SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->get_sites_filter($filter, $search, $orderby) );
+	}
+	
+	
+	public function clear_sites()
+	{
+		global $wpdb;
+		$wpdb->query( 'DELETE FROM '.self::$site_table.';' );
 	}
 	
 	
@@ -2914,26 +2921,53 @@ class OrgHub_Model
 
 
 
-	function change_site_admin( $blog_id, $admin )
+	function change_site_admin( $blog_id, $admin_user_id, $admin_email )
 	{
+		$blog_id = intval($blog_id);
+		$admin_user_id = intval($admin_user_id);
+		
+		add_user_to_blog( $blog_id, $admin_user_id, 'administrator' );
+		
 		switch_to_blog( $blog_id );
 
-		// add user if not present.
-	
-		// make user administrator if not currently.
-	
-		// change admin email to new administrator's email.
+		update_option( 'admin_email', $admin_email );
 
 		restore_current_blog();
+		
+		$this->refresh_site( $blog_id );
+	}
+	
+	
+	
+	function update_site_column( $blog_id, $column_name, $value, $type = '%s' )
+	{
+		global $wpdb;
+		
+		//
+		// Update user in Users table.
+		//
+		$result = $wpdb->update(
+			self::$site_table,
+			array(
+				$column_name		=> $value,
+			),
+			array( 'blog_id' => intval( $blog_id ) ),
+			array( $type ),
+			array( '%d' )
+		);
+
+		//
+		// Check to make sure update was successful.
+		//
+		if( $result === false )
+		{
+			$this->last_error = 'Unable to update site.';
+			return false;
+		}
+		
+		return $blog_id;
 	}
 
 }
 endif;
-
-
-
-
-
-
-
 

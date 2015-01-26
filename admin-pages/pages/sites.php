@@ -91,7 +91,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	 */
 	public function process()
 	{
-		$this->list_table->process_batch_action();
+		if( $this->list_table->process_batch_action() ) return;
 
 		if( empty($_REQUEST['action']) ) return;
 		
@@ -99,6 +99,11 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		{
 			case 'refresh':
 				$this->model->refresh_sites();
+				$this->handler->force_redirect_url = $this->get_page_url();
+				break;
+			
+			case 'clear':
+				$this->model->clear_sites();
 				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 
@@ -262,7 +267,6 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	public function display()
 	{
 		$this->list_table->prepare_items( $this->filters, $this->search, $this->orderby );
-		
 		?>
 		
 		<div class="notice notice-success">
@@ -280,6 +284,12 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		<?php
 		$this->form_start_get( 'refresh', null, 'refresh' );
 			$this->create_ajax_submit_button( 'Refresh Sites', 'refresh-all-sites', null, null, 'refresh_all_sites_start', 'refresh_all_sites_end', 'refresh_all_sites_loop_start', 'refresh_all_sites_loop_end' );
+		$this->form_end();
+		?>
+
+		<?php
+		$this->form_start_get( 'clear', null, 'clear' );
+			?><button>Clear Sites</button><?php
 		$this->form_end();
 		?>
 		
@@ -411,8 +421,8 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		$this->form_end();
 		
 		if( $this->list_table->has_items() ):
-			$this->list_table->inline_change_admin();
 			$this->list_table->inline_change_theme();
+			$this->list_table->inline_change_admin();
 		endif;
 	}
 	

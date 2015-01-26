@@ -93,7 +93,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	 */
 	public function process()
 	{
-		$this->list_table->process_batch_action();
+		if( $this->list_table->process_batch_action() ) return;
 
 		if( empty($_REQUEST['action']) ) return;
 		

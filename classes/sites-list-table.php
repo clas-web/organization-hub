@@ -271,7 +271,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	/**
 	 * 
 	 */
-	protected function get_bulk_actions()
+	public function get_bulk_actions()
 	{
 		$actions = array(
 			'delete' => 'Delete',
@@ -290,7 +290,8 @@ class OrgHub_SitesListTable extends WP_List_Table
 	{
 		$action = $this->current_action();
 		$sites = ( isset($_REQUEST['site']) ? $_REQUEST['site'] : array() );
-		
+		$bulk_input = ( isset($_REQUEST['bulk']) ? $_REQUEST['bulk'] : array() );
+				
 		switch( $action )
 		{
 			case 'delete':
@@ -304,22 +305,50 @@ class OrgHub_SitesListTable extends WP_List_Table
 				break;
 			
 			case 'change-theme':
+				if( !isset($bulk_input['theme']) )
+				{
+					// set error
+					return;
+				}
 				foreach( $sites as $site_id )
-					$this->model->change_theme( $site_id, $theme );
+					$this->model->change_theme( $site_id, $bulk_input['theme'] );
 				break;
 			
 			case 'change-site-admin':
+				apl_print( 'create-site-admin' );
+				if( !isset($bulk_input['admin']) )
+				{
+					// set error
+					return;
+				}
+				apl_print( $bulk_input['admin'] );
+				$admin = get_user_by( intval($bulk_input['admin']), 'id' );
+				apl_print( $admin );
+				global $wpdb;
+				$admin_email = $wpdb->get_var( "SELECT user_email FROM $wpdb->users WHERE id = ".$bulk_input['admin'] );
+				apl_print( $admin_email );
+				if( !$admin_email )
+				{
+					// set error
+					return;
+				}
 				foreach( $sites as $site_id )
-					$this->model->change_site_admin( $site_id, $admin );
+					$this->model->change_site_admin( $site_id, $bulk_input['admin'], $admin_email );
+				break;
+				
+			default:
+				return false;
 				break;
 		}
+		
+		return true;
 	}
 	
 
 	/**
 	 * 
 	 */
-	protected function extra_tablenav( $which )
+	public function extra_tablenav( $which )
 	{
 		?>
 		<a href="<?php echo apl_get_page_url(); ?>&action=export" class="export" />Export Sites</a>
@@ -329,25 +358,40 @@ class OrgHub_SitesListTable extends WP_List_Table
 
 	public function inline_change_admin()
 	{
+		global $wpdb;
+		$users = $wpdb->get_results( "SELECT id, display_name FROM $wpdb->users ORDER BY display_name" );
+//		$users = get_users( 'orderby=nicename' );
+//		$user_query = new WP_User_Query( array( 'orderby' => 'display_name' ) );
+//		$users = $user_query->results;
+		
 		?>
 		<form method="get" action="">
-			<table id="inline-change-admin" style="display: none">
-			<tbody>
+			<table id="inline-change-admin"
+			       class="list-table-inline-bulk-action"
+			       table="orghub-sites"
+			       action="change-site-admin"
+			       style="display:none">
 
-			<tr class="inline-change-admin-row" style="display:none">
+			<tr class="inline-bulk-action">
 				<td colspan="<?php echo $this->get_column_count(); ?>" class="colspanchange">
 					<fieldset class="inline-change-admin-col-left">
 					<div class="inline-change-admin-col">
 						<h4>Change Administrator</h4>
 						
-						<?php // select administrator dropdown ?>
+						<select name="bulk[admin]">
+						<?php foreach( $users as $user ): ?>
+							<option value="<?php echo $user->id; ?>"><?php echo $user->display_name; ?></option>
+						<?php endforeach; ?>
+						</select>
+						
+						<button class="bulk-save">Save</button>
+						<button class="bulk-cancel">Cancel</button>
 						
 					</div>
 					</fieldset>
 				</td>
 			</tr>
 			
-			</tbody>
 			</table>
 		</form>
 		<?php
@@ -356,25 +400,42 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 	public function inline_change_theme()
 	{
+		$themes = wp_get_themes(
+			array(
+				'errors' => null,
+				'allowed' => null,
+				'blog_id' => 1,
+			)
+		);
+		
 		?>
 		<form method="get" action="">
-			<table id="inline-change-theme" style="display: none">
-			<tbody>
+			<table id="inline-change-theme"
+			       class="list-table-inline-bulk-action"
+			       table="orghub-sites"
+			       action="change-theme"
+			       style="display:none">
 
-			<tr id="inline-change-theme" class="inline-change-theme-row" style="display:none">
+			<tr class="inline-bulk-action">
 				<td colspan="<?php echo $this->get_column_count(); ?>" class="colspanchange">
 					<fieldset class="inline-change-theme-col-left">
 					<div class="inline-change-theme-col">
 						<h4>Change Theme</h4>
 						
-						<?php // select theme dropdown ?>
+						<select name="bulk[theme]">
+						<?php foreach( $themes as $theme ): ?>
+							<option value="<?php echo $theme->name; ?>"><?php echo $theme->name; ?></option>
+						<?php endforeach; ?>
+						</select>
+
+						<button class="bulk-save">Save</button>
+						<button class="bulk-cancel">Cancel</button>						
 						
 					</div>
 					</fieldset>
 				</td>
 			</tr>
 			
-			</tbody>
 			</table>
 		</form>
 		<?php
@@ -382,7 +443,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 	
 	
-	protected function display_tablenav( $which )
+	public function display_tablenav( $which )
 	{
 ?>
 	<div class="tablenav <?php echo esc_attr( $which ); ?>">

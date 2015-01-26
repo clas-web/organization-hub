@@ -76,6 +76,7 @@ class OrgHub_Main
 	public static function enqueue_scripts()
 	{
 		wp_enqueue_script( 'apl-ajax', plugins_url('apl/ajax.js', __FILE__), array('jquery') );
+		wp_enqueue_script( 'apl-list-table-inline-bulk-action', plugins_url('apl/list-table-inline-bulk-action.js', __FILE__), array('jquery') );
 		wp_enqueue_style( 'orghub-style', plugins_url('admin-pages/styles/style.css', __FILE__) );
 	}
 }

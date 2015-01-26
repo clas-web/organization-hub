@@ -281,7 +281,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	/**
 	 * 
 	 */
-	protected function get_bulk_actions()
+	public function get_bulk_actions()
 	{
 		$actions = array(
 			'create-users' => 'Create User Accounts',
@@ -336,7 +336,13 @@ class OrgHub_UsersListTable extends WP_List_Table
 					$this->model->process_user( $user_id );
 				}
 				break;
+			
+			default:
+				return false;
+				break;
 		}
+		
+		return true;
 	}
 	
 	
@@ -352,7 +358,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	/**
 	 * 
 	 */
-	protected function extra_tablenav( $which )
+	public function extra_tablenav( $which )
 	{
 		?>
 		<a href="<?php echo apl_get_page_url(); ?>&action=export" class="export" />Export Users</a>
@@ -360,7 +366,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	}
 
 
-	protected function display_tablenav( $which )
+	public function display_tablenav( $which )
 	{
 ?>
 	<div class="tablenav <?php echo esc_attr( $which ); ?>">
