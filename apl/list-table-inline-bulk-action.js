@@ -20,6 +20,21 @@ jQuery(document).ready(
 	 */
 	$.fn.ListTableInlineBulkAction = function( options )
 	{
+		function disable_bulk_action_lists()
+		{
+			$('input#doaction').prop('disabled', true);
+			$('input#doaction2').prop('disabled', true);
+			$('#bulk-action-selector-top').prop('disabled', true);
+			$('#bulk-action-selector-bottom').prop('disabled', true);
+		}
+		
+		function enable_bulk_action_lists()
+		{
+			$('input#doaction').prop('disabled', false);
+			$('input#doaction2').prop('disabled', false);
+			$('#bulk-action-selector-top').prop('disabled', false);
+			$('#bulk-action-selector-bottom').prop('disabled', false);
+		}
 
 		function remove_all_inline_bulk_action_rows( settings )
 		{
@@ -40,12 +55,13 @@ jQuery(document).ready(
 					event.preventDefault();
 					hide(settings);
 			});
-
+			disable_bulk_action_lists();
 		}
 		
 		function hide( settings )
 		{
 			remove_all_inline_bulk_action_rows( settings );
+			enable_bulk_action_lists();
 		}
 		
 		function save( settings )
