@@ -211,6 +211,14 @@
 			min-width:10em;
 		}
 		
+		table.orghub-sites tr.archived {
+			background-color:#dcc;
+		}
+		
+		table.orghub-sites tr.deleted {
+			background-color:#c99;
+		}
+		
 		
 		
 		

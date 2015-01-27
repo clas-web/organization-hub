@@ -261,6 +261,8 @@ class OrgHub_SitesListTable extends WP_List_Table
 	{
 		static $row_class = '';
 		$row_class = ( $row_class == '' ? 'alternate' : '' );
+		$row_class .= ( $item['archived'] == '1' ? ' archived' : '' );
+		$row_class .= ( $item['deleted'] == '1' ? ' deleted' : '' );
 
 		echo '<tr class="blog-'.$item['blog_id'].' '.$row_class.'">';
 		$this->single_row_columns( $item );
