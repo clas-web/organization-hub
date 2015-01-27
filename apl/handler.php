@@ -210,6 +210,7 @@ class APL_Handler
 			default:
 				$this->current_page = ( !empty($_GET['page']) ? $_GET['page'] : null );
 				$this->current_tab = ( isset($_GET['tab']) ? $_GET['tab'] : null );
+				$this->disable_redirect = false;
 				break;
 		}
 		
@@ -235,7 +236,7 @@ class APL_Handler
 		else
 			$this->controller = null;
 		
-		if( $this->controller )
+		if( !$this->controller )
 		{
 			$this->disable_redirect = true;
 		}
