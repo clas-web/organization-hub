@@ -98,12 +98,12 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		switch( $_REQUEST['action'] )
 		{
 			case 'refresh':
-				$this->model->refresh_sites();
+				$this->model->site->refresh_sites();
 				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 			
 			case 'clear':
-				$this->model->clear_sites();
+				$this->model->site->clear_sites();
 				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 
@@ -120,7 +120,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	public function export_sites()
 	{
         require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
-		$this->model->get_site_csv_export( $this->filters, $this->search, $this->orderby );
+		$this->model->site->get_site_csv_export( $this->filters, $this->search, $this->orderby );
 		exit;
 	}
 	
@@ -435,7 +435,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		switch( $action )
 		{
 			case 'refresh-all-sites':
-				$ids = $this->model->get_blog_ids();
+				$ids = $this->model->site->get_blog_ids();
 				
 				$items = array();
 				foreach( $ids as $id ) $items[] = array( 'blog_id' => $id );
@@ -450,7 +450,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 					return;
 				}
 				
-				$site_data = $this->model->refresh_site( $input['blog_id'] );
+				$site_data = $this->model->site->refresh_site( $input['blog_id'] );
 				$column_data = array();
 				
 				$this->list_table = new OrgHub_SitesListTable( $this );

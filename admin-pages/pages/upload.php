@@ -95,7 +95,7 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 		$user_ids = array();
 		foreach( $rows as &$row )
 		{
-			if( $uid = $this->model->add_user($row) )
+			if( $uid = $this->model->user->add_user($row) )
 			{
 				$user_ids[] = $uid;
 				$processed_rows++;
@@ -106,7 +106,7 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 			}
 		}
 		
-		$this->model->set_inactive_users( $user_ids );
+		$this->model->user->set_inactive_users( $user_ids );
 		
 		$results = count($rows) . ' rows found in file.<br/>';
 		$results .= $processed_rows . ' rows added or updated successfully.<br/>';

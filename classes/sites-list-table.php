@@ -57,7 +57,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	 */
 	public function prepare_items( $filter = array(), $search = array(), $orderby = null )
 	{
-		$sites_count = $this->model->get_sites_count( $filter, $search, $orderby );
+		$sites_count = $this->model->site->get_sites_count( $filter, $search, $orderby );
 	
 		$current_page = $this->get_pagenum();
 		$per_page = $this->parent->get_screen_option( 'orghub_sites_per_page' );
@@ -67,7 +67,7 @@ class OrgHub_SitesListTable extends WP_List_Table
     		'per_page'    => $per_page
   		) );
   		
-  		$this->items = $this->model->get_sites( $filter, $search, $orderby, ($current_page-1)*$per_page, $per_page );
+  		$this->items = $this->model->site->get_sites( $filter, $search, $orderby, ($current_page-1)*$per_page, $per_page );
 	}
 
 
@@ -296,12 +296,12 @@ class OrgHub_SitesListTable extends WP_List_Table
 		{
 			case 'delete':
 				foreach( $sites as $site_id )
-					$this->model->delete_blog( $site_id );
+					$this->model->site->delete_blog( $site_id );
 				break;
 			
 			case 'archive':
 				foreach( $sites as $site_id )
-					$this->model->archive_blog( $site_id );
+					$this->model->site->archive_blog( $site_id );
 				break;
 			
 			case 'change-theme':
@@ -311,7 +311,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 					return;
 				}
 				foreach( $sites as $site_id )
-					$this->model->change_theme( $site_id, $bulk_input['theme'] );
+					$this->model->site->change_theme( $site_id, $bulk_input['theme'] );
 				break;
 			
 			case 'change-site-admin':
@@ -333,7 +333,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 					return;
 				}
 				foreach( $sites as $site_id )
-					$this->model->change_site_admin( $site_id, $bulk_input['admin'], $admin_email );
+					$this->model->site->change_site_admin( $site_id, $bulk_input['admin'], $admin_email );
 				break;
 				
 			default:
@@ -424,7 +424,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 						
 						<select name="bulk[theme]">
 						<?php foreach( $themes as $theme ): ?>
-							<option value="<?php echo $theme->name; ?>"><?php echo $theme->name; ?></option>
+							<option value="<?php echo $theme->get_stylesheet(); ?>"><?php echo $theme->name; ?></option>
 						<?php endforeach; ?>
 						</select>
 

@@ -116,11 +116,11 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	 */
 	public function process_users()
 	{
-		$users = $this->model->get_users();
+		$users = $this->model->user->get_users();
 		
 		foreach( $users as $user )
 		{
-			$this->model->process_user( $user );
+			$this->model->user->process_user( $user );
 		}
 		
 		$this->model->update_options(
@@ -139,7 +139,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	public function export_users()
 	{
         require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
-		$this->model->get_csv_export( $this->filters, $this->search, $this->show_errors, $this->orderby );
+		$this->model->user->get_csv_export( $this->filters, $this->search, $this->show_errors, $this->orderby );
 		exit;
 	}
 	
@@ -154,27 +154,27 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		$this->filter_types = array(
 			'status' => array(
 				'name' => 'Status',
-				'values' => $this->model->get_all_status_values(),
+				'values' => $this->model->user->get_all_status_values(),
 				'filter' => array(),
 			),
 			'type' => array(
 				'name' => 'Type',
-				'values' => $this->model->get_all_type_values(),
+				'values' => $this->model->user->get_all_type_values(),
 				'filter' => array(),
 			),
 			'category' => array(
 				'name' => 'Category',
-				'values' => $this->model->get_all_category_values(),
+				'values' => $this->model->user->get_all_category_values(),
 				'filter' => array(),
 			),
 			'site_domain' => array(
 				'name' => 'Domain',
-				'values' => $this->model->get_all_site_domain_values(),
+				'values' => $this->model->user->get_all_site_domain_values(),
 				'filter' => array(),
 			),
 			'site' => array(
 				'name' => 'Connections Sites',
-				'values' => $this->model->get_all_connections_sites_values(),
+				'values' => $this->model->user->get_all_connections_sites_values(),
 				'filter' => array(),
 			),
 		);

@@ -57,7 +57,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	 */
 	public function prepare_items( $filter = array(), $search = array(), $only_errors = false, $orderby = null )
 	{
-		$users_count = $this->model->get_users_count( $filter, $search, $only_errors, $orderby );
+		$users_count = $this->model->user->get_users_count( $filter, $search, $only_errors, $orderby );
 	
 		$current_page = $this->get_pagenum();
 		$per_page = $this->parent->get_screen_option( 'orghub_users_per_page' );
@@ -67,7 +67,7 @@ class OrgHub_UsersListTable extends WP_List_Table
     		'per_page'    => $per_page
   		) );
   		
-  		$this->items = $this->model->get_users( $filter, $search, $only_errors, $orderby, ($current_page-1)*$per_page, $per_page );
+  		$this->items = $this->model->user->get_users( $filter, $search, $only_errors, $orderby, ($current_page-1)*$per_page, $per_page );
 	}
 
 
@@ -224,13 +224,13 @@ class OrgHub_UsersListTable extends WP_List_Table
 	{
 		$html = '<span class="url" title="'.$item['site_domain'].'/'.$item['site_path'].'">'.$item['site_domain'].'/'.$item['site_path'].'</span><br/>';
 		
-		$username_class = ''; //($this->model->get_user_exception($item['id'], 'username') ? 'user-exception' : '');
-		$site_class = ''; //($this->model->get_user_exception($item['id'], 'site') ? 'user-exception' : '');
-		$connections_class = ''; //($this->model->get_user_exception($item['id'], 'connections') ? 'user-exception' : '');
+		$username_class = ''; //($this->model->user->get_user_exception($item['id'], 'username') ? 'user-exception' : '');
+		$site_class = ''; //($this->model->user->get_user_exception($item['id'], 'site') ? 'user-exception' : '');
+		$connections_class = ''; //($this->model->user->get_user_exception($item['id'], 'connections') ? 'user-exception' : '');
 		
 		$class = 'wp_user_id';
-		if( $this->model->get_wp_user_error( $item['id'] ) ) $class .= ' error';
-		elseif( $this->model->get_wp_user_warning( $item['id'] ) ) $class .= ' warning';
+		if( $this->model->user->get_wp_user_error( $item['id'] ) ) $class .= ' error';
+		elseif( $this->model->user->get_wp_user_warning( $item['id'] ) ) $class .= ' warning';
 		if( $item['wp_user_id'] == null )
 			$text = 'username: NONE';
 		else
@@ -238,15 +238,15 @@ class OrgHub_UsersListTable extends WP_List_Table
 		$html .= '<span class="'.$class.'" title="'.$text.'">'.$text.'</span><br/>';
 
 		$class = 'profile_site_id';
-		if( $this->model->get_profile_site_error( $item['id'] ) ) $class .= ' error';
-		elseif( $this->model->get_profile_site_warning( $item['id'] ) ) $class .= ' warning';
+		if( $this->model->user->get_profile_site_error( $item['id'] ) ) $class .= ' error';
+		elseif( $this->model->user->get_profile_site_warning( $item['id'] ) ) $class .= ' warning';
 		if( $item['profile_site_id'] == null )
 		{
 			$text = 'profile site: NONE';
 		}
 		else
 		{
-			$profile_site = $this->model->get_profile_site( $item['profile_site_id'] );
+			$profile_site = $this->model->user->get_profile_site( $item['profile_site_id'] );
 			if( $profile_site['archived'] )
 				$text = '<strike>profile site</strike>: '.$item['profile_site_id'];
 			else
@@ -257,15 +257,15 @@ class OrgHub_UsersListTable extends WP_List_Table
 		foreach( $item['connections_sites'] as $cs )
 		{
 			$class = 'connections_site_id';
-			if( $this->model->get_connections_error( $item['id'], $cs['site'] ) ) $class .= ' error';
-			elseif( $this->model->get_connections_warning( $item['id'], $cs['site'] ) ) $class .= ' warning';
+			if( $this->model->user->get_connections_error( $item['id'], $cs['site'] ) ) $class .= ' error';
+			elseif( $this->model->user->get_connections_warning( $item['id'], $cs['site'] ) ) $class .= ' warning';
 			if( $cs['post_id'] == null )
 			{
 				$text = $cs['site'].' post: NONE';
 			}
 			else
 			{			
-				$connections_post = $this->model->get_connections_post( $cs['post_id'], $cs['site'] );
+				$connections_post = $this->model->user->get_connections_post( $cs['post_id'], $cs['site'] );
 				if( $connections_post['post_status'] == 'draft' )
 					$text = '<strike>'.$cs['site'].' post</strike>: '.$cs['post_id'];
 				else
@@ -307,33 +307,33 @@ class OrgHub_UsersListTable extends WP_List_Table
 		{
 			case 'create-users':
 				foreach( $users as $user_id )
-					$this->model->create_username( $user_id );
+					$this->model->user->create_username( $user_id );
 				break;
 			
 			case 'create-sites':
 				foreach( $users as $user_id )
-					$this->model->create_site( $user_id, true );
+					$this->model->user->create_site( $user_id, true );
 				break;
 			
 			case 'create-connections-posts':
 				foreach( $users as $user_id )
-					$this->model->create_connections_posts( $user_id, true );
+					$this->model->user->create_connections_posts( $user_id, true );
 				break;
 			
 			case 'archive-sites':
 				foreach( $users as $user_id )
-					$this->model->archive_site( $user_id );
+					$this->model->user->archive_site( $user_id );
 				break;
 			
 			case 'draft-connections-posts':
 				foreach( $users as $user_id )
-					$this->model->process_connections_posts( $user_id, true );
+					$this->model->user->process_connections_posts( $user_id, true );
 				break;
 			
 			case 'process-users':
 				foreach( $users as $user_id )
 				{
-					$this->model->process_user( $user_id );
+					$this->model->user->process_user( $user_id );
 				}
 				break;
 			
