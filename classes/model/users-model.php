@@ -1225,7 +1225,7 @@ class OrgHub_UsersModel
 //		update_usermeta( $user->ID, 'description', $db_user['description'] );
 //		update_usermeta( $user->ID, 'category', implode( ', ', $db_user['category'] ) );
 //		update_usermeta( $user->ID, 'type', implode( ', ', $db_user['type'] ) );
-//		update_usermeta( $user->ID, 'website', $db_user['profile_site_id'] );
+//		update_usermeta( $user->ID, 'website', $db_user['profile_blog_id'] );
 		
 		foreach( $db_user['connections_sites'] as $cs )
 		{
@@ -1260,7 +1260,7 @@ class OrgHub_UsersModel
 			$this->set_user_column( $db_user['id'], 'profile_blog_error', 'Wordpress username not set.' );
 			return false;
 		}
-
+		
 		//
 		// If a profile blog is already set, then verify that it exists and that the 
 		// options are setup correctly.
@@ -1286,7 +1286,7 @@ class OrgHub_UsersModel
 		if( !$db_user['site_domain'] )
 		{
 			$url_parts = parse_url( get_site_url(1) );
-			$db_user['site_domain'] = $url_parts['host'] . $url_parts['path'];
+			$db_user['site_domain'] = $url_parts['host'];
 		}
 		
 		//
@@ -2191,6 +2191,35 @@ class OrgHub_UsersModel
 	public function get_wp_user( $id )
 	{
 		return get_user_by( 'id', intval($id) );
+	}
+	
+	
+	/**
+	 * Get a blog's information.
+	 * @param   int         $id  The blog id.
+	 * @return  array|bool  The blog's information on success, otherwise false.
+	 */
+	public function get_profile_blog( $id )
+	{
+		global $wpdb;
+		$blog_info = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM '.$wpdb->blogs.' WHERE blog_id = %d',
+				$id
+			),
+			ARRAY_A
+		);
+		
+		if( !$blog_info ) return false;
+		
+		$blog_details = get_blog_details( intval($id) );
+		
+		if( !$blog_details ) return false;
+		
+		$blog_info['siteurl'] = $blog_details->siteurl;
+		$blog_info['blogname'] = $blog_details->blogname;
+		
+		return $blog_info;
 	}
 	
 	

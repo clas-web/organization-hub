@@ -65,7 +65,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				$this->model->user->publish_profile_blog( $user_id );
 				break;
 			case 'reset-profile-site-id':
-				$this->model->user->set_user_column( $user_id, 'profile_site_id', null );
+				$this->model->user->set_user_column( $user_id, 'profile_blog_id', null );
 				break;
 			case 'create-connections-post':
 				$this->model->user->create_connections_post( $user_id, $_REQUEST['site'], true );
@@ -86,10 +86,10 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				$this->model->user->set_user_column( $user_id, 'wp_user_warning', null );
 				break;
 			case 'clear-site-error':
-				$this->model->user->set_user_column( $user_id, 'profile_site_error', null );
+				$this->model->user->set_user_column( $user_id, 'profile_blog_error', null );
 				break;
 			case 'clear-site-warning':
-				$this->model->user->set_user_column( $user_id, 'profile_site_warning', null );
+				$this->model->user->set_user_column( $user_id, 'profile_blog_warning', null );
 				break;
 			case 'clear-connections-error':
 				$this->model->user->set_connections_column( $user_id, $_REQUEST['site'], 'connections_error', null );
@@ -241,8 +241,8 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 		<?php
 		if( $site_path ):
 			$class = '';
-			if( $error = $this->model->user->get_user_column( $id, 'profile_site_error' ) ) $class .= 'exception error';
-			elseif( $warning = $this->model->user->get_user_column( $id, 'profile_site_warning' ) ) $class .= 'exception warning';
+			if( $error = $this->model->user->get_user_column( $id, 'profile_blog_error' ) ) $class .= 'exception error';
+			elseif( $warning = $this->model->user->get_user_column( $id, 'profile_blog_warning' ) ) $class .= 'exception warning';
 			if( $class ):
 				?>
 				<p class="<?php echo $class; ?>">
@@ -263,20 +263,20 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				<?php
 			endif;
 
-			$profile_site = null;
-			if( $profile_site_id ):
-				$profile_site = $this->model->user->get_profile_site( $profile_site_id );
+			$profile_blog = null;
+			if( $profile_blog_id ):
+				$profile_blog = $this->model->user->get_profile_blog( $profile_blog_id );
 			
-				if( $profile_site ):
+				if( $profile_blog_id ):
 					?>
-					<div class="site-id"><label>ID</label><span><?php echo $profile_site['blog_id']; ?></span></div>
-					<div class="site-name"><label>Name</label><span><?php echo $profile_site['blogname']; ?></span></div>
-					<div class="site-url"><label>URL</label><span><?php echo $profile_site['siteurl']; ?></span></div>
-					<div class="site-archived"><label>Archived</label><span><?php echo ($profile_site['archived'] == '0' ? 'No' : 'Yes'); ?></span></div>
+					<div class="site-id"><label>ID</label><span><?php echo $profile_blog['blog_id']; ?></span></div>
+					<div class="site-name"><label>Name</label><span><?php echo $profile_blog['blogname']; ?></span></div>
+					<div class="site-url"><label>URL</label><span><?php echo $profile_blog['siteurl']; ?></span></div>
+					<div class="site-archived"><label>Archived</label><span><?php echo ($profile_blog['archived'] == '0' ? 'No' : 'Yes'); ?></span></div>
 					<?php
 				else:
 					?>
-					<p class="notice notice-error">ERROR: profile_site_id set ("<?php echo $profile_site_id; ?>") but site does not exist.</p>
+					<p class="notice notice-error">ERROR: profile_blog_id set ("<?php echo $profile_blog_id; ?>") but site does not exist.</p>
 					<?php
 				endif;
 			else:
@@ -289,11 +289,11 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 			<div class="buttons">
 			
 				<?php
-				if( $profile_site ):
+				if( $profile_blog ):
 					?>
-					<a href="<?php echo network_admin_url( 'site-info.php?id='.$profile_site['blog_id'] ); ?>" target="_blank">Edit Site</a>
+					<a href="<?php echo network_admin_url( 'site-info.php?id='.$profile_blog['blog_id'] ); ?>" target="_blank">Edit Site</a>
 					<?php
-					if( $profile_site['archived'] == '0' ):
+					if( $profile_blog['archived'] == '0' ):
 						?>
 						<button name="action" value="archive-site">Archive Site</button>
 						<?php
@@ -310,9 +310,9 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 					<?php
 				endif;
 				
-				if( $profile_site_id ):
+				if( $profile_blog_id ):
 					?>
-					<button name="action" value="reset-profile-site-id">Reset profile_site_id</button>
+					<button name="action" value="reset-profile-site-id">Reset profile_blog_id</button>
 					<?php
 				endif;
 				?>		
