@@ -46,6 +46,7 @@ endif;
 if( !class_exists('OrgHub_Main') ):
 class OrgHub_Main
 {
+	
 	public static function load()
 	{
 		$orghub_pages = new APL_Handler( true );
@@ -58,6 +59,7 @@ class OrgHub_Main
 		$menu->add_page( new OrgHub_LogAdminPage );
 		
 		$orghub_pages->add_menu( $menu );
+		$orghub_pages->setup();
 	}
 	
 	public static function update()

@@ -2,7 +2,7 @@
 /**
  * OrgHub_UsersEditTabAdminPage
  * 
- * 
+ * This class controls the admin page USERS when in edit user mode.
  * 
  * @package    orghub
  * @subpackage admin-pages/tabs/users
@@ -17,7 +17,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 	
 	
 	/**
-	 * 
+	 * Creates an OrgHub_UsersEditTabAdminPage object.
 	 */
 	public function __construct( $parent )
 	{
@@ -27,30 +27,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 
 
 	/**
-	 * 
-	 */
-	public function add_head_script()
-	{
-		?>
-		<style>
-		
-			
-		
-		</style>
-  		<script type="text/javascript">
-			jQuery(document).ready( function()
-			{
-			
-				
-			
-			});
-		</script>
-		<?php
-	}
-	
-	
-	/**
-	 * 
+	 * Processes the current admin page.
 	 */
 	public function process()
 	{
@@ -69,14 +46,14 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				$this->model->user->process_user( $user_id );
 				break;
 			case 'create-username':
-				$this->model->user->create_username( $user_id );
+				$this->model->user->create_wp_user( $user_id );
 				break;
 			case 'delete-username':
 				// TODO: delete username function
-				//$this->model->user->delete_username( $user_id );
+				//$this->model->user->delete_wp_user( $user_id );
 				break;
 			case 'reset-wp-user-id':
-				$this->model->user->update_wp_user_id( $user_id, null );
+				$this->model->user->set_user_column( $user_id, 'wp_user_id', null );
 				break;
 			case 'create-site':
 				$this->model->user->create_site( $user_id, true );
@@ -88,7 +65,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				$this->model->user->publish_site( $user_id );
 				break;
 			case 'reset-profile-site-id':
-				$this->model->user->update_profile_site_id( $user_id, null );
+				$this->model->user->set_user_column( $user_id, 'profile_site_id', null );
 				break;
 			case 'create-connections-post':
 				$this->model->user->create_connections_post( $user_id, $_REQUEST['site'], true );
@@ -103,29 +80,29 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				$this->model->user->update_connections_post_id( $user_id, $_REQUEST['site'], null );
 				break;
 			case 'clear-username-error':
-				$this->model->user->set_wp_user_error( $user_id, null );
+				$this->model->user->set_user_column( $user_id, 'wp_user_error', null );
 				break;
 			case 'clear-username-warning':
-				$this->model->user->set_wp_user_warning( $user_id, null );
+				$this->model->user->set_user_column( $user_id, 'wp_user_warning', null );
 				break;
 			case 'clear-site-error':
-				$this->model->user->set_profile_site_error( $user_id, null );
+				$this->model->user->set_user_column( $user_id, 'profile_site_error', null );
 				break;
 			case 'clear-site-warning':
-				$this->model->user->set_profile_site_warning( $user_id, null );
+				$this->model->user->set_user_column( $user_id, 'profile_site_warning', null );
 				break;
 			case 'clear-connections-error':
-				$this->model->user->set_connections_error( $user_id, $_REQUEST['site'], null );
+				$this->model->user->set_connections_column( $user_id, $_REQUEST['site'], 'connections_error', null );
 				break;
 			case 'clear-connections-warning':
-				$this->model->user->set_connections_warning( $user_id, $_REQUEST['site'], null );
+				$this->model->user->set_connections_column( $user_id, $_REQUEST['site'], 'connections_warning', null );
 				break;
 		}
 	}	
 		
 
 	/**
-	 * 
+	 * Displays the current admin page.
 	 */
 	public function display()
 	{
@@ -140,6 +117,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 		}
 
 		$user = $this->model->user->get_user_by_id( $id );
+		
 		if( empty($user) )
 		{
 			?>
@@ -147,7 +125,8 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 			<?php
 			return;
 		}
-		
+
+		extract($user);
 		?>
 		
 		<?php
@@ -176,8 +155,8 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 
 			<?php
 			$class = '';
-			if( $error = $this->model->user->get_wp_user_error( $user['id'] ) ) $class .= 'exception error';
-			elseif( $warning = $this->model->user->get_wp_user_warning( $user['id'] ) ) $class .= 'exception warning';
+			if( $error = $this->model->user->get_user_column( $id, 'wp_user_error' ) ) $class .= 'exception error';
+			elseif( $warning = $this->model->user->get_user_column( $id, 'wp_user_warning' ) ) $class .= 'exception warning';
 			if( $class )
 			{
 				?>
@@ -200,8 +179,8 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 			}
 				
 			$wp_user = null;
-			if( $user['wp_user_id'] ):
-				$wp_user = $this->model->user->get_wp_user( $user['wp_user_id'] );
+			if( $wp_user_id ):
+				$wp_user = $this->model->user->get_wp_user( $wp_user_id );
 			
 				if( $wp_user ):
 					?>
@@ -212,7 +191,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 					<?php
 				else:
 					?>
-					<p class="notice notice-error">ERROR: wp_user_id set ("<?php echo $user['wp_user_id']; ?>") but user does not exist.</p>
+					<p class="notice notice-error">ERROR: wp_user_id set ("<?php echo $wp_user_id; ?>") but user does not exist.</p>
 					<?php
 				endif;
 			else:
@@ -235,7 +214,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 					<?php
 				endif;
 				
-				if( $user['wp_user_id'] ):
+				if( $wp_user_id ):
 					?>
 					<button name="action" value="reset-wp-user-id">Reset wp_user_id</button>
 					<?php
@@ -259,10 +238,11 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 		
 		<div id="profile-site-details" class="details-box">
 			
-			<?php
+		<?php
+		if( $blog_path ):
 			$class = '';
-			if( $error = $this->model->user->get_profile_site_error( $user['id'] ) ) $class .= 'exception error';
-			elseif( $warning = $this->model->user->get_profile_site_warning( $user['id'] ) ) $class .= 'exception warning';
+			if( $error = $this->model->user->get_user_column( $id, 'profile_site_error' ) ) $class .= 'exception error';
+			elseif( $warning = $this->model->user->get_user_column( $id, 'profile_site_warning' ) ) $class .= 'exception warning';
 			if( $class ):
 				?>
 				<p class="<?php echo $class; ?>">
@@ -284,8 +264,8 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 			endif;
 
 			$profile_site = null;
-			if( $user['profile_site_id'] ):
-				$profile_site = $this->model->user->get_profile_site( $user['profile_site_id'] );
+			if( $profile_site_id ):
+				$profile_site = $this->model->user->get_profile_site( $profile_site_id );
 			
 				if( $profile_site ):
 					?>
@@ -296,7 +276,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 					<?php
 				else:
 					?>
-					<p class="notice notice-error">ERROR: profile_site_id set ("<?php echo $user['profile_site_id']; ?>") but site does not exist.</p>
+					<p class="notice notice-error">ERROR: profile_site_id set ("<?php echo $profile_site_id; ?>") but site does not exist.</p>
 					<?php
 				endif;
 			else:
@@ -325,12 +305,12 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				else:
 
 					?>
- 					<label><?php echo $user['site_domain'].'/'.$user['site_path']; ?></label>
+ 					<label><?php echo $blog_domain.'/'.$blog_path; ?></label>
 					<button name="action" value="create-site">Create Site</button>
 					<?php
 				endif;
 				
-				if( $user['profile_site_id'] ):
+				if( $profile_site_id ):
 					?>
 					<button name="action" value="reset-profile-site-id">Reset profile_site_id</button>
 					<?php
@@ -338,6 +318,11 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				?>		
 			
 			</div>
+		<?php
+		else:
+			echo 'Profile Site not specified.';
+		endif;
+		?>
 		</div>		
 		<?php $this->form_end(); ?>
 
@@ -347,7 +332,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 		//
 		?>
 		
-		<?php foreach( $user['connections_sites'] as $cs ): ?>
+		<?php foreach( $connections_sites as $cs ): ?>
 		
 		<?php $this->form_start( 'connections-site', null, null, array( 'id' => $id ) ); ?>
 
@@ -357,8 +342,8 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 
 			<?php
 			$class = '';
-			if( $error = $this->model->user->get_connections_error( $user['id'], $cs['site'] ) ) $class .= 'exception error';
-			elseif( $warning = $this->model->user->get_connections_warning( $user['id'], $cs['site'] ) ) $class .= 'exception warning';
+			if( $error = $this->model->user->get_connections_column( $id, $cs['site'], 'connections_error' ) ) $class .= 'exception error';
+			elseif( $warning = $this->model->user->get_connections_column( $id, $cs['site'], 'connections_warning' ) ) $class .= 'exception warning';
 			if( $class ):
 				?>
 				<p class="<?php echo $class; ?>">

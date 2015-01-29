@@ -2,7 +2,7 @@
 /**
  * OrgHub_CsvHandler
  * 
- * 
+ * A general purpose CSV Handler for importing and exporting.
  * 
  * @package    orghub
  * @subpackage classes
@@ -12,18 +12,21 @@
 if( !class_exists('OrgHub_CsvHandler') ):
 class OrgHub_CsvHandler
 {
-	public static $length = 99999;
-	public static $delimiter = ',';
-	public static $enclosure = '"';
-	public static $escape = '\\';
+	public static $length = 99999;		// The maximum length of a line in CSV file.
+	public static $delimiter = ',';		// The field delimiter character.
+	public static $enclosure = '"';		// The field enclosure character.
+	public static $escape = '\\';		// The field escape character.
 
-	public static $last_error = '';
+	public static $last_error = null;	// The last error recorded by the handler.
 
 	
 	/**
-	 * 
+	 * Imports a CSV file.
+	 * @param   string  $filename  The complete file path and name of the CSV file.
+	 * @param   array   $rows      The resulting rows array of values from CSV file.
+	 * @return  bool    True if import is successful, otherwise false.
 	 */
-    public static function import( $filename, &$rows, $use_comment_column = true )
+    public static function import( $filename, &$rows )
     {
     	$headers = null;
 		$rows = array();
@@ -77,7 +80,10 @@ class OrgHub_CsvHandler
     
     
 	/**
-	 * 
+	 * Exports a CSV file from data.
+	 * @param  string  The name of the resulting file.
+	 * @param  array   An array of header names for the CSV file.
+	 * @param  array   An array of rows with values for each column.
 	 */
     public static function export( $filename, &$headers, &$rows )
     {
@@ -123,8 +129,9 @@ class OrgHub_CsvHandler
 		}
 		
 		fclose( $outfile );
+		exit;
     }
 
-}
-endif;
+} // if( !class_exists('OrgHub_CsvHandler') ):
+endif; // class OrgHub_CsvHandler
 

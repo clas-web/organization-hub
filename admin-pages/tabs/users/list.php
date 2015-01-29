@@ -1,14 +1,12 @@
 <?php
 
-
-if( !class_exists('OrgHub_UsersListTable') ):
-require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/users-list-table.php' );
-endif;
+if( !class_exists('OrgHub_UsersListTable') )
+	require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/users-list-table.php' );
 
 /**
  * OrgHub_UsersListTabAdminPage
  * 
- * 
+ * This class controls the admin page USERS when in list mode.
  * 
  * @package    orghub
  * @subpackage admin-pages/tabs/users
@@ -19,19 +17,20 @@ if( !class_exists('OrgHub_UsersListTabAdminPage') ):
 class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 {
 	
-	private $model = null;	
-	private $list_table = null;
+	private $model = null;			// The OrgHub's main model.
+	private $list_table = null;		// The page's WP list table.
 	
-	private $filter_types;
-	private $filter;
-	private $search;
-	private $orderby;
-	private $show_errors;
+	private $filter_types;			// The types of filters.
+	private $filter;				// 
+	private $search;				// 
+	private $orderby;				// 
+	private $show_errors;			// 
 	
 	
 	
 	/**
-	 * 
+	 * Constructor.
+	 * Creates an OrgHub_UsersListTabAdminPage object.
 	 */
 	public function __construct( $parent )
 	{
@@ -40,6 +39,9 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	}
 
 	
+	/**
+	 * Initialize the admin page by setting up the filters and list table.
+	 */
 	public function init()
 	{
 		$this->setup_filters();
@@ -47,7 +49,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	}
 	
 	/**
-	 * 
+	 * Loads the list table's items.
 	 */
 	public function load()
 	{
@@ -56,30 +58,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	
 
 	/**
-	 *
-	 */
-	public function add_head_script()
-	{
-		?>
-		<style>
-		
-			
-		
-		</style>
-  		<script type="text/javascript">
-			jQuery(document).ready( function()
-			{
-			
-				
-			
-			});
-		</script>
-		<?php
-	}
-	
-	
-	/**
-	 * 
+	 * Add screen options.
 	 */
 	public function add_screen_options()
 	{
@@ -89,7 +68,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	
 	
 	/**
-	 * 
+	 * Process any action present in the $_REQUEST data.
 	 */
 	public function process()
 	{
@@ -105,14 +84,16 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 				break;
 			
 			case 'export':
-				$this->export_users();
+		        require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
+				$this->model->user->get_csv_export( $this->filters, $this->search, $this->show_errors, $this->orderby );
+				exit;
 				break;
 		}
 	}
 	
 
 	/**
-	 * 
+	 * Processes the 'process-users' action.
 	 */
 	public function process_users()
 	{
@@ -134,18 +115,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	
 	
 	/**
-	 * 
-	 */
-	public function export_users()
-	{
-        require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
-		$this->model->user->get_csv_export( $this->filters, $this->search, $this->show_errors, $this->orderby );
-		exit;
-	}
-	
-	
-	/**
-	 * 
+	 * Setup the filters for the list table, such as time, posts count, and page count.
 	 */
 	private function setup_filters()
 	{
@@ -167,14 +137,22 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 				'values' => $this->model->user->get_all_category_values(),
 				'filter' => array(),
 			),
-			'site_domain' => array(
+			'blog_domain' => array(
 				'name' => 'Domain',
-				'values' => $this->model->user->get_all_site_domain_values(),
+				'values' => $this->model->user->get_all_blog_domain_values(),
+				'filter' => array(),
+			),
+			'connection' => array(
+				'name' => 'Connections Sites',
+				'values' => $this->model->user->get_all_connections_sites_values(),
 				'filter' => array(),
 			),
 			'site' => array(
-				'name' => 'Connections Sites',
-				'values' => $this->model->user->get_all_connections_sites_values(),
+				'name' => 'Profile Sites',
+				'values' => array( 
+					'na-site'  => 'Profile site not specified.', 
+					'no-site'  => 'Profile site not created.', 
+					'has-site' => 'Profile site created.' ),
 				'filter' => array(),
 			),
 		);
@@ -245,7 +223,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	
 	
 	/**
-	 * 
+	 * Displays the current admin page.
 	 */
 	public function display()
 	{
@@ -285,16 +263,27 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 					<div class="title"><?php echo $type['name']; ?></div>
 	
 					<div class="scroll-box">
-					<?php foreach( $type['values'] as $value ): ?>
+					<?php foreach( $type['values'] as $vk => $vv ): ?>
 						<div class="item">
-						<input type="checkbox"
-							   name="<?php echo $key; ?>[]"
-							   id="<?php apl_name_e( $key, $value ); ?>"
-							   value="<?php echo $value; ?>"
-							   <?php checked( true, in_array($value, $type['filter']) ); ?> />
-						<label for="<?php apl_name_e( $key, $value ); ?>">
-							<?php echo $value; ?>
-						</label>
+						<?php if( is_int($vk) ): ?>
+							<input type="checkbox"
+								   name="<?php echo $key; ?>[]"
+								   id="<?php apl_name_e( $key, $vv ); ?>"
+								   value="<?php echo $vv; ?>"
+								   <?php checked( true, in_array($vv, $type['filter']) ); ?> />
+							<label for="<?php apl_name_e( $key, $vv ); ?>">
+								<?php echo $vv; ?>
+							</label>
+						<?php else: ?>
+							<input type="checkbox"
+								   name="<?php echo $key; ?>[]"
+								   id="<?php apl_name_e( $key, $vk ); ?>"
+								   value="<?php echo $vk; ?>"
+								   <?php checked( true, in_array($vk, $type['filter']) ); ?> />
+							<label for="<?php apl_name_e( $key, $vk ); ?>">
+								<?php echo $vv; ?>
+							</label>
+						<?php endif; ?>
 						</div>
 					<?php endforeach; ?>
 					</div>
@@ -336,29 +325,6 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		
 		
 		<?php
-	}
-	
-	
-	// DO LATER...
-	public function ajax_request( $action, $input, $count, $total )
-	{
-		switch( $action )
-		{
-			case 'test-ajax':
-				$output['status'] = true;
-				$output['message'] = 'The action was "test-ajax".';
-				break;
-			
-			case 'test-ajax-2':
-				$output['status'] = true;
-				$output['message'] = 'The action was "test-ajax-2".';
-				break;
-			
-			default:
-				$output['status'] = false;
-				$output['message'] = 'No action was given.';
-				break;
-		}
 	}
 
 } // class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage

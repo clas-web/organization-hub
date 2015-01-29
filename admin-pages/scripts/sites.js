@@ -1,6 +1,9 @@
 
 
-
+/**
+ * Start the refresh of all sites.
+ * @param  array  settings  The AJAX buttons settings.
+ */
 function refresh_all_sites_start( settings )
 {
 	jQuery('#ajax-status').html('AJAX refresh started.');
@@ -8,6 +11,10 @@ function refresh_all_sites_start( settings )
 }
 
 
+/**
+ * Done with the refresh of all sites.
+ * @param  array  settings  The AJAX buttons settings.
+ */
 function refresh_all_sites_end( settings )
 {
 	jQuery('#ajax-status').html('AJAX refresh done.');
@@ -15,18 +22,34 @@ function refresh_all_sites_end( settings )
 }
 
 
+/**
+ * Start contacting the server via AJAX for refresh sites list.
+ * @param  int    fi        The current form count.
+ * @param  array  settings  The AJAX buttons settings.
+ */
 function refresh_all_sites_loop_start( fi, settings )
 {
 	jQuery('#ajax-progress').html('Contacting server for AJAX data.');
 }
 
 
+/**
+ * Finished contacting the server via AJAX for refresh sites list.
+ * @param  int    fi        The current form count.
+ * @param  array  settings  The AJAX buttons settings.
+ * @param  bool   success   True if the AJAX call was successful, otherwise false.
+ * @param  array  data      The returned data on success, otherwise error information.
+ */
 function refresh_all_sites_loop_end( fi, settings, success, data )
 {
 	jQuery('#ajax-progress').html('Received AJAX data.');
 }
 
 
+/**
+ * Start cycling through the sites list returned via AJAX.
+ * @param  array  ajax  The AJAX settings returned from the server.
+ */
 function refresh_site_start( ajax )
 {
 	jQuery('#ajax-status').html('Performing AJAX refresh.');
@@ -34,6 +57,10 @@ function refresh_site_start( ajax )
 }
 
 
+/**
+ * Finished cycling through the sites list returned via AJAX.
+ * @param  array  ajax  The AJAX settings returned from the server.
+ */
 function refresh_site_end( ajax )
 {
 	jQuery('#ajax-status').html('AJAX refresh done.');
@@ -41,12 +68,28 @@ function refresh_site_end( ajax )
 }
 
 
+/**
+ * Start contacting the server via AJAX to refresh one site.
+ * @param  int    fi        The current form count.
+ * @param  array  settings  The AJAX buttons settings.
+ * @param  int    ai        The current ajax items count.
+ * @param  array  ajax      The AJAX settings returned from the server.
+ */
 function refresh_site_loop_start( fi, settings, ai, ajax )
 {
 	jQuery('#ajax-progress').html('Refreshing blog '+(ai+1)+' of '+(ajax.items.length));
 }
 
 
+/**
+ * Finished contacting the server via AJAX to refresh one site.
+ * @param  int    fi        The current form count.
+ * @param  array  settings  The AJAX buttons settings.
+ * @param  int    ai        The current ajax items count.
+ * @param  array  ajax      The AJAX settings returned from the server.
+ * @param  bool   success   True if the AJAX call was successful, otherwise false.
+ * @param  array  data      The returned data on success, otherwise error information.
+ */
 function refresh_site_loop_end( fi, settings, ai, ajax, success, data )
 {
 	if( !success || !data.success )

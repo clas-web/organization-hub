@@ -2,7 +2,7 @@
 /**
  * OrgHub_SitesModel
  * 
- * 
+ * The sites model for the Organization Hub plugin.
  * 
  * @package    orghub
  * @subpackage classes
@@ -13,13 +13,18 @@ if( !class_exists('OrgHub_SitesModel') ):
 class OrgHub_SitesModel
 {
 	
-	private static $instance = null;
-
-	private static $site_table			= 'orghub_site';	
-	private $model = null;
+	private static $instance = null;	// The only instance of this class.
+	private $model = null;				// The "parent" model for Organization Hub.
+	
+	// Names of tables used by the model without prefix.
+	private static $site_table = 'orghub_site';	// 
 	
 	
 	
+	/**
+	 * Private Constructor.  Needed for a Singleton class.
+	 * Creates an OrgHub_SitesModel object.
+	 */
 	private function __construct()
 	{
 		global $wpdb;
@@ -31,7 +36,7 @@ class OrgHub_SitesModel
 
 	/**
 	 * Get the only instance of this class.
-	 * @return  OrgHub_Model  A singleton instance of the model class.
+	 * @return  OrgHub_SitesModel  A singleton instance of the sites model class.
 	 */
 	public static function get_instance()
 	{
@@ -103,32 +108,132 @@ class OrgHub_SitesModel
 		global $wpdb;
 		$wpdb->query( 'DELETE FROM '.self::$site_table.';' );
 	}
+	
+	
+	
+//========================================================================================
+//================================================ Import / Updating database tables =====
+	
+	
+	/**
+	 * Adds an OrgHub site to the database.
+	 * @param   array     $args  An array of data about a site.
+	 * @return  int|bool  The id of the inserted site or false on failure.
+	 */
+	public function add_site( &$args )
+	{
+		//if( !$this->check_args( $args ) ) return false;
+
+		//
+		// If site already exists, then update the user.
+		//
+		$db_site = $this->get_site_by_blog_id( $args['blog_id'] );
+		if( $db_site )
+		{
+			return $this->update_site( $db_site['id'], $args );
+		}
+		
+		global $wpdb;
+		
+		//
+		// Insert new site into Sites table.
+		//
+		$result = $wpdb->insert(
+			self::$site_table,
+			array(
+				'blog_id'			=> $args['blog_id'],
+				'url'				=> $args['url'],
+				'title'				=> $args['title'],
+				'num_posts'			=> $args['num_posts'],
+				'num_pages'			=> $args['num_pages'],
+				'num_comments'		=> $args['num_comments'],
+				'last_post_url'		=> $args['last_post_url'],
+				'last_post_date'	=> $args['last_post_date'],
+				'last_post_status'	=> $args['last_post_status'],
+				'last_comment_url'	=> $args['last_comment_url'],
+				'last_comment_date'	=> $args['last_comment_date'],
+				'admin_email'		=> $args['admin_email'],
+				'status'			=> $args['status'],
+			),
+			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+		);
+		
+		//
+		// Check to make sure insertion was successful.
+		//
+		$site_id = $wpdb->insert_id;
+		if( !$site_id )
+		{
+			$this->model->last_error = 'Unable to insert site.';
+			return false;
+		}
+
+		return $site_id;
+	}
+	
+	
+	/**
+	 * Updates an OrgHub site in the database.
+	 * @param   int       $id    The site's id (not the WordPress blog id).
+	 * @param   array     $args  An array of data about a site.
+	 * @return  int|bool  The id of the updated site or false on failure.
+	 */
+	public function update_site( $id, &$args )
+	{
+		global $wpdb;
+		
+		//
+		// Update user in Users table.
+		//
+		$result = $wpdb->update(
+			self::$site_table,
+			array(
+				'blog_id'			=> $args['blog_id'],
+				'url'				=> $args['url'],
+				'title'				=> $args['title'],
+				'num_posts'			=> $args['num_posts'],
+				'num_pages'			=> $args['num_pages'],
+				'num_comments'		=> $args['num_comments'],
+				'last_post_url'		=> $args['last_post_url'],
+				'last_post_date'	=> $args['last_post_date'],
+				'last_post_status'	=> $args['last_post_status'],
+				'last_comment_url'	=> $args['last_comment_url'],
+				'last_comment_date'	=> $args['last_comment_date'],
+				'admin_email'		=> $args['admin_email'],
+				'status'			=> $args['status'],
+			),
+			array( 'id' => intval( $id ) ),
+			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+
+		//
+		// Check to make sure update was successful.
+		//
+		if( $result === false )
+		{
+			$this->model->last_error = 'Unable to update site.';
+			return false;
+		}
+		
+		return $id;
+	}
 
 
 
+//========================================================================================
+//================================================= Retrieve site data from database =====
+	
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	/**
+	 * Retrieve a complete list of OrgHub site from the database after filtering.
+	 * @param   array   $filter       An array of filter name and values.
+	 * @param   array   $search       An array of search columns and phrases.
+	 * @param   string  $orderby      The column to orderby.
+	 * @param   int     $offset       The offset of the users list.
+	 * @param   int     $limit        The amount of users to retrieve.
+	 * @return  array   An array of sites given the filtering.
+	 */
 	public function get_sites( $filter = array(), $search = array(), $orderby = array(), $offset = 0, $limit = -1 )
 	{
 		global $wpdb;
@@ -146,14 +251,84 @@ class OrgHub_SitesModel
 			'archived', 'deleted'
 		);
 		
-		$list = $this->get_column_list( $list );
-		$filter = $this->get_sites_filter($filter, $search, $orderby, $offset, $limit);
+		$list = $this->model->get_column_list( $list );
+		$filter = $this->filter_sql($filter, $search, $orderby, $offset, $limit);
 		
 // 		apl_print( 'SELECT '.$list.' FROM '.self::$site_table.' '.$filter );
 		return $wpdb->get_results( 'SELECT '.$list.' FROM '.self::$site_table.' '.$filter, ARRAY_A );
 	}
 	
-	public function get_sites_filter( $filter, $search, $orderby, $offset = 0, $limit = -1 )
+	
+	/**
+	 * The amount of OrgHub sites from the database after filtering.
+	 * @param   array   $filter       An array of filter name and values.
+	 * @param   array   $search       An array of search columns and phrases.
+	 * @param   string  $orderby      The column to orderby.
+	 * @return  array   The amount of sites given the filtering.
+	 */
+	public function get_sites_count( $filter, $search, $orderby )
+	{
+		global $wpdb;
+// 		apl_print("SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->filter_sql($filter, $search, $orderby));
+		return $wpdb->get_var( "SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->filter_sql($filter, $search, $orderby) );
+	}
+
+
+	/**
+	 * Get a site's information based on its blog id.
+	 * @param   int         $blog_id  The blog's id.
+	 * @return  array|bool  The site's data on success, otherwise false.
+	 */
+	public function get_site_by_blog_id( $blog_id )
+	{
+		global $wpdb;
+		
+		$list = array();
+		$list[self::$site_table] = array(
+			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
+			'last_post_url', 'last_post_date', 'last_post_status',
+			'last_comment_url', 'last_comment_date', 'admin_email',
+		);
+		$list[$wpdb->users] = array(
+			'display_name','user_login'
+		);
+		
+		$list = $this->get_column_list( $list );
+
+		$site = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT '.$list.' FROM '.self::$site_table.' LEFT JOIN wp_users ON wp_users.user_email = '.self::$site_table.'.admin_email WHERE blog_id = %d',
+				$blog_id
+			),
+			ARRAY_A
+		);
+		
+		if( $site ) return $site;
+		return false;
+	}
+	
+	
+	/**
+	 * Gets the ids of all blogs on the site.
+	 * @return  An array of all blog ids.
+	 */
+	public function get_blog_ids()
+	{
+		global $wpdb;
+		return $wpdb->get_col( 'SELECT blog_id FROM '.$wpdb->blogs );
+	}
+	
+	
+	/**
+	 * Creates the SQL needed to complete an SQL statement.
+	 * @param   array   $filter       An array of filter name and values.
+	 * @param   array   $search       An array of search columns and phrases.
+	 * @param   string  $orderby      The column to orderby.
+	 * @param   int     $offset       The offset of the users list.
+	 * @param   int     $limit        The amount of users to retrieve.
+	 * @return  string  The constructed SQL needed to complete an SQL statement.
+	 */
+	public function filter_sql( $filter, $search, $orderby, $offset = 0, $limit = -1 )
 	{
 		global $wpdb;
 		
@@ -269,232 +444,100 @@ class OrgHub_SitesModel
 	}
 	
 	
-	private function get_column_list( $columns )
+
+//========================================================================================
+//========================================================= Get/Set from/to database =====
+	
+
+	/**
+	 * Gets a column in the OrgHub sites table.
+	 * @param   int     $user_id  The OrgHub site's id (not WordPress site id).
+	 * @param   string  $column   The column name.
+	 * @return  bool    The requested value or false on failure.
+	 */
+	public function get_site_column( $blog_id, $column )
 	{
-		$list = '';
-		$i = 0;
-		foreach( $columns as $table => $names )
+		global $wpdb;
+		return $wpdb->get_var( 
+			$wpdb->prepare( 
+				"SELECT $column FROM ".self::$site_table." WHERE blog_id=%d",
+				intval( $blog_id )
+			)
+		);
+	}
+	
+	
+	/**
+	 * Sets a column in the OrgHub sites table to a value.
+	 * @param   int     $user_id  The OrgHub site's id (not WordPress site id).
+	 * @param   string  $column   The column name.
+	 * @param   strint  $value    The value to set column to.
+	 * @return  bool    True if update was successful, otherwise false.
+	 */
+	private function set_site_column( $user_id, $column, $value )
+	{
+		global $wpdb;
+		
+		$type = '%s';
+		if( is_int($value) ) $type = '%d';
+		
+		if( $value === null )
 		{
-			if( count($names) === 0 ) continue;
-			if( $i > 0 ) $list .= ',';
-			$list .= $table.'.'.implode( ','.$table.'.', $names );
-			$i++;
+			$return = $wpdb->query( 
+				$wpdb->prepare( 
+					"UPDATE ".self::$site_table." SET $column = NULL WHERE id = %d",
+					intval( $user_id )
+				)
+			);
+		}
+		else
+		{
+			$return = $wpdb->query( 
+				$wpdb->prepare( 
+					"UPDATE ".self::$site_table." SET $column = $type WHERE id = %d",
+					$value,
+					intval( $user_id )
+				)
+			);
 		}
 		
-		if( $list === '' ) $list = '*';
-		return $list;
-	}
+		if( $return ) return true;
+		return false;
+	}	
 	
 	
 	
-	public function get_sites_count( $filter, $search, $orderby )
+//========================================================================================
+//============================================================= Actions / Refreshing =====
+	
+	
+	/**
+	 * Refresh all the sites.
+	 */
+	public function refresh_all_sites()
 	{
-		global $wpdb;
-// 		apl_print("SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->get_sites_filter($filter, $search, $orderby));
-		return $wpdb->get_var( "SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->get_sites_filter($filter, $search, $orderby) );
-	}
-	
-	
-	public function clear_sites()
-	{
-		global $wpdb;
-		$wpdb->query( 'DELETE FROM '.self::$site_table.';' );
-	}
-	
-	
-	public function refresh_sites()
-	{
-		$sites = wp_get_sites( array( 'limit' => 10000 ) );
+		$sites = wp_get_sites( array( 'limit' => 100000 ) );
 		
 		foreach( $sites as &$site )
 		{
-			switch_to_blog( $site['blog_id'] );
-
-			$site['url'] = get_bloginfo( 'url' );
-			$site['title'] = get_bloginfo( 'name' );
-			
-			$posts_count = wp_count_posts();
-			$site['num_posts'] = $posts_count->publish;
-			
-			$pages_count = wp_count_posts('page');
-			$site['num_pages'] = $pages_count->publish;
-			
-			$comments = wp_count_comments();
-			$site['num_comments'] = $comments->total_comments;
-
-			$recent_post = wp_get_recent_posts( array('numberposts' => 1) );
-			if( !empty($recent_post) && count($recent_post) > 0 )
-			{
-				$site['last_post_url'] = get_permalink( $recent_post[0]['ID'] );
-				$site['last_post_date'] = $recent_post[0]['post_modified'];
-				$site['last_post_status'] = $recent_post[0]['post_status'];
-			}
-			else
-			{
-				$site['last_post_url'] = '';
-				$site['last_post_date'] = '0000-00-00 00:00:00';
-				$sits['last_post_status'] = '';
-			}
-			
-			$recent_comment = get_comments( array('number' => 1) );
-			if( !empty($recent_comment) && count($recent_comment) > 0 )
-			{
-				$site['last_comment_url'] = get_permalink( $recent_comment[0]->comment_ID );
-				$site['last_comment_date'] = $recent_comment[0]->comment_date;
-			}
-			else
-			{
-				$site['last_comment_url'] = '';
-				$site['last_comment_date'] = '0000-00-00 00:00:00';
-			}
-			
-			$site['admin_email'] = get_bloginfo( 'admin_email' );
-			
-			$site['status'] = 'TO DO';
-
-			restore_current_blog();
-		}
-		
-		foreach( $sites as &$site )
-		{
-			$this->add_site( $site );
+			$this->refresh_site( $site['blog_id'] );
 		}
 		
 		$this->model->update_option( 'sites-refresh-time', date('Y-m-d H:i:s') );
 	}
 	
 	
-	public function get_site_by_blog_id( $blog_id )
-	{
-		global $wpdb;
-		
-		$list = array();
-		$list[self::$site_table] = array(
-			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
-			'last_post_url', 'last_post_date', 'last_post_status',
-			'last_comment_url', 'last_comment_date', 'admin_email',
-		);
-		$list[$wpdb->users] = array(
-			'display_name','user_login'
-		);
-		
-		$list = $this->get_column_list( $list );
-
-		$site = $wpdb->get_row(
-			$wpdb->prepare(
-				'SELECT '.$list.' FROM '.self::$site_table.' LEFT JOIN wp_users ON wp_users.user_email = '.self::$site_table.'.admin_email WHERE blog_id = %d',
-				$blog_id
-			),
-			ARRAY_A
-		);
-		
-		return $site;
-	}
-	
-	
-	public function add_site( &$args )
-	{
-		//if( !$this->check_user_args( $args ) ) return false;
-
-		$db_site = $this->get_site_by_blog_id( $args['blog_id'] );
-		if( $db_site )
-		{
-			return $this->update_site( $db_site['id'], $args );
-		}
-		
-		global $wpdb;
-		
-		//
-		// Insert new user into Users table.
-		//
-		$result = $wpdb->insert(
-			self::$site_table,
-			array(
-				'blog_id'			=> $args['blog_id'],
-				'url'				=> $args['url'],
-				'title'				=> $args['title'],
-				'num_posts'			=> $args['num_posts'],
-				'num_pages'			=> $args['num_pages'],
-				'num_comments'		=> $args['num_comments'],
-				'last_post_url'		=> $args['last_post_url'],
-				'last_post_date'	=> $args['last_post_date'],
-				'last_post_status'	=> $args['last_post_status'],
-				'last_comment_url'	=> $args['last_comment_url'],
-				'last_comment_date'	=> $args['last_comment_date'],
-				'admin_email'		=> $args['admin_email'],
-				'status'			=> $args['status'],
-			),
-			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
-		);
-		
-		//
-		// Check to make sure insertion was successful.
-		//
-		$site_id = $wpdb->insert_id;
-		if( !$site_id )
-		{
-			$this->model->last_error = 'Unable to insert site.';
-			return false;
-		}
-
-		return $site_id;
-	}
-	
-	public function update_site( $id, &$args )
-	{
-		global $wpdb;
-		
-		//
-		// Update user in Users table.
-		//
-		$result = $wpdb->update(
-			self::$site_table,
-			array(
-				'blog_id'			=> $args['blog_id'],
-				'url'				=> $args['url'],
-				'title'				=> $args['title'],
-				'num_posts'			=> $args['num_posts'],
-				'num_pages'			=> $args['num_pages'],
-				'num_comments'		=> $args['num_comments'],
-				'last_post_url'		=> $args['last_post_url'],
-				'last_post_date'	=> $args['last_post_date'],
-				'last_post_status'	=> $args['last_post_status'],
-				'last_comment_url'	=> $args['last_comment_url'],
-				'last_comment_date'	=> $args['last_comment_date'],
-				'admin_email'		=> $args['admin_email'],
-				'status'			=> $args['status'],
-			),
-			array( 'id' => intval( $id ) ),
-			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
-			array( '%d' )
-		);
-
-		//
-		// Check to make sure update was successful.
-		//
-		if( $result === false )
-		{
-			$this->model->last_error = 'Unable to update site.';
-			return false;
-		}
-		
-		return $id;
-	}
-	
-	
-	public function get_blog_ids()
-	{
-		global $wpdb;
-		return $wpdb->get_col( 'SELECT blog_id FROM '.$wpdb->blogs );
-	}
-	
-	
+	/**
+	 * Refresh a single site.
+	 * @param   int         $blog_id  The blog id of the site.
+	 * @return  array|bool  The site's info on success, otherwise false.
+	 */
 	public function refresh_site( $blog_id )
 	{
 		global $wpdb;
 		
 		$site = $wpdb->get_row( 'SELECT * FROM '.$wpdb->blogs.' WHERE blog_id = '.intval($blog_id), ARRAY_A );
-		if( !$site ) return $site;
+		if( !$site ) return false;
 		
 		switch_to_blog( $blog_id );
 
@@ -554,10 +597,12 @@ class OrgHub_SitesModel
 		
 		return $this->get_site_by_blog_id( $blog_id );
 	}
-
-
-
-
+	
+	
+	/**
+	 * Mark a blog as deleted.
+	 * @param  int  $blog_id  The blog's id.
+	 */
 	function delete_blog( $blog_id )
 	{
 		do_action( 'deactivate_blog', $blog_id );
@@ -565,13 +610,21 @@ class OrgHub_SitesModel
 	}
 
 
-
+	/**
+	 * Mark a blog as archived.
+	 * @param  int  $blog_id  The blog's id.
+	 */
 	function archive_blog( $blog_id )
 	{
 		update_blog_status( $blog_id, 'archived', '1' );
 	}
 
 
+	/**
+	 * Change the active theme of a blog.
+	 * @param  int     $blog_id  The blog's id.
+	 * @param  string  $theme    The new theme's name.	 
+	 */
 	function change_theme( $blog_id, $theme )
 	{
 		switch_to_blog( $blog_id );
@@ -582,7 +635,12 @@ class OrgHub_SitesModel
 	}
 
 
-
+	/**
+	 * Change the active theme of a blog.
+	 * @param  int     $blog_id        The blog's id.
+	 * @param  int     $admin_user_id  The admin's user id.
+	 * @param  string  $admin_mail     The admin's email.
+	 */
 	function change_site_admin( $blog_id, $admin_user_id, $admin_email )
 	{
 		$blog_id = intval($blog_id);
@@ -601,55 +659,64 @@ class OrgHub_SitesModel
 	
 	
 	
-	function update_site_column( $blog_id, $column_name, $value, $type = '%s' )
+//========================================================================================
+//=========================================================================== Export =====
+	
+	
+	/**
+	 * Exports a list of sites to a CSV.
+	 * @param   array   $filter       An array of filter name and values.
+	 * @param   array   $search       An array of search columns and phrases.
+	 * @param   string  $orderby      The column to orderby.
+	 */
+	public function get_site_csv_export( $filter = array(), $search = array(), $orderby = null )
 	{
 		global $wpdb;
-		
-		//
-		// Update user in Users table.
-		//
-		$result = $wpdb->update(
-			self::$site_table,
-			array(
-				$column_name		=> $value,
-			),
-			array( 'blog_id' => intval( $blog_id ) ),
-			array( $type ),
-			array( '%d' )
+		$users = $this->get_sites( $filter, $search, $orderby );
+
+
+		$headers = array(
+			'blog_id',
+			'url',
+			'title',
+			'num_posts',
+			'num_pages',
+			'num_comments',
+			'last_post_url',
+			'last_post_date', 
+			'last_post_status',
+			'last_comment_url',
+			'last_comment_date',
+			'admin_email',
+			'admin_username',
+			'admin_name',
 		);
 
-		//
-		// Check to make sure update was successful.
-		//
-		if( $result === false )
+		foreach( $users as &$user )
 		{
-			$this->model->last_error = 'Unable to update site.';
-			return false;
+			$u = $user;
+			$user = array(
+				$u['blog_id'], // blog_id
+				$u['url'], // url
+				$u['title'], // title
+				$u['num_posts'], // num_posts
+				$u['num_pages'], // num_pages
+				$u['num_comments'], // num_comments
+				$u['last_post_url'], // last_post_url
+				$u['last_post_date'], // last_post_date
+				$u['last_post_status'], // last_post_status
+				$u['last_comment_url'], // last_comment_url
+				$u['last_comment_date'], // last_comment_date
+				$u['admin_email'], // admin_email
+				$u['user_login'], // admin_username
+				$u['display_name'], // admin_name
+			);
 		}
 		
-		return $blog_id;
-	}
+		OrgHub_CsvHandler::export( 'sites', $headers, $users );
+		exit;
+	}	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-}
-endif;
+} // class OrgHub_SitesModel
+endif; // if( !class_exists('OrgHub_SitesModel') ):
 

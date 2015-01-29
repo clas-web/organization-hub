@@ -2,7 +2,7 @@
 /**
  * OrgHub_UploadAdminPage
  * 
- * 
+ * This class controls the admin page UPLOAD.
  * 
  * @package    orghub
  * @subpackage admin-pages/pages
@@ -20,7 +20,7 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 
 
 	/**
-	 * 
+	 * Creates an OrgHub_UploadAdminPage object.
 	 */
 	public function __construct()
 	{
@@ -30,30 +30,7 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 	
 	
 	/**
-	 * 
-	 */
-	public function add_head_script()
-	{
-		?>
-		<style>
-		
-			
-		
-		</style>
-  		<script type="text/javascript">
-			jQuery(document).ready( function()
-			{
-			
-				
-			
-			});
-		</script>
-		<?php
-	}
-
-
-	/**
-	 * 
+	 * Processes the current admin page.
 	 */
 	public function process()
 	{
@@ -69,7 +46,7 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 
 
 	/**
-	 * 
+	 * Process the upload action, by importing a CSV file.
 	 */
 	public function upload_file()
 	{
@@ -124,7 +101,7 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 		
 	
 	/**
-	 * 
+	 * Displays the current admin page.
 	 */
 	public function display()
 	{

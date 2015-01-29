@@ -1,13 +1,12 @@
 <?php
 
-
 if( !class_exists('OrgHub_SitesListTable') )
 	require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/sites-list-table.php' );
 
 /**
  * OrgHub_SitesAdminPage
  * 
- * 
+ * This class controls the admin page SITES.
  * 
  * @package    orghub
  * @subpackage admin-pages/pages
@@ -28,7 +27,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Creates an OrgHub_SitesAdminPage object.
 	 */
 	public function __construct()
 	{
@@ -36,6 +35,10 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		$this->model = OrgHub_Model::get_instance();
 	}
 	
+	
+	/**
+	 * Initialize the admin page.  Called during "admin_init" action.
+	 */
 	public function init()
 	{
 		$this->setup_filters();
@@ -44,7 +47,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Loads the admin page.  Called during "load-{page}" action.
 	 */
 	public function load()
 	{
@@ -53,30 +56,8 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	
 	
 	/**
-	 *
-	 */
-	public function add_head_script()
-	{
-		?>
-		<style>
-		
-			
-		
-		</style>
-  		<script type="text/javascript">
-			jQuery(document).ready( function()
-			{
-			
-				
-			
-			});
-		</script>
-		<?php
-	}
-	
-	
-	/**
-	 *
+	 * Add the screen options for the page.
+	 * Called during "load-{page}" action.
 	 */
 	public function add_screen_options()
 	{
@@ -87,7 +68,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	
 	
 	/**
-	 *
+	 * Processes the current admin page.
 	 */
 	public function process()
 	{
@@ -98,7 +79,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		switch( $_REQUEST['action'] )
 		{
 			case 'refresh':
-				$this->model->site->refresh_sites();
+				$this->model->site->refresh_all_sites();
 				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 			
@@ -108,32 +89,25 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 				break;
 
 			case 'export':
-				$this->export_sites();
+				require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
+				$this->model->site->get_site_csv_export( $this->filters, $this->search, $this->orderby );
+				exit;
 				break;
 		}
 	}
-
-
+	
+	
 	/**
-	 * 
+	 * Enqueues all the scripts or styles needed for the admin page. 
 	 */
-	public function export_sites()
-	{
-        require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
-		$this->model->site->get_site_csv_export( $this->filters, $this->search, $this->orderby );
-		exit;
-	}
-	
-	
 	public function enqueue_scripts()
 	{
 		wp_enqueue_script( 'orghub-sites', ORGANIZATION_HUB_PLUGIN_URL.'/admin-pages/scripts/sites.js', array('jquery') );
 	}
-
 	
 	
 	/**
-	 *
+	 * Setup the filters for the list table, such as time, posts count, and page count.
 	 */
 	private function setup_filters()
 	{
@@ -262,7 +236,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Displays the current admin page.
 	 */
 	public function display()
 	{
@@ -428,7 +402,11 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Processes and displays the output of an ajax request.
+	 * @param  string  $action  The AJAX action.
+	 * @param  array   $input   The AJAX input array.
+	 * @param  int     $count   When multiple AJAX calls are made, the current count.
+	 * @param  int     $total   When multiple AJAX calls are made, the total count.
 	 */
 	public function ajax_request( $action, $input, $count, $total )
 	{
@@ -470,7 +448,6 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 						$column_data[$column_name] = $this->list_table->column_default( $site_data, $column_name );
 					}
 				}
-				
 				
 				$this->ajax_set( 'site', $site_data );
 				$this->ajax_set( 'columns', $column_data );

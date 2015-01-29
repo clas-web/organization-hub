@@ -2,7 +2,7 @@
 /**
  * OrgHub_LogAdminPage
  * 
- * 
+ * This class controls the admin page LOG.
  * 
  * @package    orghub
  * @subpackage admin-pages/pages
@@ -14,7 +14,7 @@ class OrgHub_LogAdminPage extends APL_AdminPage
 {
 	
 	/**
-	 * 
+	 * Creates an OrgHub_LogAdminPage object.
 	 */
 	public function __construct()
 	{
@@ -23,7 +23,7 @@ class OrgHub_LogAdminPage extends APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Displays the current admin page.
 	 */
 	public function display()
 	{

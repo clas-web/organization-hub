@@ -79,11 +79,21 @@ abstract class APL_AdminPage
 	}
 	
 	
+	/**
+	 * Initialize the admin page.  Called during "admin_init" action.
+	 */
 	public function init() { }
 	
 	
 	/**
+	 * Loads the admin page.  Called during "load-{page}" action.
+	 */
+	public function load() { }
+
+
+	/**
 	 * Adds the admin page to the main menu and sets up all values, actions and filters.
+	 * Called during "admin_menu" or "network_admin_menu" action.
 	 */
 	public function admin_menu_setup()
 	{
@@ -130,12 +140,6 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * 
-	 */
-	public function load() { }
-	
-	
-	/**
 	 * Checks if this is the page that should perform an apl ajax request.  If the current
 	 * page matches the request and a tab is not selected, then the ajax request is processed.
 	 */
@@ -154,6 +158,9 @@ abstract class APL_AdminPage
 			$this->ajax_failed( 'The submitted data cannot be verified.' );
 			return;
 		}
+		
+		$this->output = array( 'ajax' => array() );
+		$this->ajax_success();
 		
 		$this->ajax_request( $_POST['apl-ajax-action'], $_POST['input'], $_POST['count'], $_POST['total'] );
 		
@@ -256,7 +263,7 @@ abstract class APL_AdminPage
 
 
 	/**
-	 *
+	 * Add the screen options for the page.
 	 */
 	public function add_screen_options() { }
 	
@@ -264,7 +271,8 @@ abstract class APL_AdminPage
 
 
 	/**
-	 *
+	 * Sets up the screen options for the admin page.
+	 * Called during "load-{page}" action after the load function.
 	 */
 	public function setup_screen_options()
 	{
@@ -281,38 +289,26 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 *
+	 * Adds the per_page option to the screen options list.  
+	 * This option is used to alter number of items are shown in a list table.
+	 * @param  string  $option   Unique name for option.
+	 * @param  string  $label    The label/title to use when displaying.
+	 * @param  string  $default  The default value.
 	 */
 	public function add_per_page_screen_option( $option, $label, $default )
 	{
-		$this->add_screen_option( 'per_page', $option, $label, $default );
-	}
-	
-	
-	/**
-	 *
-	 */
-	public function add_screen_option( $screen_option, $option, $label, $default, $other = array() )
-	{
 		$this->screen_options[$option] = array(
-			'screen_option' => $screen_option,
+			'screen_option' => 'per_page',
 			'option' => $option,
 			'label' => $label,
 			'default' => $default,
 		);
-		
-		if( is_array($other) )
-		{
-			foreach( $other as $k => $v )
-			{
-				$this->screen_options[$option][$k] = $v;
-			}
-		}
 	}
 	
 	
 	/**
-	 *
+	 * Add the selectable columns to the screen options.
+	 * @param  array  $columns  An array of columns that will be selectable.
 	 */
 	public function add_selectable_columns( $columns )
 	{
@@ -328,7 +324,8 @@ abstract class APL_AdminPage
 
 
 	/**
-	 *
+	 * Gets the selectable columns for the list table.
+	 * @return  array  The selectable columns array.
 	 */
 	public function get_selectable_columns()
 	{
@@ -337,7 +334,9 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 *
+	 * Gets the default value of a screen option.
+	 * @param   string  $option  The option's name.
+	 * @return  string  The default value of the option.
 	 */
 	public function get_screen_option( $option )
 	{
@@ -352,7 +351,12 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 *
+	 * Filter a screen option value before it is set.
+	 * Called during "set-screen-option" filter.
+	 * @param   bool    $status  
+	 * @param   string  $option  The name of the option.
+	 * @param   string  $value   The new value of the option.
+	 * @return  string  The fitlered value of the option.
 	 */
 	public function save_screen_options( $status, $option, $value )
 	{
@@ -374,6 +378,7 @@ abstract class APL_AdminPage
 	
 	/**
 	 * HTML/JavaScript to add to the <head> portion of the page. 
+	 * Called during "admin_head" action.
 	 */
 	public function add_head_script() { }
 	
@@ -707,7 +712,9 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Gets the URL of the current admin page with new query arguments added.
+	 * @param   array   $query  An array of key/value pairs for additional URL query items.
+	 * @return  string  The generated URL with new query arguments.
 	 */
 	public function get_page_url( $query = array() )
 	{
@@ -879,50 +886,79 @@ abstract class APL_AdminPage
 	}
 	
 	
-	public function ajax_failed( $message = null )
+	/**
+	 * Sets the failure status and message that will be returned when AJAX call is complete.
+	 * @param  string  $message  The failure message.
+	 */
+	public function ajax_failed( $message = '' )
 	{
 		$this->output['success'] = false;
 		$this->output['message'] = $message;
 	}
 	
 	
-	public function ajax_success( $message = null )
+	/**
+	 * Sets the success status and message that will be returned when AJAX call is complete.
+	 * @param  string  $message  The success message.
+	 */
+	public function ajax_success( $message = '' )
 	{
 		$this->output['success'] = true;
 		$this->output['message'] = $message;
 	}
 	
 	
+	/**
+	 * Set a key/value pair tto the returning AJAX data.
+	 * @param  string  $key    The key/name of the value.
+	 * @param  string  $value  The value.
+	 */
 	public function ajax_set( $key, $value )
 	{
-		$this->output[$key] = $value;
+		$this->output['ajax'][$key] = $value;
 	}
 	
+	
+	/**
+	 * Remove a value from the returning AJAX data.
+	 * @param  string  $key  The key/name of value.
+	 */
 	public function ajax_remove( $key )
 	{
-		unset( $this->output[$key] );
+		unset( $this->output['ajax'][$key] );
 	}
 	
+	
+	/**
+	 * Sets the return values needed to start a new AJAX loop.
+	 * @param   string  $action         The new AJAX action.
+	 * @param   array   $items          The items that will be subject of the new AJAX action.
+	 * @param   string  $cb_start       The new start JS callback.
+	 * @param   string  $cb_end         The new end JS callback.
+	 * @param   string  $cb_loop_start  The new start loop JS callback.
+	 * @param   string  $cb_loop_end    The new end loop JS callback.
+	 */
 	public function ajax_set_items( $action, $items, $cb_start = null, $cb_end = null, $cb_loop_start = null, $cb_loop_end = null )
 	{
-		$this->output['ajax'] = array(
-			'page'			=> $this->handler->get_page_name(),
-			'tab'			=> $this->handler->get_tab_name(),
-			'action'		=> $action,
-			'items'			=> $items,
-			'cb_start'		=> $cb_start,
-			'cb_end'		=> $cb_end,
-			'cb_loop_start'	=> $cb_loop_start,
-			'cb_loop_end'	=> $cb_loop_end,
-			'nonce'			=> wp_create_nonce( $this->get_name().'-'.$action.'-ajax-request' ),
-		);
+		$this->output['ajax']['page'] 			= $this->handler->get_page_name();
+		$this->output['ajax']['tab'] 			= $this->handler->get_tab_name();
+		$this->output['ajax']['action'] 		= $action;
+		$this->output['ajax']['items'] 			= $items;
+		$this->output['ajax']['cb_start'] 		= $cb_start;
+		$this->output['ajax']['cb_end'] 		= $cb_end;
+		$this->output['ajax']['cb_loop_start'] 	= $cb_loop_start;
+		$this->output['ajax']['cb_loop_end'] 	= $cb_loop_end;
+		$this->output['ajax']['nonce'] 			= wp_create_nonce( $this->get_name().'-'.$action.'-ajax-request' );
 	}
 	
+	
+	/**
+	 * Display the AJAX data.
+	 */
 	public function ajax_output()
 	{
 		echo json_encode( $this->output );
 	}
-
 
 } // class APL_AdminPage
 endif; // if( !class_exists('APL_AdminPage') ):

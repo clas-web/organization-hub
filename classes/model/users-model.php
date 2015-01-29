@@ -2,7 +2,7 @@
 /**
  * OrgHub_UsersModel
  * 
- * 
+ * The users model for the Organization Hub plugin.
  * 
  * @package    orghub
  * @subpackage classes
@@ -13,17 +13,21 @@ if( !class_exists('OrgHub_UsersModel') ):
 class OrgHub_UsersModel
 {
 
-	private static $instance = null;
-
+	private static $instance = null;	// The only instance of this class.
+	private $model = null;				// The "parent" model for Organization Hub.
+	
+	// Names of tables used by the model without prefix.
 	private static $user_table 			= 'orghub_user';
 	private static $type_table 			= 'orghub_type';
 	private static $category_table 		= 'orghub_category';
 	private static $connections_table 	= 'orghub_connections';
-	
-	private $model = null;
 
 
 	
+	/**
+	 * Private Constructor.  Needed for a Singleton class.
+	 * Creates an OrgHub_UsersModel object.
+	 */
 	private function __construct()
 	{
 		global $wpdb;
@@ -39,7 +43,7 @@ class OrgHub_UsersModel
 
 	/**
 	 * Get the only instance of this class.
-	 * @return  OrgHub_Model  A singleton instance of the model class.
+	 * @return  OrgHub_UsersModel  A singleton instance of the users model class.
 	 */
 	public static function get_instance()
 	{
@@ -78,17 +82,17 @@ class OrgHub_UsersModel
 				  last_name text NOT NULL DEFAULT '',
 				  email text NOT NULL DEFAULT '',
 				  description text NOT NULL DEFAULT '',
-				  site_domain text NOT NULL DEFAULT '',
-				  site_path text NOT NULL DEFAULT '',
+				  blog_domain text NOT NULL DEFAULT '',
+				  blog_path text NOT NULL DEFAULT '',
 				  status varchar(16) NOT NULL,
 				  warning text DEFAULT NULL,
 				  error text DEFAULT NULL,
 				  wp_user_id bigint(20) DEFAULT NULL,
-				  wp_user_id_warning text DEFAULT NULL,
-				  wp_user_id_error text DEFAULT NULL,
-				  profile_site_id bigint(20) DEFAULT NULL,
-				  profile_site_id_warning text DEFAULT NULL,
-				  profile_site_id_error text DEFAULT NULL,
+				  wp_user_warning text DEFAULT NULL,
+				  wp_user_error text DEFAULT NULL,
+				  profile_blog_id bigint(20) DEFAULT NULL,
+				  profile_blog_warning text DEFAULT NULL,
+				  profile_blog_error text DEFAULT NULL,
 				  PRIMARY KEY  (id)
 				) ENGINE=InnoDB $db_charset_collate;";
 		
@@ -118,8 +122,8 @@ class OrgHub_UsersModel
 				  site text NOT NULL DEFAULT '',
 				  required tinyint(1) NOT NULL DEFAULT 0,
 				  post_id bigint(20) DEFAULT NULL,
-				  post_id_warning text DEFAULT NULL,
-				  post_id_error text DEFAULT NULL,
+				  connections_warning text DEFAULT NULL,
+				  connections_error text DEFAULT NULL,
 				  PRIMARY KEY  (id)
 				) ENGINE=InnoDB $db_charset_collate;";
 		
@@ -154,28 +158,17 @@ class OrgHub_UsersModel
 
 
 
-
-
-
-
-
-
-
-
-
+//========================================================================================
+//================================================ Import / Updating database tables =====
 
 
 	/**
 	 * Verifies that all the required fields are present.
-	 *
 	 * @param  array  $args  An array of user values.
-	 * 
 	 * @return  bool  True if the args are valid, otherwise False.
 	 */
-	private function check_user_args( &$args )
+	private function check_args( &$args )
 	{
-		//orghub_print($args, '$args (check_user_args-start)');
-		
 		//
 		// Verify that the required columns have been included.
 		//
@@ -200,21 +193,30 @@ class OrgHub_UsersModel
 		//
 		// Verify that columns with multiple columns have valid values.
 		//
-		if( !$this->check_multiple_value_arg('type', $args['type']) ) return false;
-		if( !$this->check_multiple_value_arg('category', $args['category']) ) return false;
+		if( !$this->check_multiple_value_arg('type', $args['type'], false) ) return false;
+		if( !$this->check_multiple_value_arg('category', $args['category'], false) ) return false;
 		
 		//
-		// If not specified, populate site_domain column with its default value.
-		// If site_domain is specified, then verify that the value is valid.
+		// If not specified, populate blog_domain column with its default value.
+		// If blog_domain is specified, then verify that the value is valid.
 		//
-		if( (!in_array('site_domain', array_keys($args))) || (!$args['site_domain']) )
+		if( (!in_array('blog_domain', array_keys($args))) )
 		{
-			$args['site_domain'] = get_site_url( 1 );
+			$args['blog_domain'] = '';
 		}
-		elseif( !$this->is_valid_site_domain_name($args['site_domain']) )
+		elseif( !$this->is_valid_blog_domain_name($args['blog_domain']) )
 		{
-			$this->model->last_error = 'Invalid field value for field "site_domain".';
+			$this->model->last_error = 'Invalid field value for field "blog_domain".';
 			return false;
+		}
+
+		//
+		// If not specified, populate blog_domain column with its default value.
+		// If blog_domain is specified, then verify that the value is valid.
+		//
+		if( (!in_array('blog_path', array_keys($args))) )
+		{
+			$args['blog_path'] = '';
 		}
 		
 		//
@@ -224,23 +226,27 @@ class OrgHub_UsersModel
 		{
 			$args['connections_sites'] = '';
 		}
-		elseif( !$this->check_multiple_value_arg('connections_sites', $args['connections_sites']) )
+		elseif( !$this->check_multiple_value_arg('connections_sites', $args['connections_sites'], false) )
 		{
+			$this->model->last_error = 'Invalid field value for field "connections_sites".';
 			return false;
 		}
 		
-		//orghub_print($args, '$args (check_user_args-end)');
 		return true;
 	}
 	
 	
 	/**
-	 * 
+	 * Parses and verifies each item in a column/field's comma-seperated value.
+	 * @param  string  $field  The column/field name.
+	 * @param  string  $value  The string value of the column/field.
+	 * @param  bool    $at_least_one  True if the value should have at least one value.
+	 * @return bool    True if the value is valid.
 	 */
-	private function check_multiple_value_arg( $field, &$value )
+	private function check_multiple_value_arg( $field, &$value, $at_least_one = true )
 	{
 		$value = str_getcsv( $value, ",", '"', "\\" );
-		if( count($value) === 0 )
+		if( ($at_least_one) && (count($value) === 0) )
 		{
 			$this->model->last_error = 'Invalid field value for field "'.$field.'".';
 			return false;
@@ -262,60 +268,33 @@ class OrgHub_UsersModel
 	
 	
 	/**
-	 * 
+	 * Verifies that the domain value is a valid format.
+	 * @param   string  $blog_domain_name  The blog domain.
+	 * @return  bool    True if the blog domain is a valid format.
 	 */
-	private function is_valid_site_domain_name($site_domain_name)
+	private function is_valid_blog_domain_name( $blog_domain_name )
 	{
-    	return (preg_match("/^([a-z\d](-*[a-z\d])*)(\.([a-z\d](-*[a-z\d])*))*$/i", $site_domain_name) //valid chars check
-            && preg_match("/^.{1,253}$/", $site_domain_name) //overall length check
-            && preg_match("/^[^\.]{1,63}(\.[^\.]{1,63})*$/", $site_domain_name)   ); //length of each label
+    	return (preg_match("/^([a-z\d](-*[a-z\d])*)(\.([a-z\d](-*[a-z\d])*))*$/i", $blog_domain_name) //valid chars check
+            && preg_match("/^.{1,253}$/", $blog_domain_name) //overall length check
+            && preg_match("/^[^\.]{1,63}(\.[^\.]{1,63})*$/", $blog_domain_name)   ); //length of each label
 	}
 	
 	
 	/**
-	 * 
-	 */
-	private function prepare_db_user( &$user )
-	{
- 		if( !$user ) return false;
- 		
- 		global $wpdb;
- 		
- 		if( !empty($user['user_id']) ) $user['id'] = $user['user_id'];
- 		
- 		$user['type'] = $wpdb->get_col(
- 			$wpdb->prepare(
-	 			'SELECT type FROM '.self::$type_table.' WHERE user_id=%d',
-	 			$user['id']
-	 		)
- 		);
- 		
- 		$user['category'] = $wpdb->get_col(
- 			$wpdb->prepare(
- 				'SELECT category FROM '.self::$category_table.' WHERE user_id=%d',
- 				$user['id']
- 			)
- 		);
- 		
- 		$user['connections_sites'] = $wpdb->get_results(
- 			$wpdb->prepare(
- 				'SELECT site, post_id, required FROM '.self::$connections_table.' WHERE user_id=%d',
- 				$user['id']
- 			),
- 			ARRAY_A
- 		);
-
- 		return true;
-	}
-	
-	
-	/**
-	 *
+	 * Adds an OrgHub user to the database.
+	 * @param   array     $args  An array of data about a user.
+	 * @return  int|bool  The id of the inserted user or false on failure.
 	 */
 	public function add_user( &$args )
 	{
-		if( !$this->check_user_args( $args ) ) return false;
+		//
+		// Check the args to determine that all needed values are present and valid.
+		//
+		if( !$this->check_args( $args ) ) return false;
 
+		//
+		// If user already exists, then update the user.
+		//
 		$db_user = $this->get_user_by_username( $args['username'] );
 		if( $db_user )
 		{
@@ -337,8 +316,8 @@ class OrgHub_UsersModel
 				'last_name'			=> $args['last_name'],
 				'email'				=> $args['email'],
 				'description'		=> $args['description'],
-				'site_domain'		=> $args['site_domain'],
-				'site_path'			=> $args['site_path'],
+				'blog_domain'		=> $args['blog_domain'],
+				'blog_path'			=> $args['blog_path'],
 				'status'			=> 'new',
 			),
 			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
@@ -405,20 +384,10 @@ class OrgHub_UsersModel
 	
 	
 	/**
-	 * Set all non-active users to inactive.
-	 */
-	public function set_inactive_users( &$active_user_ids )
-	{
-		global $wpdb;
-		$active_user_ids = array_filter( $active_user_ids, 'intval' );
-		return $wpdb->query( 
-			"UPDATE ".self::$user_table." SET status = 'inactive' WHERE id NOT IN (".implode($active_user_ids, ",").")"
-		);
-	}
-	
-	
-	/**
-	 *
+	 * Updates an OrgHub user in the database.
+	 * @param   int       $id    The user's id (not the WordPress user id).
+	 * @param   array     $args  An array of data about a user.
+	 * @return  int|bool  The id of the updated user or false on failure.
 	 */
 	public function update_user( $id, &$args )
 	{
@@ -435,8 +404,8 @@ class OrgHub_UsersModel
 				'last_name'			=> $args['last_name'],
 				'email'				=> $args['email'],
 				'description'		=> $args['description'],
-				'site_domain'		=> $args['site_domain'],
-				'site_path'			=> $args['site_path'],
+				'blog_domain'		=> $args['blog_domain'],
+				'blog_path'			=> $args['blog_path'],
 				'status'			=> $args['status'],
 			),
 			array( 'id' => intval( $id ) ),
@@ -579,7 +548,7 @@ class OrgHub_UsersModel
 		
 		foreach( $args['connections_sites'] as $acs )
 		{
-			if( !$this->in_array_field($acs, 'site', $current_values) )
+			if( !$this->model->in_array_by_key($acs, 'site', $current_values) )
 			{
 				$wpdb->insert(
 					self::$connections_table,
@@ -592,37 +561,17 @@ class OrgHub_UsersModel
 				);
 			}
 		}
-	
+		
+		$this->update_user_data( $id );
 		
 		return $id;
 	}
 	
-	
+
 	/**
-	 * 
-	 */
-	private function in_array_field($needle, $needle_field, $haystack, $strict = false) { 
-		if( $strict )
-		{
-			foreach( $haystack as $item )
-			{
-				if( isset($item[$needle_field]) && $item[$needle_field] === $needle ) return true;
-			}
-		}
-		else
-		{
-			foreach( $haystack as $item )
-			{
-				if( isset($item[$needle_field]) && $item[$needle_field] == $needle ) return true; 
-			}
-		}
-		
-		return false; 
-	}
-	
-	
-	/**
-	 *
+	 * Deletes an OrgHub user in the database.
+	 * @param   int       $id    The user's id (not the WordPress user id).
+	 * @return  bool      True if the user is deleted, otherwise false.
 	 */
 	public function delete_user( $id )
 	{
@@ -654,10 +603,79 @@ class OrgHub_UsersModel
 		
 		return true;
 	}
+
+
+	/**
+	 * Set all non-active users to inactive.
+	 * @param  array  $active_user_ids  An array of users that should remain active.
+	 */
+	public function set_inactive_users( &$active_user_ids )
+	{
+		global $wpdb;
+		$active_user_ids = array_filter( $active_user_ids, 'intval' );
+		return $wpdb->query( 
+			"UPDATE ".self::$user_table." SET status = 'inactive' WHERE id NOT IN (".implode($active_user_ids, ",").")"
+		);
+	}
+	
+	
+	
+//========================================================================================
+//================================================= Retrieve user data from database =====
 	
 	
 	/**
-	 * 
+	 * Retrieve a complete list of OrgHub users from the database after filtering.
+	 * @param   array   $filter       An array of filter name and values.
+	 * @param   array   $search       An array of search columns and phrases.
+	 * @param   bool    $only_errors  True if filter out OrgHub users with errors.
+	 * @param   string  $orderby      The column to orderby.
+	 * @param   int     $offset       The offset of the users list.
+	 * @param   int     $limit        The amount of users to retrieve.
+	 * @return  array   An array of users given the filtering.
+	 */
+	public function get_users( $filter = array(), $search = array(), $only_errors = false, $orderby = null, $offset = 0, $limit = -1 )
+	{
+		global $wpdb;
+		
+		$groupby = self::$user_table.".id";
+		apl_print("SELECT * FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit));
+		$users = $wpdb->get_results( "SELECT * FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit), ARRAY_A );
+		//apl_print($users, '$users (get_users-results)');
+		
+		if( !is_array($users) ) return false;
+		
+		foreach( $users as &$user ) $this->prepare_db_user($user);
+			
+		//apl_print($users, '$users (get_users-end)');
+		return $users;
+	}
+
+
+	/**
+	 * The amount of OrgHub users from the database after filtering.
+	 * @param   array   $filter       An array of filter name and values.
+	 * @param   array   $search       An array of search columns and phrases.
+	 * @param   bool    $only_errors  True if filter out OrgHub users with errors.
+	 * @param   string  $orderby      The column to orderby.
+	 * @param   int     $offset       The offset of the users list.
+	 * @param   int     $limit        The amount of users to retrieve.
+	 * @return  int     A count of users given the filtering.
+	 */
+	public function get_users_count( $filter = array(), $search = array(), $only_errors = false, $orderby = null, $offset = 0, $limit = -1 )
+	{
+		global $wpdb;
+		
+		$groupby = null;
+		//apl_print("SELECT COUNT(DISTINCT ".self::$user_table.".id) FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit));
+		return $wpdb->get_var( "SELECT COUNT(DISTINCT ".self::$user_table.".id) FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit) );
+	}	
+
+
+	/**
+	 * Retrieve a OrgHub user by its id value.
+	 * @param   int         $user_id  The OrgHub user's id (not the WordPress user id).
+	 * @return  array|bool  The user's data or false on failure.
 	 */
 	public function get_user_by_id( $user_id )
 	{
@@ -670,18 +688,15 @@ class OrgHub_UsersModel
 			ARRAY_A
 		);
 		
-		//orghub_print( $user, '$user (get_user_by_id-row)' );
-		if( $this->prepare_db_user($user) ) 
-		{
-			//orghub_print( $user, '$user (get_user_by_id-end)' );
-			return $user;
-		}
+		if( $this->prepare_db_user($user) ) return $user;
 		return false;
 	}
 	
 	
 	/**
-	 * 
+	 * Retrieve a OrgHub user by its username value.
+	 * @param   string      $username  The OrgHub user's username.
+	 * @return  array|bool  The user's data or false on failure.
 	 */
 	public function get_user_by_username( $username )
 	{
@@ -697,10 +712,17 @@ class OrgHub_UsersModel
 		if( $this->prepare_db_user($user) ) return $user;
 		return false;
 	}
-
-
+	
+	
 	/**
-	 * 
+	 * Creates the SQL needed to complete an SQL statement.
+	 * @param   array   $filter       An array of filter name and values.
+	 * @param   array   $search       An array of search columns and phrases.
+	 * @param   bool    $only_errors  True if filter out OrgHub users with errors.
+	 * @param   string  $orderby      The column to orderby.
+	 * @param   int     $offset       The offset of the users list.
+	 * @param   int     $limit        The amount of users to retrieve.
+	 * @return  string  The constructed SQL needed to complete an SQL statement.
 	 */
 	private function filter_sql( $filter = array(), $search = array(), $only_errors = false, $groupby = null, $orderby = null, $offset = 0, $limit = -1 )
 	{
@@ -714,10 +736,35 @@ class OrgHub_UsersModel
 			{
 				$key = $keys[$i];
 				$where_string .= ' ( ';
-				for( $j = 0; $j < count($filter[$key]); $j++ )
+				
+				if( $key == 'site' )
 				{
-					$where_string .= $key." = '".$filter[$key][$j]."' ";
-					if( $j < count($filter[$key])-1 ) $where_string .= ' OR ';
+					for( $j = 0; $j < count($filter[$key]); $j++ )
+					{
+						switch( $filter[$key][$j] )
+						{
+							case 'na-site':
+								$where_string .= "blog_path = '' ";
+								break;
+							
+							case 'no-site':
+								$where_string .= "( blog_path != '' AND profile_blog_id IS NULL ) ";
+								break;
+								
+							case 'has-site':
+								$where_string .= "( blog_path != '' AND profile_blog_id IS NOT NULL ) ";
+								break;
+						}
+						if( $j < count($filter[$key])-1 ) $where_string .= ' OR ';
+					}
+				}
+				else
+				{
+					for( $j = 0; $j < count($filter[$key]); $j++ )
+					{
+						$where_string .= $key." = '".$filter[$key][$j]."' ";
+						if( $j < count($filter[$key])-1 ) $where_string .= ' OR ';
+					}
 				}
 				$where_string .= ' ) ';
 				
@@ -754,9 +801,9 @@ class OrgHub_UsersModel
 			else $where_string .= ' AND ';
 
 			$where_string .= " error IS NOT NULL AND error != '' AND ";
-			$where_string .= " wp_user_id_error IS NOT NULL AND wp_user_id_error != '' AND ";
-			$where_string .= " profile_site_id_error IS NOT NULL AND profile_site_id_error != '' AND ";
-			$where_string .= " post_id_error IS NOT NULL AND post_id_error != '' ";
+			$where_string .= " wp_user_error IS NOT NULL AND wp_user_id_error != '' AND ";
+			$where_string .= " profile_blog_error IS NOT NULL AND profile_blog_error != '' AND ";
+			$where_string .= " connections_error IS NOT NULL AND connections_error != '' ";
 		}
 				
 		if( $orderby ) $orderby = 'ORDER BY '.$orderby; else $orderby = '';
@@ -783,422 +830,297 @@ class OrgHub_UsersModel
 		return $join.' '.$where_string.' '.$groupby.' '.$orderby.' '.$limit_string;
 	}
 	
-	
+
 	/**
-	 *
+	 * Prepares the user's array with additional information from other database tables.
+	 * @param   array  $user  The user's data retreived from the users database.
+	 * @return  bool   True if the user was prepared correctly, otherwise False.
 	 */
-	public function get_users( $filter = array(), $search = array(), $only_errors = false, $orderby = null, $offset = 0, $limit = -1 )
+	private function prepare_db_user( &$user )
 	{
-		global $wpdb;
-		
-		$groupby = self::$user_table.".id";
-		//orghub_print("SELECT * FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit));
-		$users = $wpdb->get_results( "SELECT * FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit), ARRAY_A );
-		//orghub_print($users, '$users (get_users-results)');
-		
-		if( !is_array($users) ) return false;
-		
-		foreach( $users as &$user ) $this->prepare_db_user($user);
-			
-		//orghub_print($users, '$users (get_users-end)');
-		return $users;
+ 		if( !$user ) return false;
+ 		
+ 		global $wpdb;
+ 		
+ 		if( !empty($user['user_id']) ) $user['id'] = $user['user_id'];
+ 		
+ 		$user = array_map(
+ 			function( $v )
+ 			{
+				return( is_null($v) ) ? '' : $v;
+			},
+			$user
+		);
+ 		
+ 		$user['type'] = $wpdb->get_col(
+ 			$wpdb->prepare(
+	 			'SELECT type FROM '.self::$type_table.' WHERE user_id=%d',
+	 			$user['id']
+	 		)
+ 		);
+ 		
+ 		$user['category'] = $wpdb->get_col(
+ 			$wpdb->prepare(
+ 				'SELECT category FROM '.self::$category_table.' WHERE user_id=%d',
+ 				$user['id']
+ 			)
+ 		);
+ 		
+ 		$user['connections_sites'] = $wpdb->get_results(
+ 			$wpdb->prepare(
+ 				'SELECT site, post_id, required FROM '.self::$connections_table.' WHERE user_id=%d',
+ 				$user['id']
+ 			),
+ 			ARRAY_A
+ 		);
+
+ 		return true;
 	}
 
-
-	/**
-	 *
-	 */
-	public function get_users_count( $filter = array(), $search = array(), $only_errors = false, $orderby = null, $offset = 0, $limit = -1 )
-	{
-		global $wpdb;
-		
-		$groupby = null;
-		//orghub_print("SELECT COUNT(DISTINCT ".self::$user_table.".id) FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit));
-		return $wpdb->get_var( "SELECT COUNT(DISTINCT ".self::$user_table.".id) FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit) );
-	}	
-
-	
-	/**
-	 * 
-	 */
-	public function set_user_status( $id, $status )
-	{
-		global $wpdb;
-		
-		$result = $wpdb->update(
-			self::$user_table,
-			array( 'status' => $status ),
-			array( 'id' => intval( $id ) ),
-			array( '%s' ),
-			array( '%d' )
-		);
-	
-		if( $result !== false )
-		{
-			return $status;
-		}
-		else
-		{
-			$this->model->write_to_log( $db_user['username'], 'Unable to set user status in database: '.$id.' => '.$status );
-			return false;
-		}
-	}	
 
 
 //========================================================================================
-//============================================================= USERS - Foreign Keys =====
-
+//========================================================= Get/Set from/to database =====
+	
 
 	/**
-	 *
+	 * Gets a column in the OrgHub users table.
+	 * @param   int     $user_id  The OrgHub user's id (not WordPress user id).
+	 * @param   string  $column   The column name.
+	 * @return  bool    The requested value or false on failure.
 	 */
-	public function update_wp_user_id( $id, $wp_user_id )
+	public function get_user_column( $user_id, $column )
 	{
-		return $this->set_users_value( $id, 'wp_user_id', $wp_user_id );
+		global $wpdb;
+		return $wpdb->get_var( 
+			$wpdb->prepare( 
+				"SELECT $column FROM ".self::$user_table." WHERE id=%d",
+				intval( $user_id )
+			)
+		);
 	}
 
-
+	
 	/**
-	 *
+	 * Sets a column in the OrgHub users table to a value.
+	 * @param   int     $user_id  The OrgHub user's id (not WordPress user id).
+	 * @param   string  $column   The column name.
+	 * @param   strint  $value    The value to set column to.
+	 * @return  bool    True if update was successful, otherwise false.
 	 */
-	public function update_profile_site_id( $id, $profile_site_id )
-	{
-		return $this->set_users_value( $id, 'profile_site_id', $profile_site_id );
-	}
-
-
-	/**
-	 *
-	 */
-	public function update_connections_post_id( $id, $connections_site, $connections_post_id )
+	public function set_user_column( $user_id, $column, $value )
 	{
 		global $wpdb;
 		
-		$current_value = $wpdb->get_var(
-			$wpdb->prepare(
-				'SELECT id FROM '.self::$connections_table.' WHERE user_id=%d AND site=%s',
-				intval($id),
-				$connections_site
-			)
-		);
+		$type = '%s';
+		if( is_int($value) ) $type = '%d';
 		
-		if( $current_value )
+		if( $value === null )
 		{
-			if( $connections_post_id === null )
-			{
-				return $wpdb->query( 
-					$wpdb->prepare( 
-						"UPDATE ".self::$connections_table." SET post_id=NULL WHERE user_id=%d AND site=%s",
-						intval( $id ),
-						$connections_site
-					)
-				);
-			}
-
-			return $wpdb->query( 
+			$return = $wpdb->query( 
 				$wpdb->prepare( 
-					"UPDATE ".self::$connections_table." SET post_id=%d WHERE user_id=%d AND site=%s",
-					intval( $connections_post_id ),
-					intval( $id ),
-					$connections_site
+					"UPDATE ".self::$user_table." SET $column = NULL WHERE id = %d",
+					intval( $user_id )
 				)
 			);
 		}
 		else
 		{
-			if( $connections_post_id === null )
-			{
-				return $wpdb->insert(
-					self::$connections_table,
-					array(
-						'user_id'		=> $id,
-						'site'			=> $connections_site,
-						'required'		=> 0,
-					),
-					array( '%d', '%s', '%d' )
-				);
-			}
-			
-			return $wpdb->insert(
-				self::$connections_table,
-				array(
-					'user_id'			=> $id,
-					'site'				=> $connections_site,
-					'post_id'			=> $connections_post_id,
-					'required'			=> 0,
-				),
-				array( '%d', '%s', '%d', '%d' )
+			$return = $wpdb->query( 
+				$wpdb->prepare( 
+					"UPDATE ".self::$user_table." SET $column = $type WHERE id = %d",
+					$value,
+					intval( $user_id )
+				)
 			);
 		}
 		
+		if( $return ) return true;
 		return false;
 	}
-	
-	
+
+
 	/**
-	 *
+	 * Gets a column in the OrgHub connections sites table.
+	 * @param   int     $user_id  The OrgHub user's id (not WordPress user id).
+	 * @param   string  $site     The connections site.
+	 * @param   string  $column   The column name.
+	 * @return  bool    The requested value or false on failure.
 	 */
-	private function set_users_value( $id, $key, $value )
-	{
-		global $wpdb;
-		
-		if( $value === null )
-		{
-			return $wpdb->query( 
-				$wpdb->prepare( 
-					"UPDATE ".self::$user_table." SET $key = NULL WHERE id = %d",
-					intval( $id )
-				)
-			);
-		}
-
-		return $wpdb->query( 
-			$wpdb->prepare( 
-				"UPDATE ".self::$user_table." SET $key = %d WHERE id = %d",
-				intval( $value ),
-				intval( $id )
-			)
-		);
-	}
-	
-
-//========================================================================================
-//====================================================== USERS - Errors and Warnings =====
-
-
-	public function set_user_value( $id, $key, $value, $value_type='%s' )
-	{
-		global $wpdb;
-		
-		if( $value = null )
-		{
-			return $wpdb->query( 
-				$wpdb->prepare( 
-					"UPDATE ".self::$user_table." SET $key=NULL WHERE id=%d",
-					intval( $id )
-				)
-			);
-		}
-		
-		return $wpdb->query( 
-			$wpdb->prepare( 
-				"UPDATE ".self::$user_table." SET $key=$value_type WHERE id=%d",
-				intval( $value ),
-				intval( $id )
-			)
-		);
-	}
-
-	public function get_user_value( $id, $key )
+	public function get_connections_column( $user_id, $site, $column )
 	{
 		global $wpdb;
 		return $wpdb->get_var( 
 			$wpdb->prepare( 
-				"SELECT $key FROM ".self::$user_table." WHERE id=%d",
-				intval( $id )
-			)
-		);
-	}
-	
-	public function set_user_connections_value( $id, $connections_site, $key, $value, $value_type = '%s' )
-	{
-		global $wpdb;
-		
-		if( $value === null )
-		{
-			return $wpdb->query( 
-				$wpdb->prepare( 
-					"UPDATE ".self::$connections_table." SET $key=NULL WHERE user_id=%d AND site=%s",
-					intval( $id ),
-					$connections_site
-				)
-			);
-		}
-		
-		return $wpdb->query( 
-			$wpdb->prepare( 
-				"UPDATE ".self::$connections_table." SET $key=%s WHERE user_id=%d AND site=%s",
-				$value,
-				intval( $id ),
-				$connections_site
-			)
-		);
-		
-	}
-
-	public function get_user_connections_value( $id, $connections_site, $key )
-	{
-		global $wpdb;
-		return $wpdb->get_var( 
-			$wpdb->prepare( 
-				"SELECT $key FROM ".self::$connections_table." WHERE user_id=%d AND site=%s",
-				intval( $id ),
-				$connections_site
+				"SELECT $column FROM ".self::$connections_table." WHERE user_id=%d AND site=%s",
+				intval( $user_id ),
+				$site
 			)
 		);
 	}		
-	
-	public function set_user_error( $id, $error )
-	{
-		$this->set_user_value( $id, 'error', $error );
-	}
-
-	public function get_user_error( $id )
-	{
-		return $this->get_user_value( $id, 'error' );
-	}
-	
-	public function set_user_warning( $id, $warning )
-	{
-		$this->set_user_value( $id, 'warning', $warning );
-	}
-
-	public function get_user_warning( $id )
-	{
-		return $this->get_user_value( $id, 'warning' );
-	}
-
-	public function set_wp_user_error( $id, $error )
-	{
-		$this->set_user_value( $id, 'wp_user_id_error', $error );
-	}
-
-	public function get_wp_user_error( $id )
-	{
-		return $this->get_user_value( $id, 'wp_user_id_error' );
-	}
-	
-	public function set_wp_user_warning( $id, $warning )
-	{
-		$this->set_user_value( $id, 'wp_user_id_warning', $warning );
-	}
-
-	public function get_wp_user_warning( $id )
-	{
-		return $this->get_user_value( $id, 'wp_user_id_warning' );
-	}
-
-	public function set_profile_site_error( $id, $error )
-	{
-		$this->set_user_value( $id, 'profile_site_id_error', $error );
-	}
-
-	public function get_profile_site_error( $id )
-	{
-		return $this->get_user_value( $id, 'profile_site_id_error' );
-	}
-	
-	public function set_profile_site_warning( $id, $warning )
-	{
-		$this->set_user_value( $id, 'profile_site_id_warning', $warning );
-	}
-	
-	public function get_profile_site_warning( $id )
-	{
-		return $this->get_user_value( $id, 'profile_site_id_warning' );
-	}
-
-	public function set_connections_error( $id, $connections_site, $error )
-	{
-		$this->set_user_connections_value( $id, $connections_site, 'post_id_error', $error );
-	}
-	
-	public function get_connections_error( $id, $connections_site )
-	{
-		return $this->get_user_connections_value( $id, $connections_site, 'post_id_error' );
-	}
-
-	public function set_connections_warning( $id, $connections_site, $warning )
-	{
-		$this->set_user_connections_value( $id, $connections_site, 'post_id_warning', $error );
-	}
-	
-	public function get_connections_warning( $id, $connections_site )
-	{
-		return $this->get_user_connections_value( $id, $connections_site, 'post_id_warning' );
-	}
-
-
-
-//========================================================================================
-//=============================================================== USERS - Processing =====
 
 
 	/**
-	 *
+	 * Sets a column in the OrgHub connections sites table to a value.
+	 * @param   int     $user_id  The OrgHub user's id (not WordPress user id).
+	 * @param   string  $site     The connections site.
+	 * @param   string  $column   The column name.
+	 * @param   strint  $value    The value to set column to.
+	 * @return  bool    True if update was successful, otherwise false.
+	 */
+	public function set_connections_column( $user_id, $site, $column, $value )
+	{
+		global $wpdb;
+		
+		$type = '%s';
+		if( is_int($value) ) $type = '%d';
+		
+		if( $value === null )
+		{
+			$return = $wpdb->query( 
+				$wpdb->prepare( 
+					"UPDATE ".self::$connections_table." SET $column=NULL WHERE user_id=%d AND site=%s",
+					intval( $user_id ),
+					$site
+				)
+			);
+		}
+		else
+		{
+			$return = $wpdb->query( 
+				$wpdb->prepare( 
+					"UPDATE ".self::$connections_table." SET $column=$type WHERE user_id=%d AND site=%s",
+					$value,
+					intval( $user_id ),
+					$site
+				)
+			);
+		}
+		
+		if( $return ) return true;
+		return false;
+	}	
+	
+
+
+//========================================================================================
+//============================================================= Actions / Processing =====
+	
+	
+	/**
+	 * Process an OrgHub user.
+	 * @param   int|array  $db_user  The user id or info array of an OrgHub user.
+	 * @return  bool       True if process was completed, otherwise false.
 	 */
 	public function process_user( $db_user )
 	{
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
 		if( is_numeric($db_user) )
 		{
-			$db_user = $this->get_user_by_id( $db_user );
-			if( !$db_user ) return null;
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
 		}
-
+		
+		//
+		// Process the user.
+		//
 		switch( $db_user['status'] )
 		{
 			case 'inactive':
-				$this->process_connections_posts( $db_user );
+				$this->process_all_connections_posts( $db_user );
 				$this->archive_site( $db_user );
 				break;
 			
 			case 'new':
 			case 'active':
-				$db_user['wp_user_id'] = $this->create_username( $db_user );
+				$db_user['wp_user_id'] = $this->create_wp_user( $db_user );
 				if( $db_user['wp_user_id'] )
 				{
-					$db_user['profile_site_id'] = $this->create_site( $db_user );
-					$db_user['connections_post_id'] = $this->process_connections_posts( $db_user );
+					$this->create_profile_blog( $db_user );
+					$this->process_all_connections_posts( $db_user );
 				}
-				$this->set_user_status( $db_user['id'], 'active' );
+				break;
+			
+			default:
+				return false;
 				break;
 		}
+		
+		return true;
 	}
 
 
 	/**
-	 *
+	 * Create a WordPress user for an OrgHub user.
+	 * @param   int|array  $db_user  The user id or info array of an OrgHub user.
+	 * @return  int|bool   The wp_user_id of tne new user or false on failure.
 	 */
-	public function create_username( $db_user )
+	public function create_wp_user( $db_user )
 	{
 		global $wpdb;
 		
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
 		if( is_numeric($db_user) )
 		{
-			$db_user = $this->get_user_by_id( $db_user );
-			if( !$db_user ) return null;
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
 		}
 		
-		$user_id = false;
-		
+		//
+		// If wp_user_id is already set, then test that the id is valid.
+		//
 		if( $db_user['wp_user_id'] )
 		{
 			$user = $this->get_wp_user( $db_user['wp_user_id'] );
 			if( $user !== false )
 			{
-				$this->set_wp_user_error( $db_user['id'], null );
+				$this->update_user_data( $db_user, $user );
+				
+				$this->set_user_column( $db_user['id'], 'wp_user_error', null );
+				$this->set_user_column( $db_user['id'], 'status', 'active' );
 				return $db_user['wp_user_id'];
 			}
 		}
 		
+		//
+		// Check if the current username is already in use.
+		//
 		$user = get_user_by( 'login', $db_user['username'] );
+		$user_id = false;
 		
-		if( $user === false )
+		if( $user !== false )
 		{
+			// set the user's id.
+			$user_id = $user->ID;
+			$this->update_user_data( $db_user, $user );
+		}
+		else
+		{
+			// Determine how the user should be created.
 			$create_user_type = $this->model->get_option( 'create-user-type', 'local' );
 			
 			if( ($create_user_type == 'wpmu-ldap') && (!$this->is_ldap_plugin_active()) )
 			{
 				$this->model->write_to_log( $db_user['username'], 'WPMU LDAP plugin not active.' );
-				$this->set_wp_user_error( $db_user['id'], 'WPMU LDAP plugin not active.' );
+				$this->set_user_column( $db_user['id'], 'wp_user_error', 'WPMU LDAP plugin not active.' );
 				return null;
 			}
 			
+			// Create the user.
 			switch( $create_user_type )
 			{
 				case 'local':
 					$random_password = wp_generate_password( 8, false );
-					$user_id = wp_create_user( $db_user['username'], $random_password, $db_user['email'] );
+					wp_create_user( $db_user['username'], $random_password, $db_user['email'] );
+
+					$user = get_user_by( 'login', $db_user['username'] );
+					if( $user )
+					{
+						$user_id = $user->ID;
+						$this->update_user_data( $db_user, $user );
+					}
 					break;
 				
 				case 'wpmu-ldap':
@@ -1213,736 +1135,247 @@ class OrgHub_UsersModel
 					if( is_wp_error($result) )
 					{
 						$this->model->write_to_log( $db_user['username'], $result );
-						$this->set_wp_user_error( $db_user['id'], $result );
+						$this->set_user_column( $db_user['id'], 'wp_user_error', $result );
 						return null;
 					}
 					
 					$user = get_user_by( 'login', $db_user['username'] );
-					
-					if( $user ) $user_id = $user->ID;
+					if( $user )
+					{
+						$user_id = $user->ID;
+						$this->update_user_data( $db_user, $user );
+					}
 					break;
 				
 				default:
 					$this->model->write_to_log( $db_user['username'], 'Invalid create user type ("'.$create_user_type.'").' );
-					$this->set_wp_user_error( $db_user['id'], 'Invalid create user type ("'.$create_user_type.'").' );
+					$this->set_user_column( $db_user['id'], 'wp_user_error', 'Invalid create user type ("'.$create_user_type.'").' );
 					return null;
 					break;
 			}
 		}
-		else
-		{
-			$user_id = $user->ID;
-		}
 		
+		//
+		// If user was found or created, then update the users data.
+		//
 		if( $user_id )
 		{
-			$result = $this->update_wp_user_id( $db_user['id'], $user_id );
-			$this->update_profile_site_id( $db_user['id'], null );
+			$result = $this->set_user_column( $db_user['id'], 'wp_user_id', $user_id );
+			$this->set_user_column( $db_user['id'], 'profile_blog_id', null );
 			foreach( $db_user['connections_sites'] as $cs )
 			{
-				$this->update_connections_post_id( $db_user['id'], $cs['site'], null );
+				$this->set_connections_column( $db_user['id'], $cs['site'], 'post_id', null );
 			}
 		
 			if( $result !== false )
 			{
-				$this->set_wp_user_error( $db_user['id'], null );
+				$this->set_user_column( $db_user['id'], 'wp_user_error', null );
+				$this->set_user_column( $db_user['id'], 'status', 'active' );
 				return $user_id;
 			}
 			else
 			{
 				$this->model->write_to_log( $db_user['username'], 'Unable to save user id ("'.$user_id.'") to database.' );
-				$this->set_wp_user_error( $db_user['id'], 'Unable to save user id ("'.$user_id.'") to database.' );
+				$this->set_user_column( $db_user['id'], 'wp_user_error', 'Unable to save user id ("'.$user_id.'") to database.' );
 				return null;
 			}
 		}
-
+		
+		//
+		// No user was created.
+		//
 		$this->model->write_to_log( $db_user['username'], 'Unable to create user.' );
-		$this->set_wp_user_error( $db_user['id'], 'Unable to create user.' );
+		$this->set_user_column( $db_user['id'], 'wp_user_error', 'Unable to create user.' );
 		return null;
+	}
+	
+	
+	public function update_user_data( $db_user, $user = null )
+	{
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_numeric($db_user) )
+		{
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
+		}
+		
+		//
+		// Verify that the user is valid.
+		//
+		if( $user === null && $db_user['wp_user_id'] )
+		{
+			$user = $this->get_wp_user( $db_user['wp_user_id'] );
+		}
+		
+		if( !$user || !($user instanceof WP_User) )
+		{
+			$this->set_user_column( $db_user['id'], 'wp_user_error', 'Unable to update user data.' );
+			return false;
+		}
+		
+		//
+		// Update user information.
+		//
+		
+		//
+		// TODO: update profile site id and connections post id to urls.
+		//
+		
+		update_usermeta( $user->ID, 'description', $db_user['description'] );
+		update_usermeta( $user->ID, 'category', implode( ', ', $db_user['category'] ) );
+		update_usermeta( $user->ID, 'type', implode( ', ', $db_user['type'] ) );
+		update_usermeta( $user->ID, 'website', $db_user['profile_site_id'] );
+		
+		foreach( $db_user['connections_sites'] as $cs )
+		{
+			update_usermeta( $user->ID, 'connections_post_url-'.$cs['site'], $cs['post_id'] );
+		}
 	}
 
 
 	/**
-	 *
+	 * Create the OrgHub user's profile blog.
+	 * @param   int|array  $db_user       The user id or info array of an OrgHub user.
+	 * @return  int|bool   The profile blog id on success, otherwise false.
 	 */	
-	public function create_site( $db_user, $force_create = false )
+	public function create_profile_blog( $db_user )
 	{
 		global $wpdb;
 		
 		//
-		// If only a number is passed in, then retreive the user's database information.
+		// If $db_user is an id, then retrieve the user from the database.
 		//
 		if( is_numeric($db_user) )
 		{
-			$db_user = $this->get_user_by_id( $db_user );
-			if( !$db_user ) return null;
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
 		}
 		
 		//
-		// The user's username needs to be setup before creating a profile site.
+		// The user's username needs to be setup before creating a profile blog.
 		//
 		if( !$db_user['wp_user_id'] )
 		{
 			$this->model->write_to_log( $db_user['username'], 'Wordpress username not set.' );
-			$this->set_profile_site_error( $db_user['id'], 'Wordpress username not set.' );
-			return null;
+			$this->set_user_column( $db_user['id'], 'profile_blog_error', 'Wordpress username not set.' );
+			return false;
 		}
-		
+
 		//
-		// If a profile site is already set, then verify that it exists and that the 
-		// options are setup correctly (not archived).
+		// If a profile blog is already set, then verify that it exists and that the 
+		// options are setup correctly.
 		//
-		if( $db_user['profile_site_id'] )
+		if( $db_user['profile_blog_id'] )
 		{
-			$blog_details = get_blog_details( $db_user['profile_site_id'] );
+			$blog_details = get_blog_details( $db_user['profile_blog_id'] );
 			if( $blog_details !== false )
 			{
-				$this->update_blog_settings( $db_user['profile_site_id'], false, false, false, false );
-				$this->set_profile_site_error( $db_user['id'], null );
-				return $db_user['profile_site_id'];
+				$this->update_blog_settings( $db_user['profile_blog_id'], false, false, false, false );
+				$this->set_user_column( $db_user['id'], 'profile_blog_error', null );
+				return $db_user['profile_blog_id'];
 			}
 			else
 			{
-				$this->model->write_to_log( $db_user['username'], 'Profile site id set but cannot be found.' );
-				$this->set_profile_site_error( $db_user['id'], 'Profile site id set but cannot be found.' );
-				return null;
+				$this->model->write_to_log( $db_user['username'], 'Profile blog id set but cannot be found.' );
+				$this->set_user_column( $db_user['id'], 'profile_blog_error', 'Profile blog id set but cannot be found.' );
+				return false;
 			}
 		}
-
-		// check if site already exists.
-		$blog_id = $this->get_blog_by_path( $db_user['site_path'] );
+		
+		if( !$db_user['blog_path'] ) return false;
+		if( !$db_user['blog_domain'] )
+		{
+			$url_parts = parse_url( get_site_url(1) );
+			$db_user['blog_domain'] = $url_parts['host'] . $url_parts['path'];
+		}
+		
+		//
+		// Check if blog already exists.
+		//
+		$blog_id = $this->get_blog_by_path( $db_user['blog_path'] );
 		
 		if( $blog_id )
 		{
-			$blog_details = get_blog_details( $blog_id );
-			if( $blog_details )
-			{
-				switch_to_blog( $blog_id );
-				
-				$user = get_user_by( 'email', get_bloginfo('admin_email') );
-				if( (!$user) || ($user->slug !== $db_user['username']) )
-				{
-					$user = null;
-					$blog_users = get_users( array( 'blog_id' => $blog_id ) );
-					foreach( $blog_users as $bu )
-					{
-						if( $bu->id == $db_user['wp_user_id'] )
-						{
-							$user = $bu;
-							break;
-						}
-					}
-					
-					if( $user )
-					{
-						if( !in_array('administrator', $user->roles) )
-							$user->set_role( 'administrator' );
-						
-						update_option( 'admin_email', $db_user['email'] );
-					}
-					else
-					{
-						$this->model->write_to_log( $db_user['username'], 'Profile site ("'.$db_user['site_path'].'") already exists, but '.$db_user['username'].' user does not exist on the site.' );
-						$this->set_profile_site_error( $db_user['id'], 'Profile site ("<a href="'.$blog_details->siteurl.'/wp-admin/users.php" target="_blank">'.$db_user['site_path'].'</a>") already exists, but '.$db_user['username'].' user does not exist on the site.' );
-						return null;
-					}
-				}
-				else
-				{
-					$result = $this->update_profile_site_id( $db_user['id'], $blog_id );
-					$this->set_profile_site_error( $db_user['id'], null );
-					return $blog_id;					
-				}
-				
-				restore_current_blog();
-			}
-			else
-			{
-				$this->model->write_to_log( $db_user['username'], 'Unable to retreive blog details.' );
-				$this->set_profile_site_error( $db_user['id'], 'Unable to retreive blog details.' );
-				return null;
-			}
-			
+			// Verify the user is administrator of the blog and update blog options.
+			add_user_to_blog( $blog_id, $db_user['wp_user_id'], 'administrator' );
+		
+			switch_to_blog( $blog_id );
+			update_option( 'admin_email', $admin_email );
+			restore_current_blog();
+
 			$this->update_blog_settings( $blog_id, false, false, false, false );
 		}
 		else
 		{
-			$blog_id = wpmu_create_blog( $db_user['site_domain'], '/'.$db_user['site_path'], $db_user['first_name'].' '.$db_user['last_name'], $db_user['wp_user_id'] );
+			// Create the blog.
+			$blog_id = wpmu_create_blog( $db_user['blog_domain'], '/'.$db_user['blog_path'], $db_user['first_name'].' '.$db_user['last_name'], $db_user['wp_user_id'] );
 			if( is_wp_error($blog_id))
 			{
 				$this->model->write_to_log( $db_user['username'], $blog_id->get_error_message() );
-				$this->model->write_to_log( '', 'Site: '.$db_user['site_domain'].'/'.$db_user['site_path'] );
-				$this->set_profile_site_error( $db_user['id'], $blog_id->get_error_message() );
-				return null;
+				$this->model->write_to_log( '', 'Blog: '.$db_user['blog_domain'].'/'.$db_user['blog_path'] );
+				$this->set_user_column( $db_user['id'], 'profile_blog_error', $blog_id->get_error_message() );
+				return false;
 			}
 		}
 		
+		//
+		// If blog was found or created, then update the users data.
+		//
 		if( $blog_id )
 		{
-			$result = $this->update_profile_site_id( $db_user['id'], $blog_id );
+			$result = $this->set_user_column( $db_user['id'], 'profile_blog_id', $blog_id );
+			$this->update_user_data( $db_user );
 		
 			if( $result !== false )
 			{
-				$this->set_profile_site_error( $db_user['id'], null );
+				$this->set_user_column( $db_user['id'], 'profile_blog_error', null );
 				return $blog_id;
 			}
 			else
 			{
-				$this->model->write_to_log( $db_user['username'], 'Unable to save profile site id ("'.$blog_id.'") to database.' );
-				$this->set_profile_site_error( $db_user['id'], 'Unable to save profile site id ("'.$blog_id.'") to database.' );
-				return null;
+				$this->model->write_to_log( $db_user['username'], 'Unable to save profile blog id ("'.$blog_id.'") to database.' );
+				$this->set_user_column( $db_user['id'], 'profile_blog_error', 'Unable to save profile blog id ("'.$blog_id.'") to database.' );
+				return false;
 			}
 		}
 		
-		$this->model->write_to_log( $db_user['username'], 'Unable to create profile site.' );
-		$this->set_profile_site_error( $db_user['id'], 'Unable to create profile site.' );
-		return null;
+		//
+		// No blog was created.
+		//
+		$this->model->write_to_log( $db_user['username'], 'Unable to create profile blog.' );
+		$this->set_user_column( $db_user['id'], 'profile_blog_error', 'Unable to create profile blog.' );
+		return false;
 	}
-	
-
-	/**
-	 *
-	 */
-	public function process_connections_posts( $db_user, $override_type_restriction = false )
-	{
-		global $wpdb;
-		
-		if( is_numeric($db_user) )
-		{
-			$db_user = $this->get_user_by_id( $db_user );
-			if( !$db_user ) return null;
-		}
-		
-		foreach( $db_user['connections_sites'] as $cs )
-		{
-			$this->process_connections_post( $db_user, $cs, $override_type_restriction );
-		}
-	}
-	
-	
-	public function create_connections_posts( $db_user, $force_create = false )
-	{
-		global $wpdb;
-		
-		if( is_numeric($db_user) )
-		{
-			$db_user = $this->get_user_by_id( $db_user );
-			if( !$db_user ) return null;
-		}
-		
-		if( !$db_user['wp_user_id'] )
-		{
-			$this->model->write_to_log( $db_user['username'], 'Wordpress username not set.' );
-			$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Wordpress username not set.' );
-			return null;
-		}
-		
-		foreach( $db_user['connections_sites'] as $cs )
-		{
-			$this->create_connections_post( $db_user, $cs['site'], $force_create );
-		}
-	}
-	
-	public function create_connections_post( $db_user, $connections_site, $force_create = false )
-	{
-		global $wpdb;
-		
-		if( is_numeric($db_user) )
-		{
-			$db_user = $this->get_user_by_id( $db_user );
-			if( !$db_user ) return null;
-		}
-		
-		if( !$db_user['wp_user_id'] )
-		{
-			$this->model->write_to_log( $db_user['username'], 'Wordpress username not set.' );
-			$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Wordpress username not set.' );
-			return null;
-		}
-		
-		$connections_blog_id = $this->is_connections_site( $connections_site );
-
-		if( !$connections_blog_id )
-		{
-			$this->model->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
-			$this->set_connections_error( $db_user['id'], $connections_site, 'Connections site does not exist or does not have Connections Hub plugin activated.' );
-			return null;
-		}
-	
-		$connections_info = null;
-		foreach( $db_user['connections_sites'] as $cs )
-		{
-			if( $cs['site'] == $connections_site )
-			{
-				$connections_info = $cs;
-				break;
-			}
-		}
-		
-		//orghub_print($connections_info, 'connections_info');
-		
-		if( !$connections_info ) return null;
-
-		if( !$force_create && !$connections_info['required'] )
-		{
-			$this->set_connections_warning( $db_user['id'], $connections_site, 'Connections site post is not required.' );
-			return null;
-		}
-		
-		switch_to_blog( $connections_blog_id );
-		
-		if( $connections_info['post_id'] )
-		{
-			$post = get_post( $connections_info['post_id'], ARRAY_A );
-			
-			if( $post )
-			{
-				
-				$connections_post = array(
-					'ID'           => $connections_info['post_id'],
-					'post_title'   => $db_user['first_name'].' '.$db_user['last_name'],
-					'post_name'    => sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] ),
-					'post_author'  => $db_user['wp_user_id'],
-					'post_status'  => 'publish',
-					'tax_input'    => array( 'connection-group' => $db_user['category'] ),
-				);
-				wp_update_post( $connections_post );
-
-				update_post_meta( $connections_info['post_id'], 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
-				update_post_meta( $connections_info['post_id'], 'site-type', 'wp' );
-		
-				$blog_details = get_blog_details( $db_user['profile_site_id'] );
-				if( $blog_details )
-					update_post_meta( $connections_info['post_id'], 'url', $blog_details->siteurl );
-				else
-					update_post_meta( $connections_info['post_id'], 'url', 'n/a' );
-				
-				wp_reset_query();
-
-				$this->update_connections_post_id( $db_user['id'], $connections_info['site'], $connections_info['post_id'] );
-				$this->set_connections_error( $db_user['id'], $connections_info['site'], null );
-				$connections_post_id = $connections_info['post_id'];
-			}
-			else
-			{
-				$connections_info['post_id'] = null;
-			}
-		}
-		elseif( $db_user['status'] != 'inactive' || $force_create )
-		{
-			$connections_post_type = 'manual';
-		
-			if( ($db_user['profile_site_id']) && (get_blog_details($db_user['profile_site_id']) !== false) )
-			{
-				$connections_post_type = 'synch';
-			}
-		
-			$connections_post = array(
-				'post_title'   => $db_user['first_name'].' '.$db_user['last_name'],
-				'post_name'    => sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] ),
-				'post_type'    => 'connection',
-				'post_status'  => 'publish',
-				'post_author'  => $db_user['wp_user_id'],
-				'tax_input'    => array( 'connection-group' => $db_user['category'] ),
-			);
-		
-			$wpquery = new WP_Query(
-				array(
-					'post_type'  => 'connection',
-					'meta_key'   => 'username',
-					'meta_value' => $db_user['username'],
-					'posts_per_page' => -1,
-				)
-			);
-
-			if( $wpquery->have_posts() )
-			{
-				$updating_post = true;
-				$wpquery->the_post();
-				$post = get_post();
-				$connections_post['ID'] = $post->ID;
-				$connections_post_id = wp_update_post( $connections_post );
-			}
-			else
-			{
-				$connections_post_id = wp_insert_post( $connections_post, true );
-			}
-		
-			wp_reset_query();
-
-			if( !$connections_post_id )
-			{
-				if( isset($connections_post['ID']) )
-				{
-					$this->model->write_to_log( $db_user['username'], 'Unable to update Connections Post ("'.$connections_post['ID'].'")' );
-					$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Unable to update Connections Post ("'.$connections_post['ID'].'")' );
-				}
-				else
-				{
-					$this->model->write_to_log( $db_user['username'], 'Unable to insert Connection Post.' );
-					$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Unable to insert Connection Post.' );
-				}
-
-				return null;
-			}
-
-			update_post_meta( $connections_post_id, 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
-			update_post_meta( $connections_post_id, 'username', $db_user['username'] );
-			update_post_meta( $connections_post_id, 'site-type', 'wp' );
-			update_post_meta( $connections_post_id, 'entry-method', $connections_post_type );
-		
-			$blog_details = get_blog_details( $db_user['profile_site_id'] );
-			if( $blog_details )
-				update_post_meta( $connections_post_id, 'url', $blog_details->siteurl );
-			else
-				update_post_meta( $connections_post_id, 'url', 'n/a' );
-		}
-
-		restore_current_blog();
-		
-		if( $db_user['status'] == 'inactive' && !$force_create ) return null;
-
-		if( $connections_post_id )
-		{
-			$result = $this->update_connections_post_id( $db_user['id'], $connections_info['site'], $connections_post_id );
-		
-			if( $result !== false )
-			{
-				$this->set_connections_error( $db_user['id'], $connections_info['site'], null );
-				return $connections_post_id;
-			}
-			else
-			{
-				$this->model->write_to_log( $db_user['username'], 'Unable to save connections post id ("'.$connections_post_id.'") to database.' );
-				$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Unable to save connections post id ("'.$connections_post_id.'") to database.' );
-				return null;
-			}
-		}
-		
-		$this->model->write_to_log( $db_user['username'], 'Unable to create Connections post.' );
-		$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Unable to create Connections Post.' );
-		return null;
-	}
-	
-	private function process_connections_post( $db_user, $connections_info, $process_connections_post = false )
-	{
-
-// 		if( !$override_type_restriction )
-// 		{
-// 			$connections_site_types = $this->model->get_option( 'connections-site-types' );
-// 			$connections_site_types = array_filter( explode(',', $connections_site_types), 'trim' );
-// 			
-// 			$is_correct_connections_site_type = false;
-// 			foreach( $db_user['type'] as $user_type )
-// 			{
-// 				if( !in_array( $user_type, $connections_site_types ) )
-// 					$is_correct_connections_site_type = true;
-// 			}
-// 			if( !$is_correct_connections_site_type ) return null;
-// 		}
-		
-		if( !$db_user['wp_user_id'] )
-		{
-			$this->model->write_to_log( $db_user['username'], 'Wordpress username not set.' );
-			$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Wordpress username not set.' );
-			return null;
-		}
-		
-		$connections_blog_id = $this->is_connections_site( $connections_info['site'] );
-		
-		if( !$connections_blog_id )
-		{
-			$this->model->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
-			$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
-			return null;
-		}
-		
-		switch_to_blog( $connections_blog_id );
-				
-		if( $connections_info['post_id'] )
-		{
-			$post = get_post( $connections_info['post_id'], ARRAY_A );
-			
-			if( $post )
-			{
-				$post_status = 'publish';
-				if( $db_user['status'] == 'inactive' ) $post_status = 'draft';
-				
-				$connections_post = array(
-					'ID'           => $connections_info['post_id'],
-					'post_title'   => $db_user['first_name'].' '.$db_user['last_name'],
-					'post_name'    => sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] ),
-					'post_author'  => $db_user['wp_user_id'],
-					'post_status'  => $post_status,
-					'tax_input'    => array( 'connection-group' => $db_user['category'] ),
-				);
-				wp_update_post( $connections_post );
-
-				update_post_meta( $connections_info['post_id'], 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
-				update_post_meta( $connections_info['post_id'], 'site-type', 'wp' );
-		
-				$blog_details = get_blog_details( $db_user['profile_site_id'] );
-				if( $blog_details )
-					update_post_meta( $connections_info['post_id'], 'url', $blog_details->siteurl );
-				else
-					update_post_meta( $connections_info['post_id'], 'url', 'n/a' );
-				
-				wp_reset_query();
-
-				$this->update_connections_post_id( $db_user['id'], $connections_info['site'], $connections_info['post_id'] );
-				$this->set_connections_error( $db_user['id'], $connections_info['site'], null );
-				$connections_post_id = $connections_info['post_id'];
-			}
-			else
-			{
-				$connections_info['post_id'] = null;
-			}
-		}
-		elseif( $db_user['status'] != 'inactive' )
-		{
-			$profile_site_types = $this->model->get_option( 'profile-site-types' );
-			$profile_site_types = array_filter( explode(',', $profile_site_types), 'trim' );
-
-			$is_correct_profile_site_type = false;
-			foreach( $db_user['type'] as $user_type )
-			{
-				if( !in_array( $user_type, $profile_site_types ) )
-					$is_correct_profile_site_type = true;
-			}
-		
-			$connections_post_type = 'manual';
-		
-			if( !$is_correct_profile_site_type )
-			{
-				if( ($db_user['profile_site_id']) && (get_blog_details($db_user['profile_site_id']) !== false) )
-				{
-					$connections_post_type = 'synch';
-				}
-			}
-			else
-			{
-				$connections_post_type = 'synch';
-			}
-		
-			$connections_post = array(
-				'post_title'   => $db_user['first_name'].' '.$db_user['last_name'],
-				'post_name'    => sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] ),
-				'post_type'    => 'connection',
-				'post_status'  => 'publish',
-				'post_author'  => $db_user['wp_user_id'],
-				'tax_input'    => array( 'connection-group' => $db_user['category'] ),
-			);
-		
-			$wpquery = new WP_Query(
-				array(
-					'post_type'  => 'connection',
-					'meta_key'   => 'username',
-					'meta_value' => $db_user['username'],
-					'posts_per_page' => -1,
-				)
-			);
-
-			if( $wpquery->have_posts() )
-			{
-				$updating_post = true;
-				$wpquery->the_post();
-				$post = get_post();
-				$connections_post['ID'] = $post->ID;
-				$connections_post_id = wp_update_post( $connections_post );
-			}
-			else
-			{
-				$connections_post_id = wp_insert_post( $connections_post, true );
-			}
-		
-			wp_reset_query();
-
-			if( !$connections_post_id )
-			{
-				if( isset($connections_post['ID']) )
-				{
-					$this->model->write_to_log( $db_user['username'], 'Unable to update Connections Post ("'.$connections_post['ID'].'")' );
-					$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Unable to update Connections Post ("'.$connections_post['ID'].'")' );
-				}
-				else
-				{
-					$this->model->write_to_log( $db_user['username'], 'Unable to insert Connection Post.' );
-					$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Unable to insert Connection Post.' );
-				}
-
-				return null;
-			}
-
-			update_post_meta( $connections_post_id, 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
-			update_post_meta( $connections_post_id, 'username', $db_user['username'] );
-			update_post_meta( $connections_post_id, 'site-type', 'wp' );
-			update_post_meta( $connections_post_id, 'entry-method', $connections_post_type );
-		
-			$blog_details = get_blog_details( $db_user['profile_site_id'] );
-			if( $blog_details )
-				update_post_meta( $connections_post_id, 'url', $blog_details->siteurl );
-			else
-				update_post_meta( $connections_post_id, 'url', 'n/a' );
-		}
-		
-		restore_current_blog();
-		
-		if( $db_user['status'] == 'inactive' ) return null;
-		
-		if( $connections_post_id )
-		{
-			$result = $this->update_connections_post_id( $db_user['id'], $connections_info['site'], $connections_post_id );
-		
-			if( $result !== false )
-			{
-				$this->set_connections_error( $db_user['id'], $connections_info['site'], null );
-				return $connections_post_id;
-			}
-			else
-			{
-				$this->model->write_to_log( $db_user['username'], 'Unable to save connections post id ("'.$connections_post_id.'") to database.' );
-				$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Unable to save connections post id ("'.$connections_post_id.'") to database.' );
-				return null;
-			}
-		}
-		
-		$this->model->write_to_log( $db_user['username'], 'Unable to create Connections post.' );
-		$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Unable to create Connections Post.' );
-		return null;
-	}
-	
-	
-	/**
-	 *
-	 */
-	public function draft_connections_post( $db_user, $connections_site )
-	{
-		global $wpdb;
-		
-		if( is_numeric($db_user) )
-		{
-			$db_user = $this->get_user_by_id( $db_user );
-			if( !$db_user ) return null;
-		}
-		
-		if( !$db_user['wp_user_id'] ) return null;
-
-		$connections_info = null;
-		foreach( $db_user['connections_sites'] as $cs )
-		{
-			if( $cs['site'] == $connections_site )
-			{
-				$connections_info = $cs;
-				break;
-			}
-		}
-		
-		if( !$connections_info ) return null;
-		if( !$connections_info['post_id'] ) return null;
-		
-		$connections_blog_id = $this->is_connections_site( $connections_site );
-		
-		if( !$connections_blog_id )
-		{
-			$this->model->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
-			$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
-			return null;
-		}
-		
-		switch_to_blog( $connections_blog_id );
-		
-		$post = get_post( $connections_info['post_id'], ARRAY_A );
-		
-		if( $post )
-		{
-			$connections_post = array(
-				'ID'           => $connections_info['post_id'],
-				'post_status'  => 'draft',
-			);
-			wp_update_post( $connections_post );
-		}
-
-		restore_current_blog();
-		
-		$this->set_connections_error( $db_user['id'], $connections_info['site'], null );
-		return $connections_post_id;
-	}	
-	
-	
-	public function publish_connections_post( $db_user, $connections_site )
-	{
-		global $wpdb;
-		
-		if( is_numeric($db_user) )
-		{
-			$db_user = $this->get_user_by_id( $db_user );
-			if( !$db_user ) return null;
-		}
-		
-		if( !$db_user['wp_user_id'] ) return null;
-
-		$connections_info = null;
-		foreach( $db_user['connections_sites'] as $cs )
-		{
-			if( $cs['site'] == $connections_site )
-			{
-				$connections_info = $cs;
-				break;
-			}
-		}
-		
-		if( !$connections_info ) return null;
-		if( !$connections_info['post_id'] ) return null;
-		
-		$connections_blog_id = $this->is_connections_site( $connections_site );
-		
-		if( !$connections_blog_id )
-		{
-			$this->model->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
-			$this->set_connections_error( $db_user['id'], $connections_info['site'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
-			return null;
-		}
-		
-		switch_to_blog( $connections_blog_id );
-		
-		$post = get_post( $connections_info['post_id'], ARRAY_A );
-		
-		if( $post )
-		{
-			$connections_post = array(
-				'ID'           => $connections_info['post_id'],
-				'post_status'  => 'publish',
-			);
-			wp_update_post( $connections_post );
-		}
-
-		restore_current_blog();
-		
-		$this->set_connections_error( $db_user['id'], $connections_info['site'], null );
-		return $connections_post_id;
-	}	
 
 
 	/**
-	 *
+	 * Arhive the user's profile blog.
+	 * @param   int|array  $db_user       The user id or info array of an OrgHub user.
+	 * @return  int|bool   The profile blog id on success, otherwise false.
 	 */
-	public function archive_site( $db_user )
+	public function archive_profile_blog( $db_user )
 	{
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
 		if( is_numeric($db_user) )
 		{
-			$db_user = $this->get_user_by_id( $db_user );
-			if( !$db_user ) return null;
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
 		}
 		
-		if( !$db_user['wp_user_id'] ) return null;
-		if( !$db_user['profile_site_id'] ) return null;
+		//
+		// If profile blog has not been set, then cannot archive blog.
+		//
+		if( !$db_user['profile_blog_id'] ) return false;
 		
-		$blog_details = get_blog_details( $db_user['profile_site_id'] );
-		
+		//
+		// Verify that the blog exists, then update the blog settings.
+		//
+		$blog_details = get_blog_details( $db_user['profile_blog_id'] );
 		if( $blog_details !== false )
 		{
 			$this->update_blog_settings( 
-				$db_user['profile_site_id'], 
+				$db_user['profile_blog_id'], 
 				true, 
 				false, 
 				false, 
@@ -1950,31 +1383,42 @@ class OrgHub_UsersModel
 			);
 		}
 		
-		$this->set_profile_site_error( $db_user['id'], null );
-		return $db_user['profile_site_id'];
+		//
+		// Clear the errors.
+		//
+		$this->set_user_column( $db_user['id'], 'profile_blog_error', null );
+		return $db_user['profile_blog_id'];
 	}
 	
 	
 	/**
-	 *
+	 * Publish the user's profile blog.
+	 * @param   int|array  $db_user       The user id or info array of an OrgHub user.
+	 * @return  int|bool   The profile blog id on success, otherwise false.
 	 */
-	public function publish_site( $db_user )
+	public function publish_profile_blog( $db_user )
 	{
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
 		if( is_numeric($db_user) )
 		{
-			$db_user = $this->get_user_by_id( $db_user );
-			if( !$db_user ) return null;
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
 		}
 		
-		if( !$db_user['wp_user_id'] ) return null;
-		if( !$db_user['profile_site_id'] ) return null;
+		//
+		// If profile blog has not been set, then cannot publish blog.
+		//
+		if( !$db_user['profile_blog_id'] ) return false;
 		
-		$blog_details = get_blog_details( $db_user['profile_site_id'] );
-		
+		//
+		// Verify that the blog exists, then update the blog settings.
+		//
+		$blog_details = get_blog_details( $db_user['profile_blog_id'] );
 		if( $blog_details !== false )
 		{
 			$this->update_blog_settings( 
-				$db_user['profile_site_id'], 
+				$db_user['profile_blog_id'], 
 				false,
 				false, 
 				false, 
@@ -1982,14 +1426,22 @@ class OrgHub_UsersModel
 			);
 		}
 		
-		$this->set_profile_site_error( $db_user['id'], null );
-		return $db_user['profile_site_id'];
+		//
+		// Clear the errors.
+		//
+		$this->set_user_column( $db_user['id'], 'profile_blog_error', null );
+		return $db_user['profile_blog_id'];
 	}
-
 	
 	
 	/**
-	 *
+	 * Update a blog's settings in the blogs table.
+	 * @param   int   $blog_id   The blog's id.
+	 * @param   bool  $archived  True if site should be archived, otherwise false.
+	 * @param   bool  $mature    True if site should be mature, otherwise false.
+	 * @param   bool  $spam      True if site should be spam, otherwise false.
+	 * @param   bool  $deleted   True if site should be deleted, otherwise false.
+	 * @return  bool  True if the update was successful, otherwise false.
 	 */
 	private function update_blog_settings( $blog_id, $archived, $mature, $spam, $deleted )
 	{
@@ -2006,42 +1458,493 @@ class OrgHub_UsersModel
 			array( '%d', '%d', '%d', '%d' ),
 			array( '%d' )
 		);
-	}
-	
-	
-	/**
-	 *
-	 */
-	private function update_connections_post_settings( $post_id, $draft )
-	{
-		$status = ( $draft ? 'draft' : 'publish' );
 		
-		wp_update_post( 
-			array(
-				'ID'          => $post_id,
-				'post_status' => $status,
-			)
-		);
+		if( $result ) return true;
+		return false;
+	}
+		
+
+	/**
+	 * Process all of the Connections Sites' posts for an OrgHub user.
+	 * @param   int|array  $db_user       The user id or info array of an OrgHub user.
+	 * @return  int|bool   True on success, otherwise false.
+	 */
+	public function process_all_connections_posts( $db_user )
+	{
+		global $wpdb;
+		
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_numeric($db_user) )
+		{
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
+		}
+		
+		//
+		// Process each Connections Site's post.
+		//
+		foreach( $db_user['connections_sites'] as $cs )
+		{
+			$this->process_connections_post( $db_user, $cs );
+		}
+		
+		return true;
+	}
+
+	
+	/**
+	 * Process a single Connections Site's post for an OrgHub user.
+	 * @param   int|array     $db_user           The user id or info array of an OrgHub user.
+	 * @param   string|array  $connections_info  The connections site name or info array.
+	 * @return  bool          True if the processing occured successfully, otherwise false.
+	 */
+	private function process_connections_post( $db_user, $connections_info )
+	{
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_numeric($db_user) )
+		{
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
+		}
+
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_string($connections_info) )
+		{
+			if( !($connections_info = $this->get_connections_info( $db_user['id'], $connections_info )) ) return false;
+		}
+
+		//
+		// The user's username needs to be setup before processing a Connections post.
+		//
+		if( !$db_user['wp_user_id'] )
+		{
+			$this->model->write_to_log( $db_user['username'], 'Wordpress username not set.' );
+			$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Wordpress username not set.' );
+			return null;
+		}
+		
+		//
+		// Verify that the Connections site is a valid Connections site.
+		//
+		$connections_blog_id = $this->is_connections_site( $connections_info['site'] );
+		
+		if( !$connections_blog_id )
+		{
+			$this->model->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			return null;
+		}
+		
+		switch_to_blog( $connections_blog_id );
+				
+		//
+		// If the post already exists, then update the data, otherwise clear post_id.
+		//
+		if( $connections_info['post_id'] )
+		{
+			$post = get_post( $connections_info['post_id'], ARRAY_A );
+			
+			if( $post )
+			{
+				// only publish posts for new or active users.
+				$post_status = 'publish';
+				if( $db_user['status'] == 'inactive' ) $post_status = 'draft';
+				
+				// update the post's data.
+				$connections_post = array(
+					'ID'           => $connections_info['post_id'],
+					'post_title'   => $db_user['first_name'].' '.$db_user['last_name'],
+					'post_name'    => sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] ),
+					'post_author'  => $db_user['wp_user_id'],
+					'post_status'  => $post_status,
+					'tax_input'    => array( 'connection-group' => $db_user['category'] ),
+				);
+				wp_update_post( $connections_post );
+
+				update_post_meta( $connections_info['post_id'], 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
+				update_post_meta( $connections_info['post_id'], 'site-type', 'wp' );
+				
+				$blog_details = get_blog_details( $db_user['profile_blog_id'] );
+				if( $blog_details )
+					update_post_meta( $connections_info['post_id'], 'url', $blog_details->siteurl );
+				else
+					update_post_meta( $connections_info['post_id'], 'url', 'n/a' );
+				
+				wp_reset_query();
+
+				$this->set_connections_column( $db_user['id'], $connections_info['site'], 'post_id', $connections_info['post_id'] );
+				$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', null );
+				$connections_post_id = $connections_info['post_id'];
+			}
+			else
+			{
+				// clear out the post id since post does not exist.
+				$connections_info['post_id'] = null;
+			}
+		}
+		
+		restore_current_blog();
+
+		//
+		// Inactive users will not have new Connections Posts created.
+		//
+		if( $db_user['status'] == 'inactive' ) return false;		
+		
+		$connections_post_id = $this->create_connections_post( $db_user, $connections_info );
+		
+		//
+		// Connections post was created or updated successfully.
+		//
+		if( $connections_post_id )
+		{
+			$result = $this->set_connections_column( $db_user['id'], $connections_info['site'], 'post_id', $connections_post_id );
+		
+			if( $result !== false )
+			{
+				$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', null );
+				return $connections_post_id;
+			}
+			else
+			{
+				$this->model->write_to_log( $db_user['username'], 'Unable to save connections post id ("'.$connections_post_id.'") to database.' );
+				$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Unable to save connections post id ("'.$connections_post_id.'") to database.' );
+				return null;
+			}
+		}
+		
+		//
+		// Connections post was not created successfully.
+		//
+		$this->model->write_to_log( $db_user['username'], 'Unable to create Connections post.' );
+		$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Unable to create Connections Post.' );
+		return null;
 	}
 	
+
+	/**
+	 * Create all of the Connections Sites' posts for an OrgHub user.
+	 * @param   int|array  $db_user       The user id or info array of an OrgHub user.
+	 * @return  int|bool   True on success, otherwise false.
+	 */
+	public function create_all_connections_posts( $db_user )
+	{
+		global $wpdb;
+		
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_numeric($db_user) )
+		{
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
+		}
+		
+		//
+		// Process each Connections Site's post.
+		//
+		foreach( $db_user['connections_sites'] as $cs )
+		{
+			$this->create_connections_post( $db_user, $cs );
+		}
+		
+		return true;
+	}
+
+		
+	/**
+	 * Creates a Connections Post.
+	 * @param   int|array     $db_user           The user id or info array of an OrgHub user.
+	 * @param   string|array  $connections_info  The connections site name or info array.
+	 * @return  int|bool      The connections post id on success, otherwise false.
+	 */
+	public function create_connections_post( $db_user, $connections_info )
+	{
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_numeric($db_user) )
+		{
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
+		}
+
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_string($connections_info) )
+		{
+			if( !($connections_info = $this->get_connections_info( $db_user['id'], $connections_info )) ) return false;
+		}
+
+		$connections_post_id = false;
+		
+		//
+		// Verify that the Connections site is a valid Connections site.
+		//
+		$connections_blog_id = $this->is_connections_site( $connections_info['site'] );
+		
+		if( !$connections_blog_id )
+		{
+			$this->model->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			return null;
+		}
+		
+		switch_to_blog( $connections_blog_id );
+		
+		//
+		// If connections post id is not set and user is not inactive, then create post.
+		//
+		if( !$connections_info['post_id'] )
+		{
+			// determine was tyep of conneciton to make (synch or manual).
+			$connections_post_type = 'manual';		
+			if( ($db_user['profile_blog_id']) && (get_blog_details($db_user['profile_blog_id']) !== false) )
+			{
+				$connections_post_type = 'synch';
+			}
+			
+			// Connections Post settings.
+			$connections_post = array(
+				'post_title'   => $db_user['first_name'].' '.$db_user['last_name'],
+				'post_name'    => sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] ),
+				'post_type'    => 'connection',
+				'post_status'  => 'publish',
+				'post_author'  => $db_user['wp_user_id'],
+				'tax_input'    => array( 'connection-group' => $db_user['category'] ),
+			);
+			
+			// determine if the Connections Post already exists.
+			$wpquery = new WP_Query(
+				array(
+					'post_type'  => 'connection',
+					'meta_key'   => 'username',
+					'meta_value' => $db_user['username'],
+					'posts_per_page' => -1,
+				)
+			);
+
+			if( $wpquery->have_posts() )
+			{
+				// update the post.
+				$wpquery->the_post();
+				$post = get_post();
+				$connections_post['ID'] = $post->ID;
+				$connections_post_id = wp_update_post( $connections_post );
+			}
+			else
+			{
+				// insert the post.
+				$connections_post_id = wp_insert_post( $connections_post, true );
+			}
+		
+			wp_reset_query();
+			
+			// determine if the post was created successfully.
+			if( !$connections_post_id )
+			{
+				if( isset($connections_post['ID']) )
+				{
+					$this->model->write_to_log( $db_user['username'], 'Unable to update Connections Post ("'.$connections_post['ID'].'")' );
+					$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Unable to update Connections Post ("'.$connections_post['ID'].'")' );
+				}
+				else
+				{
+					$this->model->write_to_log( $db_user['username'], 'Unable to insert Connection Post.' );
+					$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Unable to insert Connection Post.' );
+				}
+
+				return null;
+			}
+			
+			// update Connections post options.
+			update_post_meta( $connections_post_id, 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
+			update_post_meta( $connections_post_id, 'username', $db_user['username'] );
+			update_post_meta( $connections_post_id, 'site-type', 'wp' );
+			update_post_meta( $connections_post_id, 'entry-method', $connections_post_type );
+		
+			$blog_details = get_blog_details( $db_user['profile_blog_id'] );
+			if( $blog_details )
+				update_post_meta( $connections_post_id, 'url', $blog_details->siteurl );
+			else
+				update_post_meta( $connections_post_id, 'url', 'n/a' );
+			
+			$this->update_user_data( $db_user );
+		}
+		
+		restore_current_blog();
+	}
 	
 
+	/**
+	 * Draft all of the Connections Sites' posts for an OrgHub user.
+	 * @param   int|array  $db_user       The user id or info array of an OrgHub user.
+	 * @return  int|bool   True on success, otherwise false.
+	 */
+	public function draft_all_connections_posts( $db_user )
+	{
+		global $wpdb;
+		
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_numeric($db_user) )
+		{
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
+		}
+		
+		//
+		// Process each Connections Site's post.
+		//
+		foreach( $db_user['connections_sites'] as $cs )
+		{
+			$this->draft_connections_post( $db_user, $cs );
+		}
+		
+		return true;
+	}
+	
+		
+	/**
+	 * Draft a Connections Post.
+	 * @param   int|array     $db_user           The user id or info array of an OrgHub user.
+	 * @param   string|array  $connections_info  The connections site name or info array.
+	 * @return  int|bool      The connections post id on success, otherwise false.
+	 */
+	public function draft_connections_post( $db_user, $connections_info )
+	{
+		global $wpdb;
+		
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_numeric($db_user) )
+		{
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
+		}
 
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_string($connections_info) )
+		{
+			if( !($connections_info = $this->get_connections_info( $db_user['id'], $connections_info )) ) return false;
+		}
+		
+		//
+		// Cannot draft post that doesn't exist.
+		//
+		if( !$connections_info['post_id'] ) return false;
+		
+		//
+		// Detemrine that site is valid Connections site.
+		//
+		$connections_blog_id = $this->is_connections_site( $connections_site );
+		if( !$connections_blog_id )
+		{
+			$this->model->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			return false;
+		}
+		
+		switch_to_blog( $connections_blog_id );
+		
+		//
+		// Draft the post, if it exists.
+		//
+		$post = get_post( $connections_info['post_id'], ARRAY_A );
+		if( $post )
+		{
+			$connections_post = array(
+				'ID'           => $connections_info['post_id'],
+				'post_status'  => 'draft',
+			);
+			wp_update_post( $connections_post );
+		}
 
+		restore_current_blog();
+		
+		//
+		// Clear errors.
+		//
+		$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', null );
+		return $connections_post_id;
+	}	
+	
+	
+	/**
+	 * Publish a Connections Post.
+	 * @param   int|array     $db_user           The user id or info array of an OrgHub user.
+	 * @param   string|array  $connections_info  The connections site name or info array.
+	 * @return  int|bool      The connections post id on success, otherwise false.
+	 */
+	public function publish_connections_post( $db_user, $connections_info )
+	{
+		global $wpdb;
+		
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_numeric($db_user) )
+		{
+			if( !($db_user = $this->get_user_by_id( $db_user )) ) return false;
+		}
 
+		//
+		// If $db_user is an id, then retrieve the user from the database.
+		//
+		if( is_string($connections_info) )
+		{
+			if( !($connections_info = $this->get_connections_info( $db_user['id'], $connections_info )) ) return false;
+		}
 
+		//
+		// Cannot publish post that doesn't exist.
+		//
+		if( !$connections_info['post_id'] ) return false;
+		
+		//
+		// Detemrine that site is valid Connections site.
+		//
+		$connections_blog_id = $this->is_connections_site( $connections_site );
+		if( !$connections_blog_id )
+		{
+			$this->model->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			return false;
+		}
+		
+		switch_to_blog( $connections_blog_id );
+		
+		//
+		// Publish the post, if it exists.
+		//
+		$post = get_post( $connections_info['post_id'], ARRAY_A );
+		if( $post )
+		{
+			$connections_post = array(
+				'ID'           => $connections_info['post_id'],
+				'post_status'  => 'publish',
+			);
+			wp_update_post( $connections_post );
+		}
 
-
-
-
-
-
-
-
+		restore_current_blog();
+		
+		//
+		// Clear errors.
+		//
+		$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', null );
+		return $connections_post_id;
+	}	
 
 
 	/**
-	 *
+	 * Determines if the Connections Site is a valid Connecitons site.
+	 * @param   string  $connections_site_slug  The name/slug of the connections site.
+	 * @return  bool    True if the site is valid Connections site, otherwise false.
 	 */
 	public function is_connections_site( $connections_site_slug )
 	{
@@ -2059,121 +1962,39 @@ class OrgHub_UsersModel
 		
 		return $blog_id;
 	}
-	
-	
 
-
+	
 	/**
-	 *
+	 * Get the information related to a Connections site for an OrgHub user.
+	 * @param   int     $user_id           The user id of an OrgHub user.
+	 * @param   string  $connections_site  The connections site name.
+	 * @return  array   An array of a Connections site.
 	 */
-	public function get_all_status_values()
+	public function get_connections_info( $user_id, $connections_site )
 	{
 		global $wpdb;
-		return $wpdb->get_col( "SELECT DISTINCT status FROM ".self::$user_table );
-	}
-	
-
-	/**
-	 *
-	 */
-	public function get_all_type_values()
-	{
-		global $wpdb;
-		return $wpdb->get_col( "SELECT DISTINCT type FROM ".self::$type_table );
-	}
-	
-
-	/**
-	 *
-	 */
-	public function get_all_category_values()
-	{
-		global $wpdb;
-		return $wpdb->get_col( "SELECT DISTINCT category FROM ".self::$category_table );
-	}
-
-
-	/**
-	 *
-	 */
-	public function get_all_site_domain_values()
-	{
-		global $wpdb;
-		return $wpdb->get_col( "SELECT DISTINCT site_domain FROM ".self::$user_table );
-	}
-
-
-	/**
-	 *
-	 */
-	public function get_all_connections_sites_values()
-	{
-		global $wpdb;
-		return $wpdb->get_col( "SELECT DISTINCT site FROM ".self::$connections_table );
-	}
-	
-
-	/**
-	 *
-	 */
-	public function is_ldap_plugin_active()
-	{
-		return is_plugin_active_for_network('wpmuldap/ldap_auth.php');
-	}
-	
-
-	/**
-	 *
-	 */
-	public function get_blog_by_path( $path )
-	{
-		global $wpdb;
-		return $wpdb->get_var( 
+		
+		return $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT blog_id FROM $wpdb->blogs WHERE path = %s",
-				'/'.$path.'/'
-			)
-		);
-	}
-	
-	
-
-	
-	
-	/**
-	 *
-	 */
-	public function get_wp_user( $id )
-	{
-		return get_user_by( 'id', intval($id) );
-	}
-	
-	
-	/**
-	 *
-	 */
-	public function get_profile_site( $id )
-	{
-		global $wpdb;
-		$blog_info = $wpdb->get_row(
-			$wpdb->prepare(
-				'SELECT * FROM '.$wpdb->blogs.' WHERE blog_id = %d',
-				$id
+				'SELECT site, post_id, required FROM '.self::$connections_table.' WHERE user_id=%d AND site=%s',
+ 				$user_id,
+ 				$connections_site
 			),
 			ARRAY_A
 		);
-		
-		$blog_details = get_blog_details( intval($id) );
-		
-		$blog_info['siteurl'] = $blog_details->siteurl;
-		$blog_info['blogname'] = $blog_details->blogname;
-		
-		return $blog_info;
 	}
 	
-	
+
+
+//========================================================================================
+//================================================================= Connections Data =====
+
+
 	/**
-	 *
+	 * Gets the Connections Post.
+	 * @param   int           $id                The Connections Post's id.
+	 * @param   string        $connections_site  The Connections Site's name/slug.
+	 * @return  WP_Post|bool  The post on success, otherwise false.
 	 */
 	public function get_connections_post( $id, $connections_site )
 	{
@@ -2181,32 +2002,46 @@ class OrgHub_UsersModel
 		if( !$connections_blog_id ) return false;
 		
 		switch_to_blog( $connections_blog_id );
-				
 		$post = get_post( intval($id), ARRAY_A );
-		
 		restore_current_blog();
 		
-		return $post;
+		if( $post ) return $post;
+		return false;
 	}
 	
 	
+	/**
+	 * Gets the Connections Post's edit link.
+	 * @param   int     $id                The Connections Post's id.
+	 * @param   string  $connections_site  The Connections Site's name/slug.
+	 * @return  string  The url to the post's edit page.
+	 */
 	public function get_connections_post_edit_link( $id, $connections_site )
 	{
 		$connections_blog_id = $this->is_connections_site( $connections_site );
 		if( !$connections_blog_id ) return false;
 		
 		switch_to_blog( $connections_blog_id );
-				
-// 		$link = get_edit_post_link( intval($id) );
 		$link = admin_url().'post.php?post='.$id.'&action=edit';
-		
 		restore_current_blog();
 		
 		return $link;
 	}
 
 
-	public function get_csv_export( $filter = array(), $search = array(), $only_errors = false, $orderby = null )
+
+//========================================================================================
+//=========================================================================== Export =====
+	
+	
+	/**
+	 * Exports a list of users to a CSV.
+	 * @param   array   $filter       An array of filter name and values.
+	 * @param   array   $search       An array of search columns and phrases.
+	 * @param   bool    $only_errors  True if filter out OrgHub users with errors.
+	 * @param   string  $orderby      The column to orderby.
+	 */
+	public function csv_export( $filter = array(), $search = array(), $only_errors = false, $orderby = null )
 	{
 		$users = $this->get_users( $filter, $search, $only_errors, $orderby );
 		
@@ -2217,8 +2052,8 @@ class OrgHub_UsersModel
 			'last_name',
 			'description',
 			'email',
-			'site_domain',
-			'site_path',
+			'blog_domain',
+			'blog_path',
 			'connections_sites',
 			'type',
 		);
@@ -2233,8 +2068,8 @@ class OrgHub_UsersModel
 				$u['last_name'], // last name
 				$u['description'], // description
 				$u['email'], // email
-				$u['site_domain'], // site domain
-				$u['site_path'], // site path
+				$u['blog_domain'], // blog domain
+				$u['blog_path'], // blog path
 				array_map( function($cs) { return $cs['site']; }, $u['connections_sites'] ), // connections sites
 				$u['type'], // type
 			);
@@ -2245,77 +2080,109 @@ class OrgHub_UsersModel
 	}
 	
 	
-	public function get_site_csv_export( $filter = array(), $search = array(), $orderby = null )
+	
+//========================================================================================
+//==================================================================== Filter Values =====
+	
+	
+	/**
+	 * Gets all status values in the OrgHub Users table.
+	 * @return  array  An array of statuses.
+	 */
+	public function get_all_status_values()
 	{
 		global $wpdb;
-		$users = $this->get_sites( $filter, $search, $orderby );
+		return $wpdb->get_col( "SELECT DISTINCT status FROM ".self::$user_table );
+	}
+	
+
+	/**
+	 * Gets all type values in the OrgHub Type table.
+	 * @return  array  An array of types.
+	 */
+	public function get_all_type_values()
+	{
+		global $wpdb;
+		return $wpdb->get_col( "SELECT DISTINCT type FROM ".self::$type_table );
+	}
+	
+
+	/**
+	 * Gets all category values in the OrgHub Category table.
+	 * @return  array  An array of categories.
+	 */
+	public function get_all_category_values()
+	{
+		global $wpdb;
+		return $wpdb->get_col( "SELECT DISTINCT category FROM ".self::$category_table );
+	}
 
 
-		$headers = array(
-			'blog_id',
-			'url',
-			'title',
-			'num_posts',
-			'num_pages',
-			'num_comments',
-			'last_post_url',
-			'last_post_date', 
-			'last_post_status',
-			'last_comment_url',
-			'last_comment_date',
-			'admin_email',
-			'admin_username',
-			'admin_name',
+	/**
+	 * Gets all domain values in the OrgHub Users table.
+	 * @return  array  An array of domains.
+	 */
+	public function get_all_blog_domain_values()
+	{
+		global $wpdb;
+		return $wpdb->get_col( "SELECT DISTINCT blog_domain FROM ".self::$user_table );
+	}
+
+
+	/**
+	 * Gets all domain values in the OrgHub Connections table.
+	 * @return  array  An array of connections sites.
+	 */
+	public function get_all_connections_sites_values()
+	{
+		global $wpdb;
+		return $wpdb->get_col( "SELECT DISTINCT site FROM ".self::$connections_table );
+	}
+	
+
+	
+//========================================================================================
+//=================================================================== Util Functions =====
+	
+	
+	/**
+	 * Determines if the WPMU Ldap plugin is active.
+	 * @return  bool  True if the plugin is active, otherwise false.
+	 */
+	public function is_ldap_plugin_active()
+	{
+		return is_plugin_active_for_network('wpmuldap/ldap_auth.php');
+	}
+	
+
+	/**
+	 * Retrieves the blog_id of a blog using it's path.
+	 * @param   string  $path  The path of the blog.
+	 * @return  The blog id on success, otherwise false.
+	 */
+	public function get_blog_by_path( $path )
+	{
+		global $wpdb;
+		return $wpdb->get_var( 
+			$wpdb->prepare(
+				"SELECT blog_id FROM $wpdb->blogs WHERE path = %s",
+				'/'.$path.'/'
+			)
 		);
-
-		foreach( $users as &$user )
-		{
-			$u = $user;
-			$user = array(
-				$u['blog_id'], // blog_id
-				$u['url'], // url
-				$u['title'], // title
-				$u['num_posts'], // num_posts
-				$u['num_pages'], // num_pages
-				$u['num_comments'], // num_comments
-				$u['last_post_url'], // last_post_url
-				$u['last_post_date'], // last_post_date
-				$u['last_post_status'], // last_post_status
-				$u['last_comment_url'], // last_comment_url
-				$u['last_comment_date'], // last_comment_date
-				$u['admin_email'], // admin_email
-				$u['user_login'], // admin_username
-				$u['display_name'], // admin_name
-			);
-		}
-		
-		OrgHub_CsvHandler::export( 'sites', $headers, $users );
-		exit;
 	}
 	
 	
+	/**
+	 * Get a user by it's WordPress user id.
+	 * @param   int           $id  The WordPress user id.
+	 * @return  WP_User|bool  A WP_User object on success, otherwise false.
+	 */
+	public function get_wp_user( $id )
+	{
+		return get_user_by( 'id', intval($id) );
+	}
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-
-
-}
-endif;
+} // class OrgHub_UsersModel
+endif; // if( !class_exists('OrgHub_UsersModel') ):
 

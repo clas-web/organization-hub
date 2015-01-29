@@ -2,7 +2,7 @@
 /**
  * OrgHub_UsersAdminPage
  * 
- * 
+ * This class controls the admin page USERS.
  * 
  * @package    orghub
  * @subpackage admin-pages/pages
@@ -14,7 +14,7 @@ class OrgHub_UsersAdminPage extends APL_AdminPage
 {
 	
 	/**
-	 * 
+	 * Creates an OrgHub_UsersAdminPage object.
 	 */
 	public function __construct()
 	{
@@ -27,7 +27,7 @@ class OrgHub_UsersAdminPage extends APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Displays the current admin page.
 	 */
 	public function display()
 	{

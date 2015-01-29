@@ -88,7 +88,7 @@ class APL_Handler
 	 * Add a page to the main admin menu.
 	 * @param  APL_AdminPage  $page    Admin page to be displayed in the main admin menu.
 	 * @param  string         $parent  The parent page's name/slug.
-	*/
+	 */
 	public function add_page( $page, $parent = null )
 	{
 		if( $parent === null )
@@ -109,29 +109,12 @@ class APL_Handler
 	
 	
 	/**
-	 * Sets up all the admin menus and pages.
+	 * Setups the current admin page/tab, then sets up the needed hooks.
 	 */
-	public function admin_menu_setup()
+	public function setup()
 	{
 		$this->set_current_page();
-		
-		
-		
-		foreach( $this->menus as $menu )
-		{
-			$menu->admin_menu_setup();
-		}
-		
-		foreach( $this->pages as $pagetree )
-		{
-			foreach( $pagetree as $page )
-			{
-				$page->admin_menu_setup();
-			}
-		}
-		
-		
-		
+
 		global $pagenow;
 		switch( $pagenow )
 		{
@@ -163,6 +146,26 @@ class APL_Handler
 			add_action( 'admin_init', array($this->controller, 'process_page') );
 		
 			add_filter( 'set-screen-option', array($this->controller, 'save_screen_options'), 10, 3);
+		}		
+	}
+	
+	
+	/**
+	 * Sets up all the admin menus and pages.
+	 */
+	public function admin_menu_setup()
+	{
+		foreach( $this->menus as $menu )
+		{
+			$menu->admin_menu_setup();
+		}
+		
+		foreach( $this->pages as $pagetree )
+		{
+			foreach( $pagetree as $page )
+			{
+				$page->admin_menu_setup();
+			}
 		}
 	}
 	
