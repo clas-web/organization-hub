@@ -137,9 +137,9 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 				'values' => $this->model->user->get_all_category_values(),
 				'filter' => array(),
 			),
-			'blog_domain' => array(
+			'site_domain' => array(
 				'name' => 'Domain',
-				'values' => $this->model->user->get_all_blog_domain_values(),
+				'values' => $this->model->user->get_all_site_domain_values(),
 				'filter' => array(),
 			),
 			'connection' => array(

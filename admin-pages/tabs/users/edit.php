@@ -239,7 +239,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 		<div id="profile-site-details" class="details-box">
 			
 		<?php
-		if( $blog_path ):
+		if( $site_path ):
 			$class = '';
 			if( $error = $this->model->user->get_user_column( $id, 'profile_site_error' ) ) $class .= 'exception error';
 			elseif( $warning = $this->model->user->get_user_column( $id, 'profile_site_warning' ) ) $class .= 'exception warning';
@@ -305,7 +305,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				else:
 
 					?>
- 					<label><?php echo $blog_domain.'/'.$blog_path; ?></label>
+ 					<label><?php echo $site_domain.'/'.$site_path; ?></label>
 					<button name="action" value="create-site">Create Site</button>
 					<?php
 				endif;

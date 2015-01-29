@@ -373,8 +373,8 @@ class OrgHub_UsersListTable extends WP_List_Table
 		extract( $item );
 		
 		$html = '';
-		if( $item['blog_path'] )
-			$html = "<span class=\"url\" title=\"$blog_domain/$blog_path\">$blog_domain/$blog_path</span><br/>";
+		if( $item['site_path'] )
+			$html = "<span class=\"url\" title=\"$site_domain/$site_path\">$site_domain/$site_path</span><br/>";
 		
 		$class = 'wp_user_id';
 		if( $this->model->user->get_user_column( $id, 'wp_user_error' ) ) $class .= ' error';
@@ -390,7 +390,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 		elseif( $this->model->user->get_user_column( $id, 'profile_site_warning' ) ) $class .= ' warning';
 		if( $profile_site_id == null )
 		{
-			if( !$blog_path )
+			if( !$site_path )
 				$text = 'Profile Site: n/a';
 			else
 				$text = 'Profile Site: none';

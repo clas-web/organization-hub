@@ -82,8 +82,8 @@ class OrgHub_UsersModel
 				  last_name text NOT NULL DEFAULT '',
 				  email text NOT NULL DEFAULT '',
 				  description text NOT NULL DEFAULT '',
-				  blog_domain text NOT NULL DEFAULT '',
-				  blog_path text NOT NULL DEFAULT '',
+				  site_domain text NOT NULL DEFAULT '',
+				  site_path text NOT NULL DEFAULT '',
 				  status varchar(16) NOT NULL,
 				  warning text DEFAULT NULL,
 				  error text DEFAULT NULL,
@@ -197,26 +197,26 @@ class OrgHub_UsersModel
 		if( !$this->check_multiple_value_arg('category', $args['category'], false) ) return false;
 		
 		//
-		// If not specified, populate blog_domain column with its default value.
-		// If blog_domain is specified, then verify that the value is valid.
+		// If not specified, populate site_domain column with its default value.
+		// If site_domain is specified, then verify that the value is valid.
 		//
-		if( (!in_array('blog_domain', array_keys($args))) )
+		if( (!in_array('site_domain', array_keys($args))) )
 		{
-			$args['blog_domain'] = '';
+			$args['site_domain'] = '';
 		}
-		elseif( !$this->is_valid_blog_domain_name($args['blog_domain']) )
+		elseif( !$this->is_valid_site_domain_name($args['site_domain']) )
 		{
-			$this->model->last_error = 'Invalid field value for field "blog_domain".';
+			$this->model->last_error = 'Invalid field value for field "site_domain".';
 			return false;
 		}
 
 		//
-		// If not specified, populate blog_domain column with its default value.
-		// If blog_domain is specified, then verify that the value is valid.
+		// If not specified, populate site_domain column with its default value.
+		// If site_domain is specified, then verify that the value is valid.
 		//
-		if( (!in_array('blog_path', array_keys($args))) )
+		if( (!in_array('site_path', array_keys($args))) )
 		{
-			$args['blog_path'] = '';
+			$args['site_path'] = '';
 		}
 		
 		//
@@ -269,14 +269,14 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Verifies that the domain value is a valid format.
-	 * @param   string  $blog_domain_name  The blog domain.
+	 * @param   string  $site_domain_name  The blog domain.
 	 * @return  bool    True if the blog domain is a valid format.
 	 */
-	private function is_valid_blog_domain_name( $blog_domain_name )
+	private function is_valid_site_domain_name( $site_domain_name )
 	{
-    	return (preg_match("/^([a-z\d](-*[a-z\d])*)(\.([a-z\d](-*[a-z\d])*))*$/i", $blog_domain_name) //valid chars check
-            && preg_match("/^.{1,253}$/", $blog_domain_name) //overall length check
-            && preg_match("/^[^\.]{1,63}(\.[^\.]{1,63})*$/", $blog_domain_name)   ); //length of each label
+    	return (preg_match("/^([a-z\d](-*[a-z\d])*)(\.([a-z\d](-*[a-z\d])*))*$/i", $site_domain_name) //valid chars check
+            && preg_match("/^.{1,253}$/", $site_domain_name) //overall length check
+            && preg_match("/^[^\.]{1,63}(\.[^\.]{1,63})*$/", $site_domain_name)   ); //length of each label
 	}
 	
 	
@@ -316,8 +316,8 @@ class OrgHub_UsersModel
 				'last_name'			=> $args['last_name'],
 				'email'				=> $args['email'],
 				'description'		=> $args['description'],
-				'blog_domain'		=> $args['blog_domain'],
-				'blog_path'			=> $args['blog_path'],
+				'site_domain'		=> $args['site_domain'],
+				'site_path'			=> $args['site_path'],
 				'status'			=> 'new',
 			),
 			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
@@ -404,8 +404,8 @@ class OrgHub_UsersModel
 				'last_name'			=> $args['last_name'],
 				'email'				=> $args['email'],
 				'description'		=> $args['description'],
-				'blog_domain'		=> $args['blog_domain'],
-				'blog_path'			=> $args['blog_path'],
+				'site_domain'		=> $args['site_domain'],
+				'site_path'			=> $args['site_path'],
 				'status'			=> $args['status'],
 			),
 			array( 'id' => intval( $id ) ),
@@ -744,15 +744,15 @@ class OrgHub_UsersModel
 						switch( $filter[$key][$j] )
 						{
 							case 'na-site':
-								$where_string .= "blog_path = '' ";
+								$where_string .= "site_path = '' ";
 								break;
 							
 							case 'no-site':
-								$where_string .= "( blog_path != '' AND profile_blog_id IS NULL ) ";
+								$where_string .= "( site_path != '' AND profile_blog_id IS NULL ) ";
 								break;
 								
 							case 'has-site':
-								$where_string .= "( blog_path != '' AND profile_blog_id IS NOT NULL ) ";
+								$where_string .= "( site_path != '' AND profile_blog_id IS NOT NULL ) ";
 								break;
 						}
 						if( $j < count($filter[$key])-1 ) $where_string .= ' OR ';
@@ -1282,17 +1282,17 @@ class OrgHub_UsersModel
 			}
 		}
 		
-		if( !$db_user['blog_path'] ) return false;
-		if( !$db_user['blog_domain'] )
+		if( !$db_user['site_path'] ) return false;
+		if( !$db_user['site_domain'] )
 		{
 			$url_parts = parse_url( get_site_url(1) );
-			$db_user['blog_domain'] = $url_parts['host'] . $url_parts['path'];
+			$db_user['site_domain'] = $url_parts['host'] . $url_parts['path'];
 		}
 		
 		//
 		// Check if blog already exists.
 		//
-		$blog_id = $this->get_blog_by_path( $db_user['blog_path'] );
+		$blog_id = $this->get_blog_by_path( $db_user['site_path'] );
 		
 		if( $blog_id )
 		{
@@ -1308,11 +1308,11 @@ class OrgHub_UsersModel
 		else
 		{
 			// Create the blog.
-			$blog_id = wpmu_create_blog( $db_user['blog_domain'], '/'.$db_user['blog_path'], $db_user['first_name'].' '.$db_user['last_name'], $db_user['wp_user_id'] );
+			$blog_id = wpmu_create_blog( $db_user['site_domain'], '/'.$db_user['site_path'], $db_user['first_name'].' '.$db_user['last_name'], $db_user['wp_user_id'] );
 			if( is_wp_error($blog_id))
 			{
 				$this->model->write_to_log( $db_user['username'], $blog_id->get_error_message() );
-				$this->model->write_to_log( '', 'Blog: '.$db_user['blog_domain'].'/'.$db_user['blog_path'] );
+				$this->model->write_to_log( '', 'Blog: '.$db_user['site_domain'].'/'.$db_user['site_path'] );
 				$this->set_user_column( $db_user['id'], 'profile_blog_error', $blog_id->get_error_message() );
 				return false;
 			}
@@ -2056,8 +2056,8 @@ class OrgHub_UsersModel
 			'last_name',
 			'description',
 			'email',
-			'blog_domain',
-			'blog_path',
+			'site_domain',
+			'site_path',
 			'connections_sites',
 			'type',
 		);
@@ -2072,8 +2072,8 @@ class OrgHub_UsersModel
 				$u['last_name'], // last name
 				$u['description'], // description
 				$u['email'], // email
-				$u['blog_domain'], // blog domain
-				$u['blog_path'], // blog path
+				$u['site_domain'], // blog domain
+				$u['site_path'], // blog path
 				array_map( function($cs) { return $cs['site']; }, $u['connections_sites'] ), // connections sites
 				$u['type'], // type
 			);
@@ -2126,10 +2126,10 @@ class OrgHub_UsersModel
 	 * Gets all domain values in the OrgHub Users table.
 	 * @return  array  An array of domains.
 	 */
-	public function get_all_blog_domain_values()
+	public function get_all_site_domain_values()
 	{
 		global $wpdb;
-		return $wpdb->get_col( "SELECT DISTINCT blog_domain FROM ".self::$user_table );
+		return $wpdb->get_col( "SELECT DISTINCT site_domain FROM ".self::$user_table );
 	}
 
 
