@@ -639,7 +639,7 @@ class OrgHub_UsersModel
 		global $wpdb;
 		
 		$groupby = self::$user_table.".id";
-		apl_print("SELECT * FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit));
+		//apl_print("SELECT * FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit));
 		$users = $wpdb->get_results( "SELECT * FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit), ARRAY_A );
 		//apl_print($users, '$users (get_users-results)');
 		
@@ -1222,14 +1222,14 @@ class OrgHub_UsersModel
 		// TODO: update profile site id and connections post id to urls.
 		//
 		
-		update_usermeta( $user->ID, 'description', $db_user['description'] );
-		update_usermeta( $user->ID, 'category', implode( ', ', $db_user['category'] ) );
-		update_usermeta( $user->ID, 'type', implode( ', ', $db_user['type'] ) );
-		update_usermeta( $user->ID, 'website', $db_user['profile_site_id'] );
+//		update_usermeta( $user->ID, 'description', $db_user['description'] );
+//		update_usermeta( $user->ID, 'category', implode( ', ', $db_user['category'] ) );
+//		update_usermeta( $user->ID, 'type', implode( ', ', $db_user['type'] ) );
+//		update_usermeta( $user->ID, 'website', $db_user['profile_site_id'] );
 		
 		foreach( $db_user['connections_sites'] as $cs )
 		{
-			update_usermeta( $user->ID, 'connections_post_url-'.$cs['site'], $cs['post_id'] );
+//			update_usermeta( $user->ID, 'connections_post_url-'.$cs['site'], $cs['post_id'] );
 		}
 	}
 
@@ -1315,6 +1315,12 @@ class OrgHub_UsersModel
 				$this->model->write_to_log( '', 'Blog: '.$db_user['blog_domain'].'/'.$db_user['blog_path'] );
 				$this->set_user_column( $db_user['id'], 'profile_blog_error', $blog_id->get_error_message() );
 				return false;
+			}
+			elseif( $blog_id )
+			{
+				switch_to_blog( $blog_id );
+				update_option( 'blogdescription', $db_user['description'] );
+				restore_current_blog();
 			}
 		}
 		
@@ -1561,7 +1567,7 @@ class OrgHub_UsersModel
 					'post_name'    => sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] ),
 					'post_author'  => $db_user['wp_user_id'],
 					'post_status'  => $post_status,
-					'tax_input'    => array( 'connection-group' => $db_user['category'] ),
+//					'tax_input'    => array( 'connection-group' => $db_user['category'] ),
 				);
 				wp_update_post( $connections_post );
 
@@ -1594,34 +1600,7 @@ class OrgHub_UsersModel
 		//
 		if( $db_user['status'] == 'inactive' ) return false;		
 		
-		$connections_post_id = $this->create_connections_post( $db_user, $connections_info );
-		
-		//
-		// Connections post was created or updated successfully.
-		//
-		if( $connections_post_id )
-		{
-			$result = $this->set_connections_column( $db_user['id'], $connections_info['site'], 'post_id', $connections_post_id );
-		
-			if( $result !== false )
-			{
-				$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', null );
-				return $connections_post_id;
-			}
-			else
-			{
-				$this->model->write_to_log( $db_user['username'], 'Unable to save connections post id ("'.$connections_post_id.'") to database.' );
-				$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Unable to save connections post id ("'.$connections_post_id.'") to database.' );
-				return null;
-			}
-		}
-		
-		//
-		// Connections post was not created successfully.
-		//
-		$this->model->write_to_log( $db_user['username'], 'Unable to create Connections post.' );
-		$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Unable to create Connections Post.' );
-		return null;
+		return $this->create_connections_post( $db_user, $connections_info );
 	}
 	
 
@@ -1755,26 +1734,53 @@ class OrgHub_UsersModel
 					$this->model->write_to_log( $db_user['username'], 'Unable to insert Connection Post.' );
 					$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Unable to insert Connection Post.' );
 				}
-
-				return null;
 			}
-			
-			// update Connections post options.
-			update_post_meta( $connections_post_id, 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
-			update_post_meta( $connections_post_id, 'username', $db_user['username'] );
-			update_post_meta( $connections_post_id, 'site-type', 'wp' );
-			update_post_meta( $connections_post_id, 'entry-method', $connections_post_type );
-		
-			$blog_details = get_blog_details( $db_user['profile_blog_id'] );
-			if( $blog_details )
-				update_post_meta( $connections_post_id, 'url', $blog_details->siteurl );
 			else
-				update_post_meta( $connections_post_id, 'url', 'n/a' );
+			{
+				// update Connections post options.
+				update_post_meta( $connections_post_id, 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
+				update_post_meta( $connections_post_id, 'username', $db_user['username'] );
+				update_post_meta( $connections_post_id, 'site-type', 'wp' );
+				update_post_meta( $connections_post_id, 'entry-method', $connections_post_type );
+		
+				$blog_details = get_blog_details( $db_user['profile_blog_id'] );
+				if( $blog_details )
+					update_post_meta( $connections_post_id, 'url', $blog_details->siteurl );
+				else
+					update_post_meta( $connections_post_id, 'url', 'n/a' );
 			
-			$this->update_user_data( $db_user );
+				$this->update_user_data( $db_user );
+			}
 		}
 		
 		restore_current_blog();
+
+		//
+		// Connections post was created or updated successfully.
+		//
+		if( $connections_post_id )
+		{
+			$result = $this->set_connections_column( $db_user['id'], $connections_info['site'], 'post_id', $connections_post_id );
+		
+			if( $result !== false )
+			{
+				$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', null );
+				return $connections_post_id;
+			}
+			else
+			{
+				$this->model->write_to_log( $db_user['username'], 'Unable to save connections post id ("'.$connections_post_id.'") to database.' );
+				$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Unable to save connections post id ("'.$connections_post_id.'") to database.' );
+				return null;
+			}
+		}
+		
+		//
+		// Connections post was not created successfully.
+		//
+		$this->model->write_to_log( $db_user['username'], 'Unable to create Connections post.' );
+		$this->set_connections_column( $db_user['id'], $connections_info['site'], 'connections_error', 'Unable to create Connections Post.' );
+		return null;
 	}
 	
 
@@ -1950,13 +1956,11 @@ class OrgHub_UsersModel
 	{
 		$blog_id = $this->get_blog_by_path( $connections_site_slug );
 		
-		if( !$blog_id )
-			return false;
+		if( !$blog_id ) { return false; }
 		
 		switch_to_blog( $blog_id );
 		
-		if( !is_plugin_active('connections-hub/main.php') )
-			$blog_id = false;
+		if( !is_plugin_active('connections-hub/main.php') ) { $blog_id = false; }
 
 		restore_current_blog();
 		
@@ -2163,10 +2167,17 @@ class OrgHub_UsersModel
 	public function get_blog_by_path( $path )
 	{
 		global $wpdb;
+		
+		$base_path = $wpdb->get_var(
+			"SELECT path FROM $wpdb->site WHERE id = 1"
+		);
+		
+		if( !$base_path ) $base_path = '/';
+
 		return $wpdb->get_var( 
 			$wpdb->prepare(
 				"SELECT blog_id FROM $wpdb->blogs WHERE path = %s",
-				'/'.$path.'/'
+				$base_path.$path.'/'
 			)
 		);
 	}

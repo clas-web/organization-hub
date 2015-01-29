@@ -77,7 +77,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				$this->model->user->publish_connections_post( $user_id, $_REQUEST['site'] );
 				break;
 			case 'reset-connections-post-id':
-				$this->model->user->update_connections_post_id( $user_id, $_REQUEST['site'], null );
+				$this->model->user->set_connections_column( $user_id, $_REQUEST['site'], 'post_id', null );
 				break;
 			case 'clear-username-error':
 				$this->model->user->set_user_column( $user_id, 'wp_user_error', null );
