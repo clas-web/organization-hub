@@ -56,13 +56,13 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				$this->model->user->set_user_column( $user_id, 'wp_user_id', null );
 				break;
 			case 'create-site':
-				$this->model->user->create_site( $user_id, true );
+				$this->model->user->create_profile_blog( $user_id, true );
 				break;
 			case 'archive-site':
-				$this->model->user->archive_site( $user_id );
+				$this->model->user->archive_profile_blog( $user_id );
 				break;
 			case 'publish-site':
-				$this->model->user->publish_site( $user_id );
+				$this->model->user->publish_profile_blog( $user_id );
 				break;
 			case 'reset-profile-site-id':
 				$this->model->user->set_user_column( $user_id, 'profile_site_id', null );
