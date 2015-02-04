@@ -84,7 +84,7 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 				break;
 			
 			case 'clear':
-				$this->model->site->clear_sites();
+				$this->model->site->clear_tables();
 				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 
