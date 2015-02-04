@@ -457,6 +457,8 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 					$refresh_date = date('Y-m-d H:i:s');
 					$this->model->update_option( 'sites-refresh-time', $refresh_date );
 					$this->ajax_set( 'refresh_date', $refresh_date );
+					
+					$this->set_notice( 'Successfully refreshed '.$count.' sites.' );
 				}
 				break;
 			

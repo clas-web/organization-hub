@@ -824,7 +824,12 @@ abstract class APL_AdminPage
 	 */
 	protected function set_error( $error )
 	{
-		$_SESSION['apl-error'] = $error;
+		$_SESSION['apl-error'] = json_encode(
+			array(
+				'page'		=> $this->get_name(),
+				'message'	=> $error,
+			)
+		);
 	}
 	
 	
@@ -842,11 +847,16 @@ abstract class APL_AdminPage
 	 */
 	protected function display_error()
 	{
-		if( empty($_SESSION['apl-error']) ) return;
+		if( !isset($_SESSION['apl-error']) ) return;
+		
+		$e = json_decode( $_SESSION['apl-error'], true );
+		$this->clear_error();
+		
+		if( $e['page'] !== $this->get_name() ) return;
 		
 		?>
 		<div class="error">
-			<?php echo $_SESSION['apl-error']; ?>
+			<?php echo $e['message']; ?>
 		</div>
 		<?php
 	}
@@ -858,7 +868,12 @@ abstract class APL_AdminPage
 	 */
 	protected function set_notice( $notice )
 	{
-		$_SESSION['apl-notice'] = $notice;
+		$_SESSION['apl-notice'] = json_encode(
+			array(
+				'page'		=> $this->get_name(),
+				'message'	=> $notice,
+			)
+		);
 	}
 	
 	
@@ -876,11 +891,16 @@ abstract class APL_AdminPage
 	 */
 	protected function display_notice()
 	{
-		if( empty($_SESSION['apl-notice']) ) return;
+		if( !isset($_SESSION['apl-notice']) ) return;
+		
+		$e = json_decode( $_SESSION['apl-notice'], true );
+		$this->clear_notice();
+		
+		if( $e['page'] !== $this->get_name() ) return;
 		
 		?>
 		<div class="notice">
-			<?php echo $_SESSION['apl-notice']; ?>
+			<?php echo $e['message']; ?>
 		</div>
 		<?php
 	}

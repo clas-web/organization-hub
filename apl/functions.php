@@ -104,6 +104,6 @@ endif;
 if( !function_exists('apl_start_session') ):
 function apl_start_session()
 {
-	if( !session_id() ) session_start();
+	if( !session_id() ) @session_start();
 }
 endif;

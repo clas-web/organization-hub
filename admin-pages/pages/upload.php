@@ -52,7 +52,7 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 	{
 		if( !isset($_FILES) || !isset($_FILES['upload']) )
         {
-            $this->process_results = 'No uploaded file.';
+        	$this->set_error( 'No uploaded file.' );
             return;
         }
 		
@@ -63,7 +63,7 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 		
 		if( $results === false )
 		{
-            $this->process_results = OrgHub_CsvHandler::$last_error;
+			$this->set_error( OrgHub_CsvHandler::$last_error );
             return;
 		}
 		
@@ -85,10 +85,6 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 		
 		$this->model->user->set_inactive_users( $user_ids );
 		
-		$results = count($rows) . ' rows found in file.<br/>';
-		$results .= $processed_rows . ' rows added or updated successfully.<br/>';
-		$this->process_results = $results . $this->process_results;
-
 		$this->model->update_options(
 			array(
 				'last-upload' => date('Y-m-d H:i:s'),
@@ -96,7 +92,11 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 			),
 			true
 		);
+		
+		$results = count($rows) . ' rows found in file.<br/>';
+		$results .= $processed_rows . ' rows added or updated successfully.<br/>';
 
+		$this->set_notice( $results );
 	}
 		
 	
@@ -105,6 +105,10 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 	 */
 	public function display()
 	{
+		?>
+		<h4>Upload Users</h4>
+		
+		<?php
 		$this->form_start( 'upload', array('enctype' => 'multipart/form-data'), 'upload', null );
 		?>
 		
