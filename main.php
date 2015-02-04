@@ -42,6 +42,9 @@ require_once( dirname(__FILE__).'/admin-pages/require.php' );
 
 endif;
 
+add_action( 'show_user_profile', array('OrgHub_Main', 'show_custom_user_fields') );
+add_action( 'edit_user_profile', array('OrgHub_Main', 'show_custom_user_fields') );
+
 
 if( !class_exists('OrgHub_Main') ):
 class OrgHub_Main
@@ -80,6 +83,66 @@ class OrgHub_Main
 		wp_enqueue_script( 'apl-ajax', plugins_url('apl/ajax.js', __FILE__), array('jquery') );
 		wp_enqueue_script( 'apl-list-table-inline-bulk-action', plugins_url('apl/list-table-inline-bulk-action.js', __FILE__), array('jquery') );
 		wp_enqueue_style( 'orghub-style', plugins_url('admin-pages/styles/style.css', __FILE__) );
+	}
+	
+	public static function show_custom_user_fields( $user )
+	{
+		$description = get_user_meta( $user->ID, 'description', true );
+		$category = get_user_meta( $user->ID, 'category', true );
+		$type = get_user_meta( $user->ID, 'type', true );
+		$connections_sites = get_user_meta( $user->ID, 'connections_sites', true );
+
+		if( !$description && !$category && !$type && !$connections_sites ) return;
+		
+		?>
+		<h3>Organization Hub</h3>
+	
+		<table class="form-table">
+			<tr>
+				<th>
+					<label for="description">Description</label>
+				</th>
+				<td>
+					<?php echo $description; ?>
+				</td>
+			</tr>
+			<tr>
+				<th>
+					<label for="category">Category</label>
+				</th>
+				<td>
+					<?php echo $category; ?>
+				</td>
+			</tr>
+			<tr>
+				<th>
+					<label for="type">Type</label>
+				</th>
+				<td>
+					<?php echo $type; ?>
+				</td>
+			</tr>
+				<?php
+				$connections_sites = explode( ',', $connections_sites );
+				foreach( $connections_sites as $site ):
+				
+				$link = get_user_meta( $user->ID, 'connections_post_url-'.$site, true );
+				
+				?>
+			<tr>
+				<th>
+					<label for="connections-site-link-<?php echo $site; ?>">Connections Post:<br/><?php echo $site; ?></label>
+				</th>
+				<td>
+					<a href="<?php echo $link; ?>"><?php echo $link; ?></a>
+				</td>
+			</tr>
+				<?php
+					
+				endforeach;
+				?>
+		</table>
+		<?php
 	}
 }
 endif;

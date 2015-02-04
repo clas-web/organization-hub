@@ -213,12 +213,9 @@ class OrgHub_SitesListTable extends WP_List_Table
 					// set error
 					return;
 				}
-				apl_print( $bulk_input['admin'] );
 				$admin = get_user_by( intval($bulk_input['admin']), 'id' );
-				apl_print( $admin );
 				global $wpdb;
 				$admin_email = $wpdb->get_var( "SELECT user_email FROM $wpdb->users WHERE id = ".$bulk_input['admin'] );
-				apl_print( $admin_email );
 				if( !$admin_email )
 				{
 					// set error

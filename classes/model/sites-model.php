@@ -252,7 +252,9 @@ class OrgHub_SitesModel
 		);
 		
 		$list = $this->model->get_column_list( $list );
-		$filter = $this->filter_sql($filter, $search, $orderby, $offset, $limit);
+		
+		$groupby = 'blog_id';
+		$filter = $this->filter_sql($filter, $search, $groupby, $orderby, $offset, $limit);
 		
 // 		apl_print( 'SELECT '.$list.' FROM '.self::$site_table.' '.$filter );
 		return $wpdb->get_results( 'SELECT '.$list.' FROM '.self::$site_table.' '.$filter, ARRAY_A );
@@ -269,8 +271,8 @@ class OrgHub_SitesModel
 	public function get_sites_count( $filter, $search, $orderby )
 	{
 		global $wpdb;
-// 		apl_print("SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->filter_sql($filter, $search, $orderby));
-		return $wpdb->get_var( "SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->filter_sql($filter, $search, $orderby) );
+ 		$groupby = null;
+		return $wpdb->get_var( "SELECT COUNT(DISTINCT ".self::$site_table.".id) FROM ".self::$site_table.' '.$this->filter_sql($filter, $search, $groupby, $orderby) );
 	}
 
 
@@ -328,7 +330,7 @@ class OrgHub_SitesModel
 	 * @param   int     $limit        The amount of users to retrieve.
 	 * @return  string  The constructed SQL needed to complete an SQL statement.
 	 */
-	public function filter_sql( $filter, $search, $orderby, $offset = 0, $limit = -1 )
+	private function filter_sql( $filter = array(), $search = array(), $groupby = null, $orderby = null, $offset = 0, $limit = -1 )
 	{
 		global $wpdb;
 		
@@ -439,8 +441,10 @@ class OrgHub_SitesModel
 		$join = '';
 		$join .= 'LEFT JOIN '.$wpdb->users.' ON '.$wpdb->users.'.user_email = '.self::$site_table.'.admin_email ';
 		$join .= 'LEFT JOIN '.$wpdb->blogs.' ON '.$wpdb->blogs.'.blog_id = '.self::$site_table.'.blog_id ';
-
-		return $join.' '.$where_string.' GROUP BY blog_id '.$orderby.' '.$limit_string;
+		
+		if( !$groupby ) $groupby = ''; else $groupby = 'GROUP BY '.$groupby;
+			
+		return $join.' '.$where_string.' '.$groupby.' '.$orderby.' '.$limit_string;
 	}
 	
 	
@@ -516,7 +520,7 @@ class OrgHub_SitesModel
 	 */
 	public function refresh_all_sites()
 	{
-		$sites = wp_get_sites( array( 'limit' => 100000 ) );
+		$sites = wp_get_sites( array( 'limit' => 1000000 ) );
 		
 		foreach( $sites as &$site )
 		{
@@ -561,7 +565,7 @@ class OrgHub_SitesModel
 		$post_types = array( 'post', 'page' );
 		$post_types = array_merge( $post_types, get_post_types($args, 'names', 'and') );
 		
-		$recent_post = $wpdb->get_row( 'SELECT * FROM '.$wpdb->posts." WHERE post_type IN ('".implode("','", $post_types)."') ORDER BY post_modified_gmt LIMIT 1" );
+		$recent_post = $wpdb->get_row( 'SELECT * FROM '.$wpdb->posts." WHERE post_type IN ('".implode("','", $post_types)."') ORDER BY post_modified_gmt desc LIMIT 1" );
 		if( !$recent_post )
 		{
 			$site['last_post_url'] = '';
