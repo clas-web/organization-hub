@@ -181,7 +181,7 @@ class OrgHub_Model
 	 * @param   bool    $strict  Use a strict comparison (eg. case-sensitive string).
 	 * @return  bool    True if a match, otherwise false.
 	 */
-	private function in_array_by_key( $value, $key, $array, $strict = false )
+	public function in_array_by_key( $value, $key, $array, $strict = false )
 	{ 
 		if( $strict )
 		{

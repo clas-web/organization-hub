@@ -293,7 +293,7 @@ class OrgHub_SitesModel
 			'display_name','user_login'
 		);
 		
-		$list = $this->get_column_list( $list );
+		$list = $this->model->get_column_list( $list );
 
 		$site = $wpdb->get_row(
 			$wpdb->prepare(
