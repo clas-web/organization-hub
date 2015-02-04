@@ -186,7 +186,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 			
 			case 'create-connections-posts':
 				foreach( $users as $user_id )
-					$this->model->user->process_connections_posts( $user_id );
+					$this->model->user->process_all_connections_posts( $user_id );
 				break;
 			
 			case 'archive-sites':
@@ -196,7 +196,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 			
 			case 'draft-connections-posts':
 				foreach( $users as $user_id )
-					$this->model->user->process_connections_posts( $user_id );
+					$this->model->user->draft_all_connections_posts( $user_id );
 				break;
 			
 			case 'process-users':
@@ -385,10 +385,10 @@ class OrgHub_UsersListTable extends WP_List_Table
 			$text = 'Username: '.$wp_user_id;
 		$html .= '<span class="'.$class.'" title="'.$text.'">'.$text.'</span><br/>';
 
-		$class = 'profile_site_id';
+		$class = 'profile_blog_id';
 		if( $this->model->user->get_user_column( $id, 'profile_site_error' ) ) $class .= ' error';
 		elseif( $this->model->user->get_user_column( $id, 'profile_site_warning' ) ) $class .= ' warning';
-		if( $profile_site_id == null )
+		if( $profile_blog_id == null )
 		{
 			if( !$site_path )
 				$text = 'Profile Site: n/a';
@@ -397,18 +397,18 @@ class OrgHub_UsersListTable extends WP_List_Table
 		}
 		else
 		{
-			if( $archived )
-				$text = '<strike>Profile Site</strike>: '.$profile_site_id;
+			if( $profile_blog_archived || $profile_blog_deleted )
+				$text = '<strike>Profile Site</strike>: '.$profile_blog_id;
 			else
-				$text = 'Profile Site: '.$profile_site_id;
+				$text = 'Profile Site: '.$profile_blog_id;
 		}
 		$html .= '<span class="'.$class.'" title="'.$text.'">'.$text.'</span><br/>';
 	
 		foreach( $connections_sites as $cs )
 		{
 			$class = 'connections_site_id';
-			if( $this->model->user->get_connections_column( $id, $cs['site'], 'error' ) ) $class .= ' error';
-			elseif( $this->model->user->get_connections_column( $id, $cs['site'], 'warning' ) ) $class .= ' warning';
+			if( $this->model->user->get_connections_column( $id, $cs['site'], 'connections_error' ) ) $class .= ' error';
+			elseif( $this->model->user->get_connections_column( $id, $cs['site'], 'connections_warning' ) ) $class .= ' warning';
 			if( $cs['post_id'] == null )
 			{
 				$text = $cs['site'].' Post: none';

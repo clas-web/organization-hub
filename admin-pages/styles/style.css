@@ -118,6 +118,15 @@
 	p.error {
 		color:orange;
 	}
+
+	td.info span.warning {
+		background-color:yellow;
+	}
+	
+	td.info span.error {
+		background-color:red;
+		color:white;
+	}
 	
 	.details-box {
 		border:solid 1px #999;
