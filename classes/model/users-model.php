@@ -1698,6 +1698,7 @@ class OrgHub_UsersModel
 				if( $db_user['status'] == 'inactive' ) $post_status = 'draft';
 				
 				// update the post's data.
+				$this->setup_connections_custom_post_type();
 				$connections_post = array(
 					'ID'           => $connections_info['post_id'],
 					'post_title'   => $db_user['first_name'].' '.$db_user['last_name'],
