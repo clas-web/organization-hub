@@ -26,7 +26,7 @@ class OrgHub_Model
 	 * Private Constructor.  Needed for a Singleton class.
 	 * Creates an OrgHub_Model object.
 	 */
-	private function __construct()
+	protected function __construct()
 	{
 	}
 	
@@ -34,7 +34,7 @@ class OrgHub_Model
 	/**
 	 * Sets up the "children" models used by this model.
 	 */
-	private function setup_models()
+	protected function setup_models()
 	{
 		$this->site = OrgHub_SitesModel::get_instance();
 		$this->user = OrgHub_UsersModel::get_instance();

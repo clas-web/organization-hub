@@ -28,7 +28,7 @@ class OrgHub_UsersModel
 	 * Private Constructor.  Needed for a Singleton class.
 	 * Creates an OrgHub_UsersModel object.
 	 */
-	private function __construct()
+	protected function __construct()
 	{
 		global $wpdb;
 		self::$user_table        = $wpdb->base_prefix.self::$user_table;
@@ -167,7 +167,7 @@ class OrgHub_UsersModel
 	 * @param  array  $args  An array of user values.
 	 * @return  bool  True if the args are valid, otherwise False.
 	 */
-	private function check_args( &$args )
+	protected function check_args( &$args )
 	{
 		//
 		// Verify that the required columns have been included.
@@ -243,7 +243,7 @@ class OrgHub_UsersModel
 	 * @param  bool    $at_least_one  True if the value should have at least one value.
 	 * @return bool    True if the value is valid.
 	 */
-	private function check_multiple_value_arg( $field, &$value, $at_least_one = true )
+	protected function check_multiple_value_arg( $field, &$value, $at_least_one = true )
 	{
 		$value = str_getcsv( $value, ",", '"', "\\" );
 		if( ($at_least_one) && (count($value) === 0) )
@@ -272,7 +272,7 @@ class OrgHub_UsersModel
 	 * @param   string  $site_domain_name  The blog domain.
 	 * @return  bool    True if the blog domain is a valid format.
 	 */
-	private function is_valid_site_domain_name( $site_domain_name )
+	protected function is_valid_site_domain_name( $site_domain_name )
 	{
     	return (preg_match("/^([a-z\d](-*[a-z\d])*)(\.([a-z\d](-*[a-z\d])*))*$/i", $site_domain_name) //valid chars check
             && preg_match("/^.{1,253}$/", $site_domain_name) //overall length check
@@ -738,7 +738,7 @@ class OrgHub_UsersModel
 	 * @param   int     $limit        The amount of users to retrieve.
 	 * @return  string  The constructed SQL needed to complete an SQL statement.
 	 */
-	private function filter_sql( $filter = array(), $search = array(), $only_errors = false, $groupby = null, $orderby = null, $offset = 0, $limit = -1 )
+	protected function filter_sql( $filter = array(), $search = array(), $only_errors = false, $groupby = null, $orderby = null, $offset = 0, $limit = -1 )
 	{
 		global $wpdb;
 		
@@ -853,7 +853,7 @@ class OrgHub_UsersModel
 	 * @param   array  $user  The user's data retreived from the users database.
 	 * @return  bool   True if the user was prepared correctly, otherwise False.
 	 */
-	private function prepare_db_user( &$user )
+	protected function prepare_db_user( &$user )
 	{
  		if( !$user ) return false;
  		
@@ -1599,7 +1599,7 @@ class OrgHub_UsersModel
 	 * @param   bool  $deleted   True if site should be deleted, otherwise false.
 	 * @return  bool  True if the update was successful, otherwise false.
 	 */
-	private function update_blog_settings( $blog_id, $archived, $mature, $spam, $deleted )
+	protected function update_blog_settings( $blog_id, $archived, $mature, $spam, $deleted )
 	{
 		global $wpdb;
 		$result = $wpdb->update(
@@ -1652,7 +1652,7 @@ class OrgHub_UsersModel
 	 * @param   string|array  $connections_info  The connections site name or info array.
 	 * @return  bool          True if the processing occured successfully, otherwise false.
 	 */
-	private function process_connections_post( &$db_user, &$connections_info )
+	protected function process_connections_post( &$db_user, &$connections_info )
 	{
  		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
@@ -2364,7 +2364,7 @@ class OrgHub_UsersModel
 	 * Verifies that Connection custom post type exists and its associated taxonomies.
 	 * If they do not exists, then they are registered.
 	 */
-	private function setup_connections_custom_post_type()
+	protected function setup_connections_custom_post_type()
 	{
 		if( !post_type_exists('connection') )
 		{

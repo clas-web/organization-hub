@@ -25,7 +25,7 @@ class OrgHub_SitesModel
 	 * Private Constructor.  Needed for a Singleton class.
 	 * Creates an OrgHub_SitesModel object.
 	 */
-	private function __construct()
+	protected function __construct()
 	{
 		global $wpdb;
 		self::$site_table        = $wpdb->base_prefix.self::$site_table;
@@ -330,7 +330,7 @@ class OrgHub_SitesModel
 	 * @param   int     $limit        The amount of users to retrieve.
 	 * @return  string  The constructed SQL needed to complete an SQL statement.
 	 */
-	private function filter_sql( $filter = array(), $search = array(), $groupby = null, $orderby = null, $offset = 0, $limit = -1 )
+	protected function filter_sql( $filter = array(), $search = array(), $groupby = null, $orderby = null, $offset = 0, $limit = -1 )
 	{
 		global $wpdb;
 		
@@ -478,7 +478,7 @@ class OrgHub_SitesModel
 	 * @param   strint  $value    The value to set column to.
 	 * @return  bool    True if update was successful, otherwise false.
 	 */
-	private function set_site_column( $user_id, $column, $value )
+	protected function set_site_column( $user_id, $column, $value )
 	{
 		global $wpdb;
 		

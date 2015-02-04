@@ -117,7 +117,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	/**
 	 * Setup the filters for the list table, such as time, posts count, and page count.
 	 */
-	private function setup_filters()
+	protected function setup_filters()
 	{
 		if( isset($this->filter_types) ) return $this->filter_types;
 		

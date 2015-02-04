@@ -822,7 +822,7 @@ abstract class APL_AdminPage
 	 * Store an error in the session.
 	 * @param  string  $error  The error to store in the session.
 	 */
-	private function set_error( $error )
+	protected function set_error( $error )
 	{
 		$_SESSION['apl-error'] = $error;
 	}
@@ -831,7 +831,7 @@ abstract class APL_AdminPage
 	/**
 	 * Clears any errors stored in the session.
 	 */
-	private function clear_error()
+	protected function clear_error()
 	{
 		unset($_SESSION['apl-error']);
 	}
@@ -840,7 +840,7 @@ abstract class APL_AdminPage
 	/**
 	 * Displays any errors stored in the session.
 	 */
-	private function display_error()
+	protected function display_error()
 	{
 		if( empty($_SESSION['apl-error']) ) return;
 		
@@ -856,7 +856,7 @@ abstract class APL_AdminPage
 	 * Store a notice message in the session.
 	 * @param  string  $notice  The notice to store in the session.
 	 */
-	private function set_notice( $notice )
+	protected function set_notice( $notice )
 	{
 		$_SESSION['apl-notice'] = $notice;
 	}
@@ -865,7 +865,7 @@ abstract class APL_AdminPage
 	/**
 	 * Clears any notices stored in the session.
 	 */
-	private function clear_notice()
+	protected function clear_notice()
 	{
 		unset($_SESSION['apl-notice']);
 	}
@@ -874,7 +874,7 @@ abstract class APL_AdminPage
 	/**
 	 * Displays any notices stored in the session.
 	 */
-	private function display_notice()
+	protected function display_notice()
 	{
 		if( empty($_SESSION['apl-notice']) ) return;
 		
