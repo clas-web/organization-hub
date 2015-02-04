@@ -114,7 +114,9 @@ class APL_Handler
 	public function setup()
 	{
 		$this->set_current_page();
-
+		
+		if( defined('DOING_AJAX') && DOING_AJAX ) return;
+		
 		global $pagenow;
 		switch( $pagenow )
 		{
