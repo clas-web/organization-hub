@@ -516,8 +516,8 @@ abstract class APL_AdminPage
 		 	
 			<?php
 			
-			$this->display_error();
 			$this->display_notice();
+			$this->display_error();
 
 			$this->clear_error();
 			$this->clear_notice();
