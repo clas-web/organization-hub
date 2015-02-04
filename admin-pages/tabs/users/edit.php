@@ -42,7 +42,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 			case 'update-status':
 				// TODO: update status function
 				break;
-			case 'Process User':
+			case 'process-user':
 				$this->model->user->process_user( $user_id );
 				break;
 			case 'create-username':
@@ -53,7 +53,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				//$this->model->user->delete_wp_user( $user_id );
 				break;
 			case 'reset-wp-user-id':
-				$this->model->user->set_user_column( $user_id, 'wp_user_id', null );
+				$this->model->user->reset_user( $user_id );
 				break;
 			case 'create-site':
 				$this->model->user->create_profile_blog( $user_id, true );
@@ -140,6 +140,39 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 		<?php $this->form_end(); ?>
 		
 		
+		<?php
+		//
+		// User information.
+		//
+		?>
+		
+		<div id="orghub-userdata">
+			<div class="username"><label>Username:</label><?php echo $username; ?></div>
+			<div class="name"><label>Name:</label><?php echo $first_name.' '.$last_name; ?></div>
+			<div class="description"><label>Description:</label><?php echo $description; ?></div>
+			<div class="category"><label>Category:</label><?php echo implode( ', ', $category ); ?></div>
+			<div class="type"><label>Type:</label><?php echo implode( ', ', $type ); ?></div>
+			<div class="email"><label>Email:</label><?php echo $email; ?></div>
+			<div class="status"><label>Status:</label><?php echo $status; ?>
+				<div>
+				<?php
+				switch($status)
+				{
+					case 'new':
+						echo 'New users have been added, but have no WordPress username.';
+						break;
+					case 'active':
+						echo 'Active users are current users that have given a WordPress username.';
+						break;
+					case 'inactive':
+						echo 'Inactive users are not longer active within the organization so their profile site should be archived and their connections posts drafted.';
+						break;
+				}
+				?>
+				</div>
+			</div>
+		</div>
+		
 		
 		<?php
 		//
@@ -165,12 +198,12 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 					if( $error ):
 						echo $error;
 						?>
-						<button name="action" value="clear-user-error">Clear Error</button>
+						<button name="action" value="clear-username-error">Clear Error</button>
 						<?php
 					else:
 						echo $warning;
 						?>
-						<button name="action" value="clear-user-warning">Clear Warning</button>
+						<button name="action" value="clear-username-warning">Clear Warning</button>
 						<?php
 					endif;
 					?>
@@ -208,7 +241,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 					?>
 					<a href="<?php echo network_admin_url( 'users.php?s='.$wp_user->data->user_login ); ?>" target="_blank">Edit User</a>
 					<?php
-				else:
+				elseif( $status !== 'inactive' ):
 					?>
 					<button name="action" value="create-username">Create User</button>
 					<?php
@@ -269,10 +302,10 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 			
 				if( $profile_blog_id ):
 					?>
-					<div class="site-id"><label>ID</label><span><?php echo $profile_blog['blog_id']; ?></span></div>
-					<div class="site-name"><label>Name</label><span><?php echo $profile_blog['blogname']; ?></span></div>
-					<div class="site-url"><label>URL</label><span><?php echo $profile_blog['siteurl']; ?></span></div>
-					<div class="site-archived"><label>Archived</label><span><?php echo ($profile_blog['archived'] == '0' ? 'No' : 'Yes'); ?></span></div>
+					<div class="blog-id"><label>ID</label><span><?php echo $profile_blog['blog_id']; ?></span></div>
+					<div class="blog-name"><label>Name</label><span><?php echo $profile_blog['blogname']; ?></span></div>
+					<div class="blog-url"><label>URL</label><span><?php echo $profile_blog['siteurl']; ?></span></div>
+					<div class="blog-archived"><label>Archived</label><span><?php echo ($profile_blog['archived'] == '0' ? 'No' : 'Yes'); ?></span></div>
 					<?php
 				else:
 					?>
@@ -297,12 +330,12 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 						?>
 						<button name="action" value="archive-site">Archive Site</button>
 						<?php
-					else:
+					elseif( $status !== 'inactive' ):
 						?>
 						<button name="action" value="publish-site">Publish Site</button>
 						<?php
 					endif;
-				else:
+				elseif( $status !== 'inactive' ):
 
 					?>
  					<label><?php echo $site_domain.'/'.$site_path; ?></label>
@@ -401,12 +434,12 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 						?>
 						<button name="action" value="draft-connections-post">Draft Post</button>
 						<?php
-					else:
+					elseif( $status !== 'inactive' ):
 						?>
 						<button name="action" value="publish-connections-post">Publish Post</button>
 						<?php
 					endif;
-				else:
+				elseif( $status !== 'inactive' ):
 					?>
 					<button name="action" value="create-connections-post">Create Post</button>
 					<?php
