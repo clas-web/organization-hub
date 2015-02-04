@@ -177,7 +177,7 @@ jQuery(document).ready(
 			.fail(function( jqXHR, textStatus )
 			{
 				if( settings.cb_loop_end )
-					settings.cb_loop_end( index, settings, false, { message: jqXHR.responseText+': '+textStatus } );
+					settings.cb_loop_end( fi, settings, false, { message: jqXHR.responseText+': '+textStatus } );
 				
 				perform_data_ajax( fi, settings, ai+1, ajax );
 			});
