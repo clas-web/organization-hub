@@ -90,6 +90,7 @@ class OrgHub_Main
 		$description = get_user_meta( $user->ID, 'description', true );
 		$category = get_user_meta( $user->ID, 'category', true );
 		$type = get_user_meta( $user->ID, 'type', true );
+		$profile_link = get_user_meta( $user->ID, 'profile_blog', true );
 		$connections_sites = get_user_meta( $user->ID, 'connections_sites', true );
 
 		if( !$description && !$category && !$type && !$connections_sites ) return;
@@ -120,6 +121,14 @@ class OrgHub_Main
 				</th>
 				<td>
 					<?php echo $type; ?>
+				</td>
+			</tr>
+			<tr>
+				<th>
+					<label for="profile_blog">Profile Site</label>
+				</th>
+				<td>
+					<a href="<?php echo $profile_link; ?>"><?php echo $profile_link; ?></a>
 				</td>
 			</tr>
 				<?php

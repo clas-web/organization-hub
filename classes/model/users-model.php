@@ -1312,9 +1312,9 @@ class OrgHub_UsersModel
 			$link = $this->get_profile_blog_link( $db_user['profile_blog_id'] );
 
 		if( $link )
-			wp_update_user( array( 'ID' => $user->ID, 'user_url' => $link ) );
+			update_user_meta( $user->ID, 'profile_blog', $link );
 		else
-			wp_update_user( array( 'ID' => $user->ID, 'user_url' => '' ) );
+			update_user_meta( $user->ID, 'profile_blog', '' );
 		
 		$connections_meta = array();
 		foreach( $db_user['connections_sites'] as &$cs )
