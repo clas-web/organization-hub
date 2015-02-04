@@ -19,6 +19,7 @@ function refresh_all_sites_end( settings )
 {
 	jQuery('#ajax-status').html('AJAX refresh done.');
 	jQuery(settings.this).prop('disabled', false);
+	window.location.replace(window.location.href);
 }
 
 
@@ -98,18 +99,20 @@ function refresh_site_loop_end( fi, settings, ai, ajax, success, data )
 		return;
 	}
 	
-	var row = jQuery('tr.blog-'+data.site.blog_id);
+	var dajax = data.ajax;
+	
+	var row = jQuery('tr.blog-'+dajax.site.blog_id);
 	if( !row ) return;
 	
 	jQuery(row).find('td.site_title').removeClass('processing');
-	for( var column_name in data.columns )
+	for( var column_name in data.ajax.columns )
 	{
-		jQuery(row).find('td.'+column_name).html(data.columns[column_name]);
+		jQuery(row).find('td.'+column_name).html(dajax.columns[column_name]);
 	}
 	
 	if( ai+1 === ajax.items.length )
 	{
-		jQuery('#orghub-sites-time').html(data.refresh_date);
+		jQuery('#orghub-sites-time').html(dajax.refresh_date);
 	}
 }
 
