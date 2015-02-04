@@ -79,7 +79,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		switch( $_REQUEST['action'] )
 		{
 			case 'Process All Users':
-			case 'process-users':
+			case 'process-all-users':
 				$this->process_users();
 				break;
 			
@@ -247,7 +247,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		</div>
 
 		
-		<?php $this->form_start_get( 'process-users', null, 'process-users' ); ?>
+		<?php $this->form_start( 'process-all-users', null, 'process-all-users' ); ?>
 			<button>Process All Users</button>
 		<?php $this->form_end(); ?>
 		
