@@ -6,7 +6,7 @@ if( !class_exists('OrgHub_UsersListTable') )
 /**
  * OrgHub_UsersListTabAdminPage
  * 
- * This class controls the admin page USERS when in list mode.
+ * This class controls the admin page Users when in list mode.
  * 
  * @package    orghub
  * @subpackage admin-pages/tabs/users
@@ -34,7 +34,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	 */
 	public function __construct( $parent )
 	{
-		parent::__construct( 'list', 'Users List', $parent );
+		parent::__construct( $parent, 'list', 'Users List' );
 		$this->model = OrgHub_Model::get_instance();
 	}
 

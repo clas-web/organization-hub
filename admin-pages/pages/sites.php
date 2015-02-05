@@ -6,7 +6,7 @@ if( !class_exists('OrgHub_SitesListTable') )
 /**
  * OrgHub_SitesAdminPage
  * 
- * This class controls the admin page SITES.
+ * This class controls the admin page "Sites".
  * 
  * @package    orghub
  * @subpackage admin-pages/pages

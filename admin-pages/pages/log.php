@@ -2,7 +2,7 @@
 /**
  * OrgHub_LogAdminPage
  * 
- * This class controls the admin page LOG.
+ * This class controls the admin page "Log".
  * 
  * @package    orghub
  * @subpackage admin-pages/pages

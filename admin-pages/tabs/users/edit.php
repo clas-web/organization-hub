@@ -2,7 +2,7 @@
 /**
  * OrgHub_UsersEditTabAdminPage
  * 
- * This class controls the admin page USERS when in edit user mode.
+ * This class controls the admin page Users when in edit user mode.
  * 
  * @package    orghub
  * @subpackage admin-pages/tabs/users
@@ -21,7 +21,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 	 */
 	public function __construct( $parent )
 	{
-		parent::__construct( 'edit', 'Edit User', $parent );
+		parent::__construct( $parent, 'edit', 'Edit User' );
 		$this->model = OrgHub_Model::get_instance();
 	}
 

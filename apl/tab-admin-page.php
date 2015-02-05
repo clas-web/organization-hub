@@ -18,17 +18,18 @@ abstract class APL_TabAdminPage extends APL_AdminPage
 	
 	public    $display_tab;     // True if tab should appear in tab list, else False.
 	
-
+	
 	/**
 	 * Creates an APL_TabAdminPage object.
-	 * @param  string         $name        The name/slug of the tab.
-	 * @param  string         $title       The title of the tab.
 	 * @param  APL_AdminPage  $page        The parent admin page that contains the tab.
+	 * @param  string         $name        The name/slug of the tab.
+	 * @param  string         $tab_title   The title of the tab.
+	 * @param  string         $page_title  The title of the page when tab is active.
 	 * @param  string         $capability  The capability needed to displayed to the user.
 	 */
-	public function __construct( $name, $title, $page, $capability = 'administrator' )
+	public function __construct( $page, $name, $tab_title, $page_title = null, $capability = 'administrator' )
 	{
-		parent::__construct( $name, $title, $title, $capability );
+		parent::__construct( $name, $tab_title, $page_title, $capability );
 		$this->page = $page;
 		$this->display_tab = true;
 	}
@@ -77,7 +78,7 @@ abstract class APL_TabAdminPage extends APL_AdminPage
 		
 		<a href="?page=<?php echo $this->page->get_name(); ?>&tab=<?php echo $this->name; ?>"
 		   class="nav-tab <?php if( $this == $this->handler->current_tab ) echo 'active'; ?>">
-			<?php echo $this->page_title; ?>
+			<?php echo $this->menu_title; ?>
 		</a>
 		
 		<?php

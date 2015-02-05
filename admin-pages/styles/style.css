@@ -248,4 +248,15 @@
 		margin-left:7em;
 	}
 	
+	.page-contents ul {
+		list-style-type:disc;
+		padding-left:2em;
+	}
+
+	.page-contents ul > li {
+		list-style-type:disc;
+		margin:0;
+		padding:0.1em 0em;
+	}
+	
 	

@@ -43,18 +43,18 @@ abstract class APL_AdminPage
 	/**
 	 * Creates an APL_AdminPage object.
 	 * @param  string  $name        The name/slug of the page.
-	 * @param  string  $page_title  The title shown on the top of the page.
 	 * @param  string  $menu_title  The title shown on the left menu.
+	 * @param  string  $page_title  The title shown on the top of the page.
 	 * @param  string  $capability  The capability needed to displayed to the user.
 	 */
-	public function __construct( $name, $page_title, $menu_title = null, $capability = 'administrator' )
+	public function __construct( $name, $menu_title, $page_title, $capability = 'administrator' )
 	{
 		$this->handler = null;
 		$this->menu = null;
 		
 		$this->name = $name;
+		$this->menu_title = $menu_title;
 		$this->page_title = $page_title;
-		$this->menu_title = ( $menu_title !== null ? $menu_title : $page_title );
 		$this->capability = $capability;
 		
 		$this->is_main_page = false;
@@ -497,7 +497,14 @@ abstract class APL_AdminPage
 		<div class="wrap">
 	 
 			<div id="icon-themes" class="icon32"></div>
-			<h2><?php echo $this->page_title; ?></h2>
+			
+			<?php
+			if( $this->handler->current_tab && $this->handler->current_tab->page_title !== null ):
+				?><h2><?php echo $this->handler->current_tab->page_title; ?></h2><?php
+			else:
+				?><h2><?php echo $this->page_title; ?></h2><?php
+			endif;
+			?>
 			<?php settings_errors(); ?>
 		 
 		 	<?php 

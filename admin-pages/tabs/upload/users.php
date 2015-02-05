@@ -1,30 +1,27 @@
 <?php
 /**
- * OrgHub_UploadAdminPage
+ * OrgHub_UsersUploadTabAdminPage
  * 
- * This class controls the admin page UPLOAD.
+ * This class controls the tab admin page "Upload > Users".
  * 
  * @package    orghub
- * @subpackage admin-pages/pages
+ * @subpackage admin-pages/tabs/upload
  * @author     Crystal Barton <cbarto11@uncc.edu>
  */
 
-if( !class_exists('OrgHub_UploadAdminPage') ):
-class OrgHub_UploadAdminPage extends APL_AdminPage
+if( !class_exists('OrgHub_UsersUploadTabAdminPage') ):
+class OrgHub_UsersUploadTabAdminPage extends APL_TabAdminPage
 {
 	
 	private $model = null;
-	private $users_table = null;
 	
-	private $process_results = '';
-
-
+	
 	/**
 	 * Creates an OrgHub_UploadAdminPage object.
 	 */
-	public function __construct()
+	public function __construct( $parent )
 	{
-		parent::__construct( 'upload', 'Upload', 'Upload' );
+		parent::__construct( $parent, 'users', 'Users', 'Upload Users' );
         $this->model = OrgHub_Model::get_instance();
 	}
 	
@@ -106,7 +103,21 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 	public function display()
 	{
 		?>
-		<h4>Upload Users</h4>
+		<h4>Instructions</h4>
+		
+		<p>
+		Organizational Hub users can be uploaded by means of a CSV file that has the following format. The first line of this file should be the following field names: username, category, first_name, last_name, description, email, site_domain, site_path, connections_sites, type
+		</p>
+		
+		<ul>
+			<li>category: department, unit, program</li>
+			<li>description: position title</li>
+			<li>type: faculty, staff, student</li>
+			<li>site_domain: domain of the server of your WordPress site (or one of its mapped domains).</li>
+			<li>site_path: name of site to be created for a user</li>
+		</ul>
+		
+		<h4>Upload</h4>
 		
 		<?php
 		$this->form_start( 'upload', array('enctype' => 'multipart/form-data'), 'upload', null );
@@ -122,6 +133,6 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
  		$this->form_end();
 	}
 	
-} // class OrgHub_UploadAdminPage extends APL_AdminPage
-endif; // if( !class_exists('OrgHub_UploadAdminPage') ):
+} // class OrgHub_UsersUploadTabAdminPage extends APL_AdminPage
+endif; // if( !class_exists('OrgHub_UsersUploadTabAdminPage') ):
 

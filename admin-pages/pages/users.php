@@ -2,7 +2,7 @@
 /**
  * OrgHub_UsersAdminPage
  * 
- * This class controls the admin page USERS.
+ * This class controls the admin page "Users".
  * 
  * @package    orghub
  * @subpackage admin-pages/pages
