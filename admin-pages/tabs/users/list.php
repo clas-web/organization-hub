@@ -278,16 +278,11 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 					<div class="scroll-box">
 					<?php foreach( $type['values'] as $vk => $vv ): ?>
 						<div class="item">
-						<?php if( is_int($vk) ): ?>
-							<input type="checkbox"
-								   name="<?php echo $key; ?>[]"
-								   id="<?php apl_name_e( $key, $vv ); ?>"
-								   value="<?php echo $vv; ?>"
-								   <?php checked( true, in_array($vv, $type['filter']) ); ?> />
-							<label for="<?php apl_name_e( $key, $vv ); ?>">
-								<?php echo $vv; ?>
-							</label>
-						<?php else: ?>
+						<?php if( is_int($vk) ) $vk = $vv; ?>
+						<?php 
+						if( $key == 'site_domain' && $vv == '' )
+							$vv = '[default domain]';
+						?>
 							<input type="checkbox"
 								   name="<?php echo $key; ?>[]"
 								   id="<?php apl_name_e( $key, $vk ); ?>"
@@ -296,7 +291,6 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 							<label for="<?php apl_name_e( $key, $vk ); ?>">
 								<?php echo $vv; ?>
 							</label>
-						<?php endif; ?>
 						</div>
 					<?php endforeach; ?>
 					</div>
