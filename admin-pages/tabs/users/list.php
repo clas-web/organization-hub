@@ -82,6 +82,11 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 			case 'process-all-users':
 				$this->process_users();
 				break;
+
+			case 'clear':
+				$this->model->user->clear_tables();
+				$this->handler->force_redirect_url = $this->get_page_url();
+				break;
 			
 			case 'export':
 		        require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
@@ -250,6 +255,14 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		<?php $this->form_start( 'process-all-users', null, 'process-all-users' ); ?>
 			<button>Process All Users</button>
 		<?php $this->form_end(); ?>
+
+		<?php
+		if( ORGANIZATION_HUB_DEBUG ):
+		$this->form_start_get( 'clear', null, 'clear' );
+			?><button>Clear Users</button><?php
+		$this->form_end();
+		endif;
+		?>
 		
 		<?php $this->form_start_get( 'filter-form' ); ?>
 			

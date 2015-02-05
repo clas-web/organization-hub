@@ -262,9 +262,11 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		?>
 
 		<?php
+		if( ORGANIZATION_HUB_DEBUG ):
 		$this->form_start_get( 'clear', null, 'clear' );
 			?><button>Clear Sites</button><?php
 		$this->form_end();
+		endif;
 		?>
 		
 		<div id="ajax-status">

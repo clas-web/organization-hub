@@ -15,6 +15,8 @@ if( !defined('ORGANIZATION_HUB') ):
 
 define( 'ORGANIZATION_HUB', 'Organization Hub' );
 
+define( 'ORGANIZATION_HUB_DEBUG', true );
+
 define( 'ORGANIZATION_HUB_PLUGIN_PATH', dirname(__FILE__) );
 define( 'ORGANIZATION_HUB_PLUGIN_URL', plugins_url('', __FILE__) );
 
