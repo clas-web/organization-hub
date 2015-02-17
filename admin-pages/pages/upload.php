@@ -24,6 +24,7 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 		parent::__construct( 'upload', 'Upload', 'Upload' );
         $this->model = OrgHub_Model::get_instance();
         
+		$this->add_tab( new OrgHub_OverviewUploadTabAdminPage($this) );
 		$this->add_tab( new OrgHub_UsersUploadTabAdminPage($this) );
 		$this->add_tab( new OrgHub_SitesUploadTabAdminPage($this) );
 		$this->add_tab( new OrgHub_ContentUploadTabAdminPage($this) );

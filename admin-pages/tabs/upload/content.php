@@ -1,4 +1,8 @@
 <?php
+
+if( !class_exists('OrgHub_UploadListTable') )
+	require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/upload-list-table.php' );
+
 /**
  * OrgHub_ContentUploadTabAdminPage
  * 
@@ -15,6 +19,7 @@ class OrgHub_ContentUploadTabAdminPage extends APL_TabAdminPage
 	
 	private $model = null;
 	private $list_table = null;
+	private $orderby = null;
 	
 	
 	/**
@@ -28,16 +33,79 @@ class OrgHub_ContentUploadTabAdminPage extends APL_TabAdminPage
 	
 	
 	/**
+	 * Initialize the admin page by setting up the filters and list table.
+	 */
+	public function init()
+	{
+		$this->setup_filters();
+		$this->list_table = new OrgHub_UploadListTable( $this );
+	}
+	
+	/**
+	 * Loads the list table's items.
+	 */
+	public function load()
+	{
+		$this->list_table->load();
+	}
+	
+
+	/**
+	 * Setup the filters for the list table, such as time, posts count, and page count.
+	 */
+	protected function setup_filters()
+	{
+		$this->orderby = ( !empty($_GET['orderby']) ? $_GET['orderby'] : 'timestamp' );
+		$order = ( !empty($_GET['order']) ? $_GET['order'] : 'desc' );
+		
+		switch( $order )
+		{
+			case 'asc': case 'desc': break;
+			default: $order = null; break;
+		}
+
+		switch( $this->orderby )
+		{
+			case 'timestamp':
+				if( !$order ) $order = 'desc';
+				break;
+
+			default:
+				$this->orderby = 'timestamp';
+				if( !$order ) $order = 'desc';
+				break;
+		}
+		
+
+		if( !isset($_GET) ) $_GET = array();
+		$_GET['orderby'] = $this->orderby;
+		$_GET['order'] = $order;
+		
+		$this->orderby .= ' '.$order;
+	}
+	
+	
+	/**
 	 * Processes the current admin page.
 	 */
 	public function process()
 	{
+		if( $this->list_table->process_batch_action() ) return;
+
 		if( empty($_REQUEST['action']) ) return;
 		
 		switch( $_REQUEST['action'] )
 		{
 			case 'upload':
 				$this->upload_file();
+				break;
+			
+			case 'clear':
+				$this->model->upload->clear_blog_batch_items();
+				$this->handler->force_redirect_url = $this->get_page_url();
+				break;
+				
+			case 'process-items':
 				break;
 		}
 	}
@@ -48,7 +116,41 @@ class OrgHub_ContentUploadTabAdminPage extends APL_TabAdminPage
 	 */
 	public function upload_file()
 	{
+		if( !isset($_FILES) || !isset($_FILES['upload']) )
+        {
+        	$this->set_error( 'No uploaded file.' );
+            return;
+        }
 		
+        require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
+
+		$rows = array();
+		$results = OrgHub_CsvHandler::import( $_FILES['upload']['tmp_name'], $rows, false );
+		if( $results === false )
+		{
+			$this->set_error( OrgHub_CsvHandler::$last_error );
+            return;
+		}
+		
+		$processed_rows = 0;
+		$errors = '';
+		foreach( $rows as &$row )
+		{
+			if( $uid = $this->model->upload->add_item($row) )
+			{
+				$processed_rows++;
+			}
+			else
+			{
+				$errors .= $this->model->last_error.'<br/>';
+			}
+		}
+		
+		$results = count($rows) . ' rows found in file.<br/>';
+		$results .= $processed_rows . ' rows added successfully.<br/>';
+
+		$this->set_notice( $results );
+		$this->set_error( $errors );
 	}
 		
 	
@@ -57,37 +159,9 @@ class OrgHub_ContentUploadTabAdminPage extends APL_TabAdminPage
 	 */
 	public function display()
 	{
+		$this->list_table->prepare_items( $this->orderby );
+
 		?>
-		<h4>Instructions</h4>
-		
-		<p>
-		Organizational Hub can be used to add posts to an existing site. It can also be used to edit or delete existing posts or add, edit or delete taxonomy terms. All of this is done by means of CSV files with the appropriate header lines. The first column of each row indicates how the row should be processed.
-		</p>
-		<p>
-		# : Comments out the row. This row will be ignored and not processed at all.
-		</p>
-		
-		<h5>Posts and Pages</h5>
-		<p>
-		These four fields are required for all posts and pages.
-		</p>
-		<ul>
-			<li>site : The slug of the site.</li>
-			<li>type : "post" or "page" or a custom post type.</li>
-			<li>action : The action to take on the object. There are a number fo actions that can be taken. Further details on each of the actions are detailed under the type section.</li>
-			<li>add : Adds a post or page, but does not check for duplicates before creation.</li>
-			<li>update : Updates a post or page, if it exists.</li>
-			<li>replace : Replaces a post or page, if it exists, otherwise it creates the post.</li>
-			<li>prepend : Prepends data to a post or page's excerpt and content.</li>
-			<li>append : Appends data to a post or page's excerpt and content.</li>
-			<li>delete : Deletes a post or page.</li>
-			<li>grep : Updates a portion of a post or page using a regex expression and replacement text. Requires the "subject" column. Valid subject values: "title", "excerpt", "content", "slug", "guid"</li>
-			<li>title : The title of the post or page.</li>
-		</ul>
-		<p>
-		For more detailed instructions about header and various other fields that can be used, see: https://github.com/clas-web/multisite-csv-importer
-		</p>
-		
 		<h4>Upload</h4>
 		
 		<?php
@@ -102,6 +176,18 @@ class OrgHub_ContentUploadTabAdminPage extends APL_TabAdminPage
  		
  		<?php
  		$this->form_end();
+		?>
+		
+		<h4>Batch List</h4>
+
+		<?php
+		$this->form_start_get( 'clear', null, 'clear' );
+			?><button>Clear Items</button><?php
+		$this->form_end();
+		
+		$this->form_start( 'upload-table' );
+			$this->list_table->display();
+		$this->form_end();
 	}
 	
 } // class OrgHub_ContentUploadTabAdminPage extends APL_AdminPage

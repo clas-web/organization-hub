@@ -1,0 +1,3043 @@
+<?php
+/**
+ * OrgHub_UploadModel
+ * 
+ * The upload model for the Organization Hub plugin.
+ * 
+ * @package	orghub
+ * @subpackage classes
+ * @author	 Crystal Barton <cbarto11@uncc.edu>
+ */
+
+if( !class_exists('OrgHub_UploadModel') ):
+class OrgHub_UploadModel
+{
+	
+	private static $instance = null;	// The only instance of this class.
+	private $model = null;				// The "parent" model for Organization Hub.
+	
+	// Names of tables used by the model without prefix.
+	private static $upload_table = 'orghub_upload';	// 
+	
+	
+	
+	/**
+	 * Private Constructor.  Needed for a Singleton class.
+	 * Creates an OrgHub_SitesModel object.
+	 */
+	protected function __construct()
+	{
+		global $wpdb;
+		self::$upload_table		= $wpdb->base_prefix.self::$upload_table;
+		
+		$this->model = OrgHub_Model::get_instance();
+	}
+
+
+	/**
+	 * Get the only instance of this class.
+	 * @return  OrgHub_UploadModel  A singleton instance of the sites model class.
+	 */
+	public static function get_instance()
+	{
+		if( self::$instance	=== null )
+		{
+			self::$instance = new OrgHub_UploadModel();
+		}
+		return self::$instance;
+	}
+
+
+
+//========================================================================================
+//================================================================== Database tables =====
+
+
+	/**
+	 * Create the required database tables.
+	 */
+	public function create_tables()
+	{
+		global $wpdb;
+		
+		$db_charset_collate = '';
+		if( !empty($wpdb->charset) )
+			$db_charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
+		if( !empty($wpdb->collate) )
+			$db_charset_collate .= " COLLATE $wpdb->collate";
+		
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
+		$sql = "CREATE TABLE ".self::$upload_table." (
+				  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				  blog_id bigint(20) unsigned NOT NULL,
+				  data text NOT NULL DEFAULT '',
+				  timestamp timestamp DEFAULT CURRENT_TIMESTAMP,
+				  PRIMARY KEY  (id)
+				) ENGINE=InnoDB $db_charset_collate;";
+		
+		dbDelta($sql);
+	}
+	
+	
+	/**
+	 * Drop the required database tables.
+	 */
+	public function delete_tables()
+	{
+		global $wpdb;
+		$wpdb->query( 'DROP TABLE '.self::$upload_table.';' );
+	}
+
+
+	/**
+	 * Clear the required database tables.
+	 */
+	public function clear_tables()
+	{
+		global $wpdb;
+		$wpdb->query( 'DELETE FROM '.self::$upload_table.';' );
+	}
+	
+	
+	
+//========================================================================================
+//================================================ Import / Updating database tables =====
+	
+	
+	/**
+	 * Verifies that all the required fields are present.
+	 * @param  array  $args  An array of user values.
+	 * @return  bool  True if the args are valid, otherwise False.
+	 */
+	protected function check_args( &$args, $validate_for_action = false )
+	{
+		//
+		// Verify that the required columns have been included.
+		//
+		$required_keys = array( 'type', 'action' );
+		$required_values = array( 'type', 'action' );
+		
+		foreach( $required_keys as $key )
+		{
+			if( !isset($args[$key]) )
+			{
+				$this->model->last_error = 'The '.$key.' must be specified.';
+				return false;
+			}
+			
+			if( in_array($key, $required_values) && empty($args[$key]) )
+			{
+				$this->model->last_error = 'The '.$key.' must contain a value.';
+				return false;
+			}
+		}
+		
+		$function = array(
+			$this,
+			'check_'.(str_replace('-', '_', $args['type'])).'_args',
+		);
+		
+		if( is_callable($function) )
+			return call_user_func_array( $function, array(&$args, $validate_for_action) );
+
+		$this->model->last_error = 'Invalid type specified: "'.$args['type'].'"';
+		return false;
+	}
+	
+	
+	/**
+	 * 
+	 * 
+	 * 
+	 */
+	private function validate_args_for_db( &$args, $required_keys, $required_values, $valid_keys, $valid_regex_keys )
+	{
+		$new_args = array(
+			'site'		=> $args['site'],
+			'type'		=> $args['type'],
+		);
+		
+		foreach( array_keys($args) as $key )
+		{
+			if( in_array($key, $required_keys) || in_array($key, $valid_keys) )
+			{
+				$new_args[$key] = $args[$key];
+				continue;
+			}
+			
+			foreach( $valid_regex_keys as $regex )
+			{
+				if( preg_match("/^$regex$/", $key, $matches) ) 
+					$new_args[$key] = $args[$key];
+			}
+		}
+		
+		foreach( $required_keys as $key )
+		{
+			if( !isset($new_args[$key]) )
+			{
+				$this->model->last_error = 'The '.$key.' must be specified.';
+				return false;
+			}
+			
+			if( in_array($key, $required_values) && empty($new_args[$key]) )
+			{
+				$this->model->last_error = 'The '.$key.' must contain a value.';
+				return false;
+			}
+		}
+		
+		$args = $new_args;
+		return true;
+	}
+	
+	
+	private function validate_args_for_action( &$args, $required_keys, $required_values, $valid_keys, $valid_regex_keys )
+	{
+		$result = $this->validate_args_for_db( 
+			$args, 
+			$required_keys, 
+			$required_values, 
+			$valid_keys, 
+			$valid_regex_keys );
+		if( !$result ) return false;
+
+		foreach( $valid_keys as $key )
+		{
+			if( isset($args[$key]) ) continue;
+			$args[$key] = '';
+		}
+		
+		foreach( array_keys($args) as $key )
+		{
+			foreach( $valid_regex_keys as $regex )
+			{
+				$regex_key = '\(([a-zA-Z0-9\-]+)\)';
+				if( !preg_match("/$regex_key/", $regex, $matches) ) continue;
+				
+				if( !array_key_exists($matches[0], $args) )
+					$args[$matches[0]] = array();
+					
+				if( !preg_match("/^$regex$/", $key, $matches) ) continue;
+				
+				$args[$matches[1]][$matches[2]] = $args[$key];
+				unset($args[$key]);
+			}
+		}
+		
+		// Taxonomies
+		if( array_key_exists('categories', $args) )
+		{
+			$args['taxonomy']['category'] = $args['categories'];
+			unset($args['categories']);
+		}
+		if( array_key_exists('tags', $args) )
+		{
+			$args['taxonomy']['post_tag'] = $args['tags'];
+			unset($args['tags']);
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Adds an OrgHub import data to the database.
+	 * @param   array	 $args  An array of data about a site.
+	 * @return  int|bool  The id of the inserted site or false on failure.
+	 */
+	public function add_item( &$args )
+	{
+		if( !$this->check_args( $args ) ) return false;
+		
+		global $wpdb;
+		
+		//
+		// Insert new site into Upload table.
+		//
+		$result = $wpdb->insert(
+			self::$upload_table,
+			array(
+				'blog_id'		=> $this->get_current_blog_id(),
+				'data'			=> json_encode($args),
+			),
+			array( '%s' )
+		);
+		
+		//
+		// Check to make sure insertion was successful.
+		//
+		$item_id = $wpdb->insert_id;
+		if( !$item_id )
+		{
+			$this->model->last_error = 'Unable to insert item.';
+			return false;
+		}
+
+		return $item_id;
+	}
+	
+	
+
+//========================================================================================
+//=============================================== Retrieve upload data from database =====
+	
+
+	/**
+	 * Retrieve a complete list of OrgHub items from the database after filtering.
+	 * @param   int	 $blog_id  The blog id of the current site's batch. 
+	 * @param   int		$offset	  The offset of the users list.
+	 * @param   int		$limit	  The amount of users to retrieve.
+	 * @return  array   An array of items given the filtering.
+	 */
+	public function get_items( $orderby = null, $offset = 0, $limit = -1 )
+	{
+		global $wpdb;
+		
+		$list = array();
+		$list[self::$upload_table] = array(
+			'id', 'data', 'timestamp'
+		);
+		
+		$list = $this->model->get_column_list( $list );
+		
+		$blog_id = $this->get_current_blog_id();
+		$filter = $this->filter_sql($blog_id, $orderby, $offset, $limit);
+		
+//  		apl_print( 'SELECT '.$list.' FROM '.self::$upload_table.' '.$filter );
+		$items = $wpdb->get_results( 'SELECT '.$list.' FROM '.self::$upload_table.' '.$filter, ARRAY_A );
+		
+		foreach( $items as &$item )
+		{
+			$item['data'] = json_decode( $item['data'], true );
+		}
+		
+		return $items;
+	}
+	
+	
+	/**
+	 * The amount of OrgHub items from the database.
+	 * @param   int	 $blog_id  The blog id of the current site's batch. 
+	 * @return  array   The amount of items.
+	 */
+	public function get_items_count()
+	{
+		global $wpdb;
+		$blog_id = $this->get_current_blog_id();
+		return $wpdb->get_var( "SELECT COUNT(DISTINCT ".self::$upload_table.".id) FROM ".self::$upload_table.' '.$this->filter_sql($blog_id) );
+	}
+
+
+	/**
+	 * Creates the SQL needed to complete an SQL statement.
+	 * @param   int	 $blog_id  The blog id of the current site's batch. 
+	 * @param   int		$offset	  The offset of the users list.
+	 * @param   int		$limit	  The amount of users to retrieve.
+	 * @return  string  The constructed SQL needed to complete an SQL statement.
+	 */
+	protected function filter_sql( $blog_id = 0, $orderby = null, $offset = 0, $limit = -1 )
+	{
+		global $wpdb;
+		
+		$where = 'WHERE blog_id = '.intval($blog_id);
+		
+		if( $orderby ) $orderby = 'ORDER BY '.$orderby; else $orderby = 'ORDER BY timestamp';
+		
+		$limit = intval( $limit );
+		$offset = intval( $offset );
+		
+		$limit_string = '';
+		if( $limit > 0 )
+		{
+			if( $offset > 0 )
+				$limit_string = "LIMIT $offset, $limit";
+			else
+				$limit_string = "LIMIT $limit";
+		}
+
+		return $where.' '.$orderby.' '.$limit_string;
+	}
+	
+	
+	/**
+	 * Clear all batch items for particular blog.
+	 */
+	public function clear_blog_batch_items()
+	{
+		global $wpdb;
+		$wpdb->query( 'DELETE FROM '.self::$upload_table.' WHERE blog_id = '.$this->get_current_blog_id() );
+	}
+	
+	
+	/**
+	 * 
+	 */
+	public function get_current_blog_id()
+	{
+		$blog_id = 0;
+		if( !is_network_admin() ) $blog_id = get_current_blog_id();
+		return $blog_id;
+	}
+	
+	
+//========================================================================================
+//========================================================================== Actions =====
+	
+	
+	/**
+	 * Process the items in the upload table.
+	 */
+	public function process_items()
+	{
+		$items = $this->get_items();
+		
+		foreach( $items as &$item )
+		{
+			$data =& $item['data'];
+			
+			if( !$this->check_args($data, true) ) return false;
+		
+			$type = str_replace( '-', '_', $data['type'] );
+			$action = str_replace( '-', '_', $data['action'] );
+
+			$function = array(
+				$this,
+				$action.'_'.$type,
+			);
+			
+			if( is_callable($function) )
+				return call_user_func_array( $function, array(&$data) );
+			
+			$this->model->last_error = 'Invalid type "'.$data['type'].' or action "'.$data['action'].'" specified.';
+		}
+	}
+	
+	
+	
+//========================================================================================
+//======================================================================= TYPE: Post =====
+	
+	
+	/**
+	 * Verifies that all the required fields are present for "post" types.
+	 *
+	 * @param  array  $args  An array of user values.
+	 * @return  bool  True if the args are valid, otherwise False.
+	 */
+	protected function check_post_args( &$args, $validate_for_action = false )
+	{
+		$required_keys = array();
+		$required_values = array();
+		$valid_keys = array();
+		$valid_regex_keys = array();
+		
+		switch( $args['action'] )
+		{
+			case 'add':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, excerpt, content, post-type, date, author, slug, 
+					guid, status, password, categories, tags, taxonomy-{name}, meta-{name}
+				*/
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
+				$valid_keys = array( 'excerpt', 'content', 'post-type', 'date', 'author', 'slug', 'guid', 'status', 'password', 'categories', 'tags' );
+				$valid_regex_keys = array( '(taxonomy)\-([a-zA-Z0-9\-_]+)', '(meta)\-([a-zA-Z0-9\-_]+)' );
+				break;
+				
+			case 'update':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, excerpt, content, post-type, date, author, slug, 
+					status, password, categories, tags, taxonomy-{name}, meta-{name}
+				*/
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
+				$valid_keys = array( 'excerpt', 'content', 'post-type', 'date', 'author', 'slug', 'status', 'password', 'categories', 'tags' );
+				$valid_regex_keys = array( '(taxonomy)\-([a-zA-Z0-9\-_]+)', '(meta)\-([a-zA-Z0-9\-_]+)' );
+				break;
+			
+			case 'replace':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, excerpt, content, post-type, date, author, slug, 
+					guid, status, password, categories, tags, taxonomy-{name}, meta-{name}
+				*/
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
+				$valid_keys = array( 'excerpt', 'content', 'post-type', 'date', 'author', 'slug', 'guid', 'status', 'password', 'categories', 'tags' );
+				$valid_regex_keys = array( '(taxonomy)\-([a-zA-Z0-9\-_]+)', '(meta)\-([a-zA-Z0-9\-_]+)' );
+				break;
+			
+			case 'prepend':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, excerpt, content
+				*/
+				$required_keys = array( 'site', 'title' );
+				$required_keys = array( 'site', 'title' );
+				$valid_keys = array( 'excerpt', 'content' );
+				break;
+			
+			case 'append':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, excerpt, content
+				*/
+				$required_keys = array( 'site', 'title' );
+				$required_keys = array( 'site', 'title' );
+				$valid_keys = array( 'excerpt', 'content' );
+				break;
+			
+			case 'delete':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title
+				*/
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
+				break;
+				
+			case 'rename':
+				/*
+				required fields:
+					type, action, site, title, new-title
+				all supported fields:
+					type, action, site, title, new-title
+				*/
+				$required_keys = array( 'site', 'title', 'new-title' );
+				$required_values = array( 'site', 'title', 'new-title' );
+				break;
+				
+			case 'grep':
+				/*
+				required fields:
+					type, action, site, subject, regex, replace-text
+				all supported fields:
+					type, action, site, title, post-type, subject, regex, replace-text
+				*/
+				$required_keys = array( 'site', 'subject', 'regex', 'replace-text' );
+				$required_values = array( 'site', 'subject', 'regex' );
+				$valid_keys = array( 'title', 'post-type' );
+				break;
+				
+			case 'add-taxonomy':
+			case 'update-taxonomy':
+			case 'delete-taxonomy':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, categories, tags, taxonomy-{name}
+				*/
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
+				$valid_keys = array( 'categories', 'tags' );
+				$valid_keys_regex = array( '(taxonomy)\-([a-zA-Z0-9\-_]+)' );
+				break;
+			
+			case 'add-meta':
+				/*
+				required fields:
+					type, action, site, title, name, value
+				all supported fields:
+					type, action, site, title, name, value
+				*/
+				$required_keys = array( 'site', 'title', 'name', 'value' );
+				$required_values = array( 'site', 'title', 'name' );
+				break;
+			
+			case 'update-meta':
+				/*
+				required fields:
+					type, action, site, title, name, value
+				all supported fields:
+					type, action, site, title, name, value
+				*/
+				$required_keys = array( 'site', 'title', 'name', 'value' );
+				$required_values = array( 'site', 'title', 'name' );
+				break;
+			
+			case 'replace-meta':
+				/*
+				required fields:
+					type, action, site, title, name, value
+				all supported fields:
+					type, action, site, title, name, value
+				*/
+				$required_keys = array( 'site', 'title', 'name', 'value' );
+				$required_values = array( 'site', 'title', 'name' );
+				break;
+			
+			case 'delete-meta':
+				/*
+				required fields:
+					type, action, site, title, name
+				all supported fields:
+					type, action, site, title, name
+				*/
+				$required_keys = array( 'site', 'title', 'name' );
+				$required_values = array( 'site', 'title', 'name' );
+				break;
+			
+			case 'copy-meta':
+				/*
+				required fields:
+					type, action, site, title, name, new-name
+				all supported fields:
+					type, action, site, title, name, new-name
+				*/
+				$required_keys = array( 'site', 'title', 'name', 'new-name' );
+				$required_values = array( 'site', 'title', 'name', 'new-name' );
+				break;
+			
+			default:
+				$this->model->last_error = 'Invalid action for type: "post" => "'.$args['action'].'".';
+				return false;
+				break;
+		}
+		
+		if( $validate_for_action )
+		{
+			return $this->validate_args_for_action( 
+				$args, 
+				$required_keys, 
+				$required_values, 
+				$valid_keys, 
+				$valid_regex_keys );
+		}
+		
+		return $this->validate_args_for_db( 
+			$args, 
+			$required_keys, 
+			$required_values, 
+			$valid_keys, 
+			$valid_regex_keys );
+	}
+	
+	
+	/**
+	 * Add a new post to a site.  If a post with the same title already exists, then the 
+	 * post will not be created.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_post( &$item )
+	{
+		extract($item);
+		
+		$post_data = array(
+			'post_content'	=> $content,
+			'post_name'		=> $slug,
+			'post_title'	=> $title,
+			'post_status'	=> $status,
+			'post_type'		=> $post_type,
+			'post_author'	=> $this->get_author_id( $author ),
+			'post_password'	=> $password,
+			'guid'			=> $guid,
+			'post_excerpt'	=> $excerpt,
+			'post_date'		=> $this->parse_date( $date ),
+			'tax_input'		=> $this->get_taxonomies( $taxonomy ),
+		);
+		
+		$post_id = wp_insert_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		foreach( $meta as $key => $value )
+		{
+			update_post_meta( $post_id, $key, $value );
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Updates an existing post on a site.  If a post with a matching title does not 
+	 * exist, then it will not be created.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function update_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'post_content'	=> $content,
+			'post_name'		=> $slug,
+			'post_status'	=> $status,
+			'post_type'		=> $this->get_post_type( $post_type ),
+			'post_author'	=> $this->get_author_id( $author ),
+			'post_password'	=> $password,
+			'guid'			=> $guid,
+			'post_excerpt'	=> $excerpt,
+			'post_date'		=> $this->parse_date( $date ),
+			'tax_input'		=> $this->get_taxonomies( $taxonomy ),
+		);
+		
+		$post_id = wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		foreach( $meta as $key => $value )
+		{
+			update_post_meta( $post_id, $key, $value );
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Adds or updates a post on a site.  If a post with a matching title exists, then it 
+	 * will be updated.  If a matching post is not found, then it will be created.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function replace_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		
+		if( !$post ) return $this->add_post( $item );
+		
+		return $this->update_post( $item );
+	}
+	
+	
+	/**
+	 * Prepend content to the start of the post’s excerpt or content.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function prepend_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'post_excerpt'	=> $excerpt.$post->post_excerpt,
+			'post_content'	=> $content.$post->post_content,
+		);
+		
+		$post_id = wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Append content to the start of the post’s excerpt or content.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function append_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'post_excerpt'	=> $post->post_excerpt.$excerpt,
+			'post_content'	=> $post->post_content.$content,
+		);
+		
+		$post_id = wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Deletes a post for a site.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		$deleted_post = wp_delete_post( $post->ID, true );
+		if( $deleted_post === false )
+		{
+			$this->model->last_error = 'Unable to delete post: '.$title;
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Renames a post by changing it’s title.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function rename_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'post_title'	=> $new_title,
+		);
+		
+		$post_id = wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Search through a field in a post using a regular expression.  If the title of the 
+	 * post is not specified, then the grep will be performed on all posts in the site.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function grep_post( &$item )
+	{
+		extract($item);
+		
+		$posts = array();
+		
+		if( !empty($title) )
+		{
+			$post = $this->get_post_by_title( $title, $post_type );
+			if( !$post ) return false;
+			
+			$posts[] = $post;
+		}
+		else
+		{
+			$posts = get_posts(
+				array(
+					'posts_per_page' => -1,
+					'post_type' => $post_type,
+					'post_status' => 'any',
+				)
+			);
+		}
+		
+		foreach( $posts as $post )
+		{
+			$post_data = array( 'ID' => $post->ID );
+			
+			switch( $subject )
+			{
+				case 'excerpt':
+					if( !preg_match_all("/$regex_key/", $post->post_excerpt, $matches) ) continue;
+					
+					$excerpt = $post->post_excerpt;
+					foreach( $matches as $match ) $excerpt = str_replace( $match, $replace_text, $excerpt );
+					
+					$post_data['post_excerpt'] = $excerpt;
+					break;
+					
+				case 'content':
+					if( !preg_match_all("/$regex_key/", $post->post_content, $matches) ) continue;
+					
+					$content = $post->post_content;
+					foreach( $matches as $match ) $content = str_replace( $match, $replace_text, $content );
+					
+					$post_data['post_content'] = $content;
+					break;
+				
+				default:
+					continue; break;
+			}
+			
+			$post_id = wp_update_post( $post_data );
+		
+			if( !is_numeric($post_id) || ($post_id == 0) )
+			{
+				//TODO: error.
+				continue;
+			}
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Adds to the post’s existing terms for the taxonomy by adding these taxonomy terms(s).
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_taxonomy_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		$existing_taxonomies = wp_get_object_terms( $post->ID, array_keys($taxonomy) );
+		if( is_wp_error($existing_taxonomies) )
+		{
+			// TODO: error.
+			return false;
+		}
+		
+		$new_taxonomies = $this->get_taxonomies( $taxonomy );
+		foreach( $new_taxonomies as $taxname => $terms )
+		{
+			if( !array_key_exists($taxname, $existing_taxonomies) )
+			{
+				$existing_taxonomies[$taxname] = $terms;
+				continue;
+			}
+
+			if( is_taxonomy_heirarchical($taxname) )
+			{
+				$existing_taxonomies_ids = array_filter(
+					$existing_taxonomies,
+					function( $term )
+					{
+						return $term->term_id;
+					}
+				);
+				$existing_taxonomies[$taxname] = array_merge( $existing_taxonomies_ids, $new_taxonomies[$taxname] );
+			}
+			else
+			{
+				$existing_taxonomies_names = array_filter(
+					$existing_taxonomies,
+					function( $term )
+					{
+						return $term->name;
+					}
+				);
+				$existing_taxonomies[$taxname] = array_merge( $existing_taxonomies_names, $new_taxonomies[$taxname] );
+			}
+		}
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'tax_input'		=> $existing_taxonomies,
+		);
+		
+		wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Overwrites the post’s existing terms for the taxonomy and replaces with these 
+	 * taxonomy term(s).
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function update_taxonomy_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'tax_input'		=> $this->get_taxonomies( $taxonomy ),
+		);
+		
+		wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Deletes the post’s terms for the taxonomy that matches these taxonomy term(s).
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_taxonomy_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		$existing_taxonomies = wp_get_object_terms( $post->ID, array_keys($taxonomy) );
+		if( is_wp_error($existing_taxonomies) )
+		{
+			// TODO: error.
+			return false;
+		}
+		
+		$new_taxonomies = $this->get_taxonomies( $taxonomy );
+		foreach( $new_taxonomies as $taxname => $terms )
+		{
+			if( !array_key_exists($taxname, $existing_taxonomies) )
+			{
+				$existing_taxonomies[$taxname] = $terms;
+				continue;
+			}
+
+			if( is_taxonomy_heirarchical($taxname) )
+			{
+				$existing_taxonomies_ids = array_filter(
+					$existing_taxonomies,
+					function( $term )
+					{
+						return $term->term_id;
+					}
+				);
+				$existing_taxonomies[$taxname] = array_diff( $existing_taxonomies_ids, $new_taxonomies[$taxname] );
+			}
+			else
+			{
+				$existing_taxonomies_names = array_filter(
+					$existing_taxonomies,
+					function( $term )
+					{
+						return $term->name;
+					}
+				);
+				$existing_taxonomies[$taxname] = array_diff( $existing_taxonomies_names, $new_taxonomies[$taxname] );
+			}
+		}
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'tax_input'		=> $existing_taxonomies,
+		);
+		
+		wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+
+
+	/**
+	 * Adds a custom field / metadata for the post.  If the meta field already exists, 
+	 * then it will not be updated.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_meta_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		add_post_meta( $post->ID, $name, $value, true );
+		
+		return true;
+	}
+
+
+	/**
+	 * Updates an existing custom field / metadata for the post.  If the meta field does 
+	 * not exist, then it will not be created.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function update_meta_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		update_post_meta( $post->ID, $name, $value, true );
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Adds or updates an existing custom field / metadata for the post.  If the meta 
+	 * field does not exist, then it will be created.  If the meta field exists, it will 
+	 * be updated.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function replace_meta_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		if( !add_post_meta($post->ID, $name, $value, true) && !update_post_meta($post->ID, $name, $value, true) )
+		{
+			//TODO: error.
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Deletes a custom field / metadata for the post.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_meta_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		delete_post_meta( $post->ID, $name );
+		
+		return true;
+	}
+
+
+	/**
+	 * Creates a copy of the custom field / metadata with a new name.  If the field does 
+	 * not exists, a copy will not be made.  If the new field already exists, it will be 
+	 * overwritten.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function copy_meta_post( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		$value = get_post_meta( $post->ID, $name, false );
+		if( $value === array() )
+		{
+			//TODO: error.
+			return false;
+		}
+		
+		$value = $value[0];
+		if( !add_post_meta($post->ID, $name, $value, true) && !update_post_meta($post->ID, $name, $value, true) )
+		{
+			//TODO: error.
+			return false;
+		}
+		
+		return true;
+	}	
+	
+	
+	
+//========================================================================================
+//======================================================================= TYPE: Page =====
+	
+	
+	/**
+	 * Verifies that all the required fields are present for "page" type.
+	 * @param  array  $args  An array of user values.
+	 * @return  bool  True if the args are valid, otherwise False.
+	 */
+	protected function check_page_args( &$args, $validate_for_action = false )
+	{
+		$required_keys = array();
+		$required_values = array();
+		$valid_keys = array();
+		$valid_regex_keys = array();
+		
+		switch( $args['action'] )
+		{
+			case 'add':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, content, date, author, slug, guid, parent, 
+					status, order, password, meta-{name}
+				*/
+				$required_keys = array( 'title' );
+				$required_values = array( 'title' );
+				$valid_keys = array( 'excerpt', 'content', 'date', 'author', 'slug', 'guid', 'parent', 'status', 'menu-order', 'password' );
+				$valid_regex_keys = array( '(meta)\-([a-zA-Z0-9\-_]+)' );
+				break;
+				
+			case 'update':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, content, date, author, slug, parent, 
+					status, order, password, meta-{name}
+				*/
+				$required_keys = array( 'title' );
+				$required_values = array( 'title' );
+				$valid_keys = array( 'excerpt', 'content', 'date', 'author', 'slug', 'parent', 'status', 'menu-order', 'password' );
+				$valid_regex_keys = array( '(meta)\-([a-zA-Z0-9\-_]+)' );
+				break;
+				
+			case 'replace':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, content, date, author, slug, guid, parent, 
+					status, order, password, meta-{name}
+				*/
+				$required_keys = array( 'title' );
+				$required_values = array( 'title' );
+				$valid_keys = array( 'excerpt', 'content', 'date', 'author', 'slug', 'guid', 'parent', 'status', 'menu-order', 'password' );
+				$valid_regex_keys = array( '(meta)\-([a-zA-Z0-9\-_]+)' );
+				break;
+			
+			case 'prepend':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, content
+				*/
+				$required_keys = array( 'title' );
+				$required_values = array( 'title' );
+				$valid_keys = array( 'excerpt', 'content' );
+				break;
+				
+			case 'append':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title, content
+				*/
+				$required_keys = array( 'title' );
+				$required_values = array( 'title' );
+				$valid_keys = array( 'excerpt', 'content' );
+				break;
+				
+			case 'delete':
+				/*
+				required fields:
+					type, action, site, title
+				all supported fields:
+					type, action, site, title
+				*/
+				$required_keys = array( 'title' );
+				$required_values = array( 'title' );
+				break;
+				
+			case 'rename':
+				/*
+				required fields:
+					type, action, site, title, new-title
+				all supported fields:
+					type, action, site, title, new-title
+				*/
+				$required_keys = array( 'title', 'new-title' );
+				$required_values = array( 'title', 'new-title' );
+				break;
+				
+			case 'grep':
+				/*
+				required fields:
+					type, action, site, subject, regex, replace-text
+				all supported fields:
+					type, action, site, title, subject, regex, replace-text
+				*/
+				$required_keys = array( 'subject', 'regex', 'replace-text' );
+				$required_values = array( 'subject', 'regex' );
+				$valid_keys = array( 'title' );
+				break;
+				
+			case 'add-meta':
+				/*
+				required fields:
+					type, action, site, title, name, value
+				all supported fields:
+					type, action, site, title, name, value
+				*/
+				$required_keys = array( 'title', 'name', 'value' );
+				$required_values = array( 'title', 'name' );
+				break;
+			
+			case 'update-meta':
+				/*
+				required fields:
+					type, action, site, title, name, value
+				all supported fields:
+					type, action, site, title, name, value
+				*/
+				$required_keys = array( 'title', 'name', 'value' );
+				$required_values = array( 'title', 'name' );
+				break;
+			
+			case 'replace-meta':
+				/*
+				required fields:
+					type, action, site, title, name, value
+				all supported fields:
+					type, action, site, title, name, value
+				*/
+				$required_keys = array( 'title', 'name', 'new-name' );
+				$required_values = array( 'title', 'name', 'new-name' );
+				break;
+			
+			case 'delete-meta':
+				/*
+				required fields:
+					type, action, site, title, name
+				all supported fields:
+					type, action, site, title, name
+				*/
+				$required_keys = array( 'title', 'name' );
+				$required_values = array( 'title', 'name' );
+				break;
+
+			case 'copy-meta':
+				/*
+				required fields:
+					type, action, site, title, name, new-name
+				all supported fields:
+					type, action, site, title, name, new-name
+				*/
+				$required_keys = array( 'title', 'name' );
+				$required_values = array( 'title', 'name' );
+				break;
+			
+			default:
+				$this->model->last_error = 'Invalid action for type: "page" => "'.$args['action'].'".';
+				return false;
+				break;
+		}
+		
+		if( $validate_for_action )
+		{
+			return $this->validate_args_for_action( 
+				$args, 
+				$required_keys, 
+				$required_values, 
+				$valid_keys, 
+				$valid_regex_keys );
+		}
+		
+		return $this->validate_args_for_db( 
+			$args, 
+			$required_keys, 
+			$required_values, 
+			$valid_keys, 
+			$valid_regex_keys );
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_page( &$item )
+	{
+		extract($item);
+		
+		$post_data = array(
+			'post_content'	=> $content,
+			'post_name'		=> $slug,
+			'post_title'	=> $title,
+			'post_status'	=> $status,
+			'post_type'		=> 'page',
+			'menu_order'	=> $order,
+			'parent'		=> $this->get_post_by_title( $parent, 'page' );
+			'post_author'	=> $this->get_author_id( $author ),
+			'post_password'	=> $password,
+			'guid'			=> $guid,
+			'post_excerpt'	=> $excerpt,
+			'post_date'		=> $this->parse_date( $date ),
+		);
+		
+		$post_id = wp_insert_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		foreach( $meta as $key => $value )
+		{
+			update_post_meta( $post_id, $key, $value );
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function update_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( !$post ) return false;
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'post_content'	=> $content,
+			'post_name'		=> $slug,
+			'post_status'	=> $status,
+			'post_type'		=> 'page',
+			'menu_order'	=> $order,
+			'parent'		=> $this->get_post_by_title( $parent, 'page' );
+			'post_author'	=> $this->get_author_id( $author ),
+			'post_password'	=> $password,
+			'post_excerpt'	=> $excerpt,
+			'post_date'		=> $this->parse_date( $date ),
+		);
+		
+		$post_id = wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		foreach( $meta as $key => $value )
+		{
+			update_post_meta( $post_id, $key, $value );
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function replace_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, 'page' );
+		
+		if( !$post ) return $this->add_page( $item );
+		
+		return $this->update_page( $item );
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function prepend_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, 'page' );
+		if( !$post ) return false;
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'post_excerpt'	=> $excerpt.$post->post_excerpt,
+			'post_content'	=> $content.$post->post_content,
+		);
+		
+		$post_id = wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function append_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, 'page' );
+		if( !$post ) return false;
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'post_excerpt'	=> $post->post_excerpt.$excerpt,
+			'post_content'	=> $post->post_content.$content,
+		);
+		
+		$post_id = wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, 'page' );
+		if( !$post ) return false;
+		
+		$deleted_post = wp_delete_post( $post->ID, true );
+		if( $deleted_post === false )
+		{
+			$this->model->last_error = 'Unable to delete page: '.$title;
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function rename_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, 'page' );
+		if( !$post ) return false;
+		
+		$post_data = array(
+			'ID'			=> $post->ID,
+			'post_title'	=> $new_title,
+		);
+		
+		$post_id = wp_update_post( $post_data );
+		
+		if( !is_numeric($post_id) || ($post_id == 0) )
+		{
+			if( is_wp_error($post_id) )
+				$this->model->last_error = $post_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function grep_page( &$item )
+	{
+		extract($item);
+		
+		$posts = array();
+		
+		if( !empty($title) )
+		{
+			$post = $this->get_post_by_title( $title, 'page' );
+			if( !$post ) return false;
+			
+			$posts[] = $post;
+		}
+		else
+		{
+			$posts = get_posts(
+				array(
+					'posts_per_page' => -1,
+					'post_type' => 'page',
+					'post_status' => 'any',
+				)
+			);
+		}
+		
+		foreach( $posts as $post )
+		{
+			$post_data = array( 'ID' => $post->ID );
+			
+			switch( $subject )
+			{
+				case 'content':
+					if( !preg_match_all("/$regex_key/", $post->post_content, $matches) ) continue;
+					
+					$content = $post->post_content;
+					foreach( $matches as $match ) $content = str_replace( $match, $replace_text, $content );
+					
+					$post_data['post_content'] = $content;
+					break;
+				
+				default:
+					continue; break;
+			}
+			
+			$post_id = wp_update_post( $post_data );
+		
+			if( !is_numeric($post_id) || ($post_id == 0) )
+			{
+				//TODO: error.
+				continue;
+			}
+		}
+		
+		return true;
+	}
+
+
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_meta_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, 'page' );
+		if( !$post ) return false;
+		
+		add_post_meta( $post->ID, $name, $value, true );
+		
+		return true;
+	}
+
+
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function update_meta_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, 'page' );
+		if( !$post ) return false;
+		
+		update_post_meta( $post->ID, $name, $value, true );
+		
+		return true;
+	}
+
+
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_meta_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, 'page' );
+		if( !$post ) return false;
+		
+		delete_post_meta( $post->ID, $name );
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function copy_meta_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, 'page' );
+		if( !$post ) return false;
+		
+		$value = get_post_meta( $post->ID, $name, false );
+		if( $value === array() )
+		{
+			//TODO: error.
+			return false;
+		}
+		
+		$value = $value[0];
+		if( !add_post_meta($post->ID, $name, $value, true) && !update_post_meta($post->ID, $name, $value, true) )
+		{
+			//TODO: error.
+			return false;
+		}
+		
+		return true;
+	}
+
+
+	
+//========================================================================================
+//======================================================================= TYPE: Link =====
+	
+	
+	/**
+	 * Verifies that all the required fields are present for "link" type.
+	 * @param  array  $args  An array of values.
+	 * @return  bool  True if the args are valid, otherwise False.
+	 */
+	protected function check_link_args( &$args, $validate_for_action = false )
+	{
+		$required_keys = array();
+		$required_values = array();
+		$valid_keys = array();
+		$valid_regex_keys = array();
+		
+		switch( $args['action'] )
+		{
+			case 'add':
+				/*
+				required fields:
+					type, action, site, name, url
+				all supported fields:
+					type, action, site, name, url, description, target, categories
+				*/
+				$required_keys = array( 'name', 'url' );
+				$required_values = array( 'name', 'url' );
+				$valid_keys = array( 'description', 'target', 'categories' );
+				break;
+			
+			case 'update':
+				/*
+				required fields:
+					type, action, site, name, url
+				all supported fields:
+					type, action, site, name, url, description, target, categories
+				*/
+				$required_keys = array( 'name', 'url' );
+				$required_values = array( 'name', 'url' );
+				$valid_keys = array( 'description', 'target', 'categories' );
+				break;
+			
+			case 'replace':
+				/*
+				required fields:
+					type, action, site, name, url
+				all supported fields:
+					type, action, site, name, url, description, target, categories
+				*/
+				$required_keys = array( 'name', 'url' );
+				$required_values = array( 'name', 'url' );
+				$valid_keys = array( 'description', 'target', 'categories' );
+				break;
+			
+			case 'delete':
+				/*
+				required fields:
+					type, action, site, name
+				all supported fields:
+					type, action, site, name
+				*/
+				$required_keys = array( 'name' );
+				$required_values = array( 'name' );
+				break;
+			
+			case 'rename':
+				/*
+				required fields:
+					type, action, site, name, new-name
+				all supported fields:
+					type, action, site, name, new-name
+				*/
+				$required_keys = array( 'name', 'new-name' );
+				$required_values = array( 'name', 'new-name' );
+				break;
+				
+			case 'grep':
+				/*
+				required fields:
+					type, action, site, subject, regex, replace-text
+				all supported fields:
+					type, action, site, name, subject, regex, replace-text
+				*/
+				$required_keys = array( 'subject', 'regex', 'replace-text' );
+				$required_values = array( 'subject', 'regex' );
+				$valid_keys = array( 'name' );
+				break;
+				
+			default:
+				$this->model->last_error = 'Invalid action for type: "link" => "'.$args['action'].'".';
+				return false;
+				break;
+		}
+
+		if( $validate_for_action )
+		{
+			return $this->validate_args_for_action( 
+				$args, 
+				$required_keys, 
+				$required_values, 
+				$valid_keys, 
+				$valid_regex_keys );
+		}
+		
+		return $this->validate_args_for_db( 
+			$args, 
+			$required_keys, 
+			$required_values, 
+			$valid_keys, 
+			$valid_regex_keys );
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_link( &$item )
+	{
+		extract($item);
+		
+		$link = $this->get_link_by_name( $name );
+		if( $link ) return false;
+		
+		$link_data = array(
+			'link_url'			=> $url,
+			'link_name'			=> $name,
+			'link_target'		=> $target,
+			'link_description'	=> $description,
+			'link_category'		=> $this->get_link_category( $category ),
+		);
+		
+		$link_id = wp_insert_link( $link_data, true );
+		
+		if( !is_numeric($link_id) || ($link_id == 0) )
+		{
+			if( is_wp_error($link_id) )
+				$this->model->last_error = $link_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function update_link( &$item )
+	{
+		extract($item);
+		
+		$link = $this->get_link_by_name( $name );
+		if( !$link ) return false;
+		
+		$link_data = array(
+			'link_id'			=> $link->link_id,
+			'link_url'			=> $url,
+			'link_name'			=> $name,
+			'link_target'		=> $target,
+			'link_description'	=> $description,
+			'link_category'		=> $this->get_link_category( $category ),
+		);
+		
+		$link_id = wp_insert_link( $link_data, true );
+		
+		if( !is_numeric($link_id) || ($link_id == 0) )
+		{
+			if( is_wp_error($link_id) )
+				$this->model->last_error = $link_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function replace_link( &$item )
+	{
+		extract($item);
+		
+		$link = $this->get_link_by_name( $name );
+		
+		if( !$link ) return $this->add_link( $item );
+		
+		return $this->update_link( $item );
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_link( &$item )
+	{
+		extract($item);
+		
+		$link = $this->get_link_by_name( $name );
+		if( !$link ) return false;
+		
+		wp_delete_link( $link->link_id );
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function rename_link( &$item )
+	{
+		extract($item);
+		
+		$link = $this->get_link_by_name( $name );
+		if( !$link ) return false;
+		
+		$link_data = array(
+			'link_id'			=> $link->link_id,
+			'link_name'			=> $new_name,
+		);
+		
+		$link_id = wp_insert_link( $link_data, true );
+		
+		if( !is_numeric($link_id) || ($link_id == 0) )
+		{
+			if( is_wp_error($link_id) )
+				$this->model->last_error = $link_id->get_error_message();
+		
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function grep_link( &$item )
+	{
+		extract($item);
+		
+		$links = array();
+		
+		if( !empty($name) )
+		{
+			$link = $this->get_link_by_name( $name );
+			if( !$link ) return false;
+			
+			$links[] = $link;
+		}
+		else
+		{
+			global $wpdb;
+			$links = $wpdb->get_results( "SELECT * FROM $wpdb->links" );
+			if( !$links ) return false;
+		}
+		
+		foreach( $links as $link )
+		{
+			$link_data = array( 'link_id' => $link->link_id );
+			
+			switch( $subject )
+			{
+				case 'url':
+					if( !preg_match_all("/$regex_key/", $link->link_url, $matches) ) continue;
+					
+					$url = $link->link_url;
+					foreach( $matches as $match ) $url = str_replace( $match, $replace_text, $url );
+					
+					$link_data['link_url'] = $url;
+					break;
+					
+				case 'description':
+					if( !preg_match_all("/$regex_key/", $link->link_description, $matches) ) continue;
+					
+					$description = $post->link_description;
+					foreach( $matches as $match ) $description = str_replace( $match, $replace_text, $description );
+					
+					$post_data['link_description'] = $description;
+					break;
+				
+				default:
+					continue; break;
+			}
+			
+			$link_id = wp_insert_link( $link_data );
+		
+			if( !is_numeric($link_id) || ($link_id == 0) )
+			{
+				if( is_wp_error($link_id) )
+					$this->model->last_error = $link_id->get_error_message();
+			}
+		}
+		
+		return true;
+	}
+	
+	
+	
+//========================================================================================
+//=================================================================== TYPE: Taxonomy =====
+	
+	
+	/**
+	 * Verifies that all the required fields are present for "taxonomy" type.
+	 * @param  array  $args  An array of values.
+	 * @return  bool  True if the args are valid, otherwise False.
+	 */
+	protected function check_taxonomy_args( &$args, $validate_for_action = false )
+	{
+		$required_keys = array();
+		$required_values = array();
+		$valid_keys = array();
+		$valid_regex_keys = array();
+		
+		switch( $args['action'] )
+		{
+			case 'add':
+				/*
+				required fields:
+					type, action, site, name, terms
+				all supported fields:
+					type, action, site, name, terms
+				*/
+				$required_keys = array( 'name', 'terms' );
+				$required_values = array( 'name', 'terms' );
+				break;
+			
+			case 'delete':
+				/*
+				required fields:
+					type, action, site, name, terms
+				all supported fields:
+					type, action, site, name, terms
+				*/
+				$required_keys = array( 'name', 'terms' );
+				$required_values = array( 'name', 'terms' );
+				break;
+			
+			case 'rename':
+				/*
+				required fields:
+					type, action, site, name, terms, new-terms
+				all supported fields:
+					type, action, site, name, terms, new-terms
+				*/
+				$required_keys = array( 'name', 'terms', 'new-terms' );
+				$required_values = array( 'name', 'terms', 'new-terms' );
+				break;
+				
+			default:
+				$this->model->last_error = 'Invalid action for type: "taxonomy" => "'.$args['action'].'".';
+				return false;
+				break;
+		}
+
+		if( $validate_for_action )
+		{
+			return $this->validate_args_for_action( 
+				$args, 
+				$required_keys, 
+				$required_values, 
+				$valid_keys, 
+				$valid_regex_keys );
+		}
+		
+		return $this->validate_args_for_db( 
+			$args, 
+			$required_keys, 
+			$required_values, 
+			$valid_keys, 
+			$valid_regex_keys );
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_taxonomy( &$item )
+	{
+		extract($item);
+		
+		if( !taxonomy_exists($name) )
+		{
+			// TODO : error.
+			return false;
+		}
+		
+		$term_list = str_getcsv( $terms, ",", '"', "\\" );
+		
+		if( !is_taxonomy_hierarchical($taxname) )
+		{
+			foreach( $term_list as $term )
+			{
+				if( !term_exists( $term, $name ) )
+					$term_id = wp_insert_term( $term, $name );
+			}
+		}
+		else
+		{
+			foreach( $term_list as $term )
+			{
+				$heirarchy = array_map( 'trim', explode('>', $term) );
+				
+				$parent = null;
+				for( $i = 0; $i < count($heirarchy); $i++ )
+				{
+					if( !term_exists($heirarchy[$i], $taxname, $parent) )
+					{
+						$args = array();
+						if( $parent ) $args['parent'] = $parent;
+				
+						$result = wp_insert_term( $heirarchy[$i], $name, $args );
+						if( is_wp_error($result) )
+						{
+							//TODO: error: 'Unable to insert '.$taxonomy_name.'term: '.$heirarchy[$i];
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_taxonomy( &$item )
+	{
+		extract($item);
+		
+		if( !taxonomy_exists($name) )
+		{
+			// TODO : error.
+			return false;
+		}
+		
+		$term_list = str_getcsv( $terms, ",", '"', "\\" );
+		
+		foreach( $term_list as $term )
+		{
+			if( $term_object = term_exists( $term, $name ) )
+				wp_delete_term( $term_object->term_id, $name );
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function rename_taxonomy( &$item )
+	{
+		extract($item);
+		
+		if( !taxonomy_exists($name) )
+		{
+			// TODO : error.
+			return false;
+		}
+		
+		$term_list = str_getcsv( $terms, ",", '"', "\\" );
+		$new_terms_list = str_getcsv( $new_terms, ",", '"', "\\" );
+		
+		foreach( $term_list as $i => $term )
+		{
+			if( !isset($new_terms_list[$i]) ) continue;
+			$new_term = $new_terms_list[$i];
+			
+			if( $term_object = term_exists( $term, $name ) )
+			{
+				$tax_data = array(
+					'name' => $new_term,
+					'slug' => sanitize_title( $new_term ),
+				);
+				
+				wp_update_term( $term_object->term_id, $name, $tax_data )
+			}
+		}
+		
+		return true;
+	}	
+	
+	
+//========================================================================================
+//======================================================================= TYPE: Site =====
+	
+	
+	/**
+	 * Verifies that all the required fields are present for "site" type.
+	 * @param  array  $args  An array of values.
+	 * @return  bool  True if the args are valid, otherwise False.
+	 */
+	protected function check_site_args( &$args, $validate_for_action = false )
+	{
+		$required_keys = array();
+		$required_values = array();
+		$valid_keys = array();
+		$valid_regex_keys = array();
+		
+		switch( $args['action'] )
+		{
+			case 'add':
+				/*
+				required fields:
+					type, action, site, title, user
+				all supported fields:
+					type, action, site, title, description, domain, user, password, email, option-{name}
+				*/
+				$required_keys = array( 'title', 'user' );
+				$required_values = array( 'title', 'user' );
+				$valid_keys = array( 'description', 'domain', 'password', 'email' );
+				$valid_regex_keys = array( 'option\-([a-zA-Z0-9\-_]+)' );
+				break;
+			
+			case 'update':
+				/*
+				required fields:
+					type, action, site, title, user
+				all supported fields:
+					type, action, site, title, description, user, password, email, option-{name}
+				*/
+				$valid_keys = array( 'title', 'description', 'user', 'password', 'email' );
+				$valid_regex_keys = array( 'option\-([a-zA-Z0-9\-_]+)' );
+				break;
+				
+			case 'delete':
+				/*
+				required fields:
+					type, action, site
+				all supported fields:
+					type, action, site
+				*/
+				break;
+				
+			case 'archive':
+				/*
+				required fields:
+					type, action, site
+				all supported fields:
+					type, action, site
+				*/
+				break;
+				
+			case 'grep':
+				/*
+				required fields:
+					type, action, site, subject, regex, replace-text
+				all supported fields:
+					type, action, site, subject, regex, replace-text
+				*/
+				$required_keys = array( 'subject', 'regex', 'replace-text' );
+				$required_values = array( 'subject', 'regex' );
+				break;
+				
+			default:
+				$this->model->last_error = 'Invalid action for type: "site" => "'.$args['action'].'".';
+				return false;
+				break;
+		}
+		
+		if( $validate_for_action )
+		{
+			return $this->validate_args_for_action( 
+				$args, 
+				$required_keys, 
+				$required_values, 
+				$valid_keys, 
+				$valid_regex_keys );
+		}
+		
+		return $this->validate_args_for_db( 
+			$args, 
+			$required_keys, 
+			$required_values, 
+			$valid_keys, 
+			$valid_regex_keys );
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_site( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function update_site( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_site( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function archive_site( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	/**
+	 * 
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function grep_site( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	
+//========================================================================================
+//======================================================================= TYPE: User =====
+	
+	
+	/**
+	 * Verifies that all the required fields are present for "user" type.
+	 * @param  array  $args  An array of values.
+	 * @return  bool  True if the args are valid, otherwise False.
+	 */
+	protected function check_user_args( &$args, $validate_for_action = false )
+	{
+		$required_keys = array();
+		$required_values = array();
+		$valid_keys = array();
+		$valid_regex_keys = array();
+		
+		switch( $args['action'] )
+		{
+			case 'add':
+				/*
+				required fields:
+					type, action, user
+				all supported fields:
+					type, action, site, user, password, email, role, meta-{name}
+				*/
+				$required_keys = array( 'user', 'role' );
+				$required_values = array( 'user', 'role' );
+				$valid_keys = array( 'password', 'email' );
+				break;
+			
+			case 'update':
+				/*
+				required fields:
+					type, action, user
+				all supported fields:
+					type, action, site, user, password, email, role, meta-{name}
+				*/
+				$required_keys = array( 'user' );
+				$required_values = array( 'user' );
+				$valid_keys = array( 'password', 'email', 'role' );
+				break;
+				
+			case 'replace':
+				/*
+				required fields:
+					type, action, user
+				all supported fields:
+					type, action, site, user, password, email, role, meta-{name}
+				*/
+				$required_keys = array( 'user', 'role' );
+				$required_values = array( 'user', 'role' );
+				$valid_keys = array( 'password', 'email' );
+				break;
+			
+			case 'delete':
+				/*
+				required fields:
+					type, action, site, user
+				all supported fields:
+					type, action, site, user
+				*/
+				$required_keys = array( 'user' );
+				$required_values = array( 'user' );
+				break;
+
+			case 'add-meta':
+				/*
+				required fields:
+					type, action, user, name, value
+				all supported fields:
+					type, action, user, name, value
+				*/
+				$required_keys = array( 'name', 'value' );
+				$required_values = array( 'name' );
+				break;
+			
+			case 'update-meta':
+				/*
+				required fields:
+					type, action, user, name, value
+				all supported fields:
+					type, action, user, name, value
+				*/
+				$required_keys = array( 'name', 'value' );
+				$required_values = array( 'name' );
+				break;
+			
+			case 'replace-meta':
+				/*
+				required fields:
+					type, action, user, name, value
+				all supported fields:
+					type, action, user, name, value
+				*/
+				$required_keys = array( 'name', 'new-name' );
+				$required_values = array( 'name', 'new-name' );
+				break;
+			
+			case 'delete-meta':
+				/*
+				required fields:
+					type, action, user, name
+				all supported fields:
+					type, action, user, name
+				*/
+				$required_keys = array( 'name' );
+				$required_values = array( 'name' );
+				break;
+							
+			case 'copy-meta':
+				/*
+				required fields:
+					type, action, user, name, new-name
+				all supported fields:
+					type, action, user, name, new-name
+				*/
+				$required_keys = array( 'name' );
+				$required_values = array( 'name' );
+				break;
+							
+			default:
+				$this->model->last_error = 'Invalid action for type: "user" => "'.$args['action'].'".';
+				return false;
+				break;
+		}
+		
+		if( $validate_for_action )
+		{
+			return $this->validate_args_for_action( 
+				$args, 
+				$required_keys, 
+				$required_values, 
+				$valid_keys, 
+				$valid_regex_keys );
+		}
+		
+		return $this->validate_args_for_db( 
+			$args, 
+			$required_keys, 
+			$required_values, 
+			$valid_keys, 
+			$valid_regex_keys );
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_user( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function update_user( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_user( &$item )
+	{
+		
+		
+		return true;
+	}
+
+
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_meta_user( &$item )
+	{
+		
+		return true;
+	}
+
+
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function update_meta_user( &$item )
+	{
+		
+		return true;
+	}
+
+
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function rename_meta_user( &$item )
+	{
+		
+		return true;
+	}
+
+
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_meta_user( &$item )
+	{
+		
+		return true;
+	}
+	
+	
+	
+//========================================================================================
+//===================================================================== TYPE: Option =====
+
+	
+	/**
+	 * Verifies that all the required fields are present for "option" type.
+	 * @param  array  $args  An array of values.
+	 * @return  bool  True if the args are valid, otherwise False.
+	 */
+	protected function check_option_args( &$args, $validate_for_action = false )
+	{
+		$required_keys = array();
+		$required_values = array();
+		$valid_keys = array();
+		$valid_regex_keys = array();
+		
+		switch( $args['action'] )
+		{
+			case 'add':
+				/*
+				required fields:
+					type, action, site, name, value
+				all supported fields:
+					type, action, site, name, value
+				*/
+				$required_keys = array( 'name', 'value' );
+				$required_values = array( 'name' );
+				break;
+			
+			case 'update':
+				/*
+				required fields:
+					type, action, site, name, value
+				all supported fields:
+					type, action, site, name, value
+				*/
+				$required_keys = array( 'name', 'value' );
+				$required_values = array( 'name' );
+				break;
+			
+			case 'replace':
+				/*
+				required fields:
+					type, action, site, name, value
+				all supported fields:
+					type, action, site, name, value
+				*/
+				$required_keys = array( 'name', 'value' );
+				$required_values = array( 'name' );
+				break;
+			
+			case 'delete':
+				/*
+				required fields:
+					type, action, site, name
+				all supported fields:
+					type, action, site, name
+				*/
+				$required_keys = array( 'name' );
+				$required_values = array( 'name' );
+				break;
+			
+			case 'copy':
+				/*
+				required fields:
+					type, action, site, name, new-name
+				all supported fields:
+					type, action, site, name, new-name
+				*/
+				$required_keys = array( 'name', 'new-name' );
+				$required_values = array( 'name', 'new-name' );
+				break;
+				
+			case 'grep':
+				/*
+				required fields:
+					type, action, site, regex, replace-text
+				all supported fields:
+					type, action, site, name, regex, replace-text
+				*/
+				$required_keys = array( 'regex', 'replace-text' );
+				$required_values = array( 'regex' );
+				$valid_keys = array( 'name' );
+				break;
+				
+			default:
+				$this->model->last_error = 'Invalid action for type: "option" => "'.$args['action'].'".';
+				return false;
+				break;
+		}
+		
+		if( $validate_for_action )
+		{
+			return $this->validate_args_for_action( 
+				$args, 
+				$required_keys, 
+				$required_values, 
+				$valid_keys, 
+				$valid_regex_keys );
+		}
+		
+		return $this->validate_args_for_db( 
+			$args, 
+			$required_keys, 
+			$required_values, 
+			$valid_keys, 
+			$valid_regex_keys );
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function add_option( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function update_option( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function replace_option( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function delete_option( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function rename_option( &$item )
+	{
+		
+		
+		return true;
+	}	
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function grep_option( &$item )
+	{
+		
+		
+		return true;
+	}
+	
+	
+//========================================================================================
+//=================================================================== Util Functions =====
+	
+	
+   	/**
+	 * 
+	 */
+	protected function get_author_id( $author )
+	{
+		if( is_numeric($author) ) return intval( $author );
+		
+		$author_data = get_user_by( 'login', $author );
+		
+		return ( $author_data ? $author_data->ID : 0 );
+	}
+	
+	
+   	/**
+	 * 
+	 */
+	protected function parse_date( $date )
+	{
+		$timestamp = strtotime( $date );
+		
+		if( $timestamp === false ) return '';
+		
+		return date( 'Y-m-d H:i:s', $timestamp );
+	}
+	
+	
+   	/**
+	 * 
+	 */
+	protected function get_post_type( $post_type )
+	{
+		if( empty($post_type) ) return 'post';
+		return $post_type;
+	}
+
+	
+   	/**
+	 * 
+	 */
+	protected function get_post_parent( $parent )
+	{
+		if( empty($parent) ) return 0;
+		if( is_numeric($parent) ) return intval($parent);
+		
+		$parent = $this->get_post_by_title( $parent );
+		if( !$parent ) return 0;
+		
+		return $parent->ID;
+	}
+	
+	
+   	/**
+	 * 
+	 */
+	protected function get_taxonomies( $taxonomies )
+	{
+		$new_taxonomies = array();
+		
+		foreach( $taxonomies as $taxname => $terms )
+		{
+			if( !taxonomy_exists($taxname) )
+			{
+				// TODO: error.
+				continue;
+			}
+			
+			$new_taxonomies[$taxname] = array();
+			$term_list = str_getcsv( $terms, ",", '"', "\\" );
+			
+			if( !is_taxonomy_hierarchical($taxname) )
+			{
+				$new_taxonomies[$taxname] = $term_list;
+			}
+			else
+			{
+				$term_ids = array();
+			
+				foreach( $term_list as $term )
+				{
+					$heirarchy = array_map( 'trim', explode('>', $term) );
+					
+					$parent = null;
+					for( $i = 0; $i < count($heirarchy); $i++ )
+					{
+						if( !term_exists($heirarchy[$i], $taxname, $parent) )
+						{
+							$args = array();
+							if( $parent ) $args['parent'] = $parent;
+					
+							$result = wp_insert_term( $heirarchy[$i], $taxonomy_name, $args );
+							if( is_wp_error($result) )
+							{
+								//TODO: error: 'Unable to insert '.$taxonomy_name.'term: '.$heirarchy[$i];
+								break;
+							}
+						}
+						
+						$termobject = get_term_by( 'name', $heirarchy[$i], $taxname );
+						if( is_wp_error($termobject) )
+						{
+							//TODO: error: 'Invalid '.$taxonomy_name.'term: '.$heirarchy[$i];
+							break;
+						}
+					}
+					
+					if( isset($termobject) && !is_wp_error($termobject) )
+						$term_ids[] = $termobject->term_id;
+				}
+				
+				$new_taxonomies[$taxname] = $term_ids;
+			}
+		}
+		
+		return $new_taxonomies;
+	}
+	
+	
+	protected function get_post_by_title( $title, $post_type = 'post' )
+	{
+		if( empty($title) ) return null;
+		return get_page_by_title( $title, ARRAY_A, $post_type );
+	}
+	
+	
+	protected function get_link_by_name( $name )
+	{
+		if( empty($name) ) return null;
+		
+		global $wpdb;
+		return $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM $wpdb->links WHERE link_name = %s LIMIT 1", 
+				$name
+			)
+		);
+	}
+	
+	
+	protected function get_link_category( $category )
+	{
+		if( empty($category) ) return array();
+		
+		$link_categories = array();
+		$term_list = str_getcsv( $category, ",", '"', "\\" );
+
+		foreach( $terms_list as &$term )
+		{
+			$term = trim( $term );
+			
+			$term_object = term_exists( $term, 'link_category' );
+			if( $term_object )
+				$term_id = $term_object->term_id;
+			else
+				$term_id = wp_insert_term( $term, 'link_category' );
+			
+			$link_categories[] = $term_id;
+		}
+		
+		return $link_categories;
+	}
+	
+	
+}
+endif;
+

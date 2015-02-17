@@ -17,6 +17,7 @@ class OrgHub_Model
 	
 	public $site = null;				// The site model.
 	public $user = null;				// The user model.
+	public $upload = null;				// The upload model.
 	
 	public $last_error = null;			// The error logged by a model.
 	
@@ -38,6 +39,7 @@ class OrgHub_Model
 	{
 		$this->site = OrgHub_SitesModel::get_instance();
 		$this->user = OrgHub_UsersModel::get_instance();
+		$this->upload = OrgHub_UploadModel::get_instance();
 	}
 	
 
@@ -145,6 +147,7 @@ class OrgHub_Model
 	{
 		$this->user->create_tables();
 		$this->site->create_tables();
+		$this->upload->create_tables();
 	}
 	
 	
@@ -155,6 +158,7 @@ class OrgHub_Model
 	{
 		$this->user->delete_tables();
 		$this->site->delete_tables();
+		$this->upload->delete_tables();
 	}
 
 
@@ -165,6 +169,7 @@ class OrgHub_Model
 	{
 		$this->user->clear_tables();
 		$this->site->clear_tables();
+		$this->upload->clear_tables();
 	}
 
 
@@ -224,6 +229,7 @@ class OrgHub_Model
 		return $list;
 	}
 	
+		
 } // class OrgHub_Model
 endif; // if( !class_exists('OrgHub_Model') ):
 
