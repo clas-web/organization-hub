@@ -238,6 +238,19 @@ class OrgHub_UploadModel
 			unset($args['tags']);
 		}
 		
+		$array_keys = array_keys($args);
+		for( $i = 0; $i < count($array_keys); $i++ )
+		{
+			$key = $array_keys[$i];
+			
+			if( strpos( $key, '-' ) !== false )
+			{
+				$value = $args[$key];
+				$args[str_replace('-','_',$key)] = $value;
+				unset($args[$key]);
+			}
+		}
+		
 		return true;
 	}
 	
@@ -646,7 +659,7 @@ class OrgHub_UploadModel
 			'post_title'	=> $title,
 			'post_status'	=> $status,
 			'post_type'		=> $post_type,
-			'post_author'	=> $this->get_author_id( $author ),
+			'post_author'	=> $this->get_author_id( $user ),
 			'post_password'	=> $password,
 			'guid'			=> $guid,
 			'post_excerpt'	=> $excerpt,
@@ -692,7 +705,7 @@ class OrgHub_UploadModel
 			'post_name'		=> $slug,
 			'post_status'	=> $status,
 			'post_type'		=> $this->get_post_type( $post_type ),
-			'post_author'	=> $this->get_author_id( $author ),
+			'post_author'	=> $this->get_author_id( $user ),
 			'post_password'	=> $password,
 			'guid'			=> $guid,
 			'post_excerpt'	=> $excerpt,
@@ -1428,7 +1441,7 @@ class OrgHub_UploadModel
 			'post_type'		=> 'page',
 			'menu_order'	=> $order,
 			'parent'		=> $this->get_post_by_title( $parent, 'page' ),
-			'post_author'	=> $this->get_author_id( $author ),
+			'post_author'	=> $this->get_author_id( $user ),
 			'post_password'	=> $password,
 			'guid'			=> $guid,
 			'post_excerpt'	=> $excerpt,
@@ -1474,7 +1487,7 @@ class OrgHub_UploadModel
 			'post_type'		=> 'page',
 			'menu_order'	=> $order,
 			'parent'		=> $this->get_post_by_title( $parent, 'page' ),
-			'post_author'	=> $this->get_author_id( $author ),
+			'post_author'	=> $this->get_author_id( $user ),
 			'post_password'	=> $password,
 			'post_excerpt'	=> $excerpt,
 			'post_date'		=> $this->parse_date( $date ),
@@ -2392,7 +2405,31 @@ class OrgHub_UploadModel
 	 */
 	private function add_site( &$item )
 	{
+		extract($item);
 		
+		$admin_id = $this->get_author_id( $user, true, $password, $email );
+		if( !$admin_id )
+		{
+			$this->model->last_error = 'Unable to find or create admin user account.';
+			return false;
+		}
+		
+		$meta_data = array(
+			'blogdescription'	=> $description,
+		);
+		foreach( $option as $key => $value )
+		{
+			$meta_data[$key] = $value;
+		}
+		
+		// Create the blog.
+		$blog_id = wpmu_create_blog( $domain, $site, $title, $admin_id, $meta_data );
+		
+		if( is_wp_error($blog_id))
+		{
+			$this->model->last_error( $blog_id->get_error_message() );
+			return false;
+		}
 		
 		return true;
 	}
@@ -2405,7 +2442,38 @@ class OrgHub_UploadModel
 	 */
 	private function update_site( &$item )
 	{
+		extract($item);
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id ) return false;
+		
+		$admin_id = $this->get_author_id( $user, true, $password, $email );
+		if( !$admin_id )
+		{
+			$this->model->last_error = 'Unable to find or create admin user account.';
+			return false;
+		}
+		
+		switch_to_blog( $blog_id );
+		
+		if( $title ) update_option( 'blogname', $title );
+		if( $description ) update_option( 'blogdescription', $description );
+
+		foreach( $option as $key => $value )
+		{
+			update_option( $key, $value );
+		}
+		
+		// Verify the user is administrator of the blog and update blog options.
+		$user = get_user_by( 'id', $admin_id );
+		
+		if( $user )
+		{
+			add_user_to_blog( $blog_id, $admin_id, 'administrator' );
+			update_option( 'admin_email', $user->user_email );
+		}
+		
+		restore_current_blog();
 		
 		return true;
 	}
@@ -2417,10 +2485,25 @@ class OrgHub_UploadModel
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
 	private function delete_site( &$item )
-	{
+	{	
+		extract($item);
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id ) return false;
 		
-		return true;
+		global $wpdb;
+		$result = $wpdb->update(
+			$wpdb->blogs,
+			array( 
+				'deleted' => 1,
+			),
+			array( 'blog_id' => intval($blog_id) ),
+			array( '%d' ),
+			array( '%d' )
+		);
+		
+		if( $result ) return true;
+		return false;
 	}
 	
 	
@@ -2431,9 +2514,24 @@ class OrgHub_UploadModel
 	 */
 	private function archive_site( &$item )
 	{
+		extract($item);
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id ) return false;
 		
-		return true;
+		global $wpdb;
+		$result = $wpdb->update(
+			$wpdb->blogs,
+			array( 
+				'archived' => 1,
+			),
+			array( 'blog_id' => intval($blog_id) ),
+			array( '%d' ),
+			array( '%d' )
+		);
+		
+		if( $result ) return true;
+		return false;
 	}
 	
 	
@@ -2444,9 +2542,42 @@ class OrgHub_UploadModel
 	 */
 	private function grep_site( &$item )
 	{
+		extract($item);
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id ) return false;
 		
-		return true;
+		switch_to_blog( $blog_id );
+		
+		switch( $subject )
+		{
+			case 'title':
+				$title = get_option( 'blogname' );
+				if( !preg_match_all("/$regex_key/", $title, $matches) ) continue;
+				
+				foreach( $matches as $match )
+					$title = str_replace( $match, $replace_text, $title );
+				
+				update_option( 'blogname', $title );
+				break;
+				
+			case 'description':
+				$description = get_option( 'blogdescription' );
+				if( !preg_match_all("/$regex_key/", $description, $matches) ) continue;
+				
+				foreach( $matches as $match )
+					$description = str_replace( $match, $replace_text, $description );
+				
+				update_option( 'blogdescription', $description );
+				break;
+			
+			default:
+				break;
+		}
+		
+		restore_current_blog();
+		
+		return true;		
 	}
 	
 	
@@ -2603,7 +2734,36 @@ class OrgHub_UploadModel
 	 */
 	private function add_user( &$item )
 	{
+		extract($item);
 		
+		if( $user_id = $this->get_author_id($user) )
+		{
+			$this->model->last_error = 'User already exists: '.$user;
+			return false;
+		}
+		
+		if( !($user_id = $this->get_author_id($user, true, $password, $email)) )
+		{
+			$this->model->last_error = 'Unable to find or create user account: '.$user;
+			return false;
+		}
+		
+		foreach( $meta as $key => $value )
+		{
+			update_user_meta( $user_id, $key, $value );
+		}
+				
+		if( !$site ) return true;
+		if( !$role ) return true;
+
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id )
+		{
+			$this->model->last_error = 'Unable to find site: '.$site;
+			return false;
+		}
+		
+		add_user_to_blog( $blog_id, $user_id, $role );
 		
 		return true;
 	}
@@ -2616,7 +2776,66 @@ class OrgHub_UploadModel
 	 */
 	private function update_user( &$item )
 	{
+		extract($item);
 		
+		if( !($user_id = $this->get_author_id($user)) )
+		{
+			$this->model->last_error = 'Unable to find user account: '.$user;
+			return false;
+		}
+		
+		foreach( $meta as $key => $value )
+		{
+			update_user_meta( $user_id, $key, $value );
+		}
+				
+		if( !$site ) return true;
+		if( !$role ) return true;
+
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id )
+		{
+			$this->model->last_error = 'Unable to find site: '.$site;
+			return false;
+		}
+		
+		add_user_to_blog( $blog_id, $user_id, $role );
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function replace_user( &$item )
+	{
+		extract($item);
+		
+		if( !($user_id = $this->get_author_id($user)) )
+		{
+			$this->model->last_error = 'Unable to find or create user account: '.$user;
+			return false;
+		}
+		
+		foreach( $meta as $key => $value )
+		{
+			update_user_meta( $user_id, $key, $value );
+		}
+				
+		if( !$site ) return true;
+		if( !$role ) return true;
+
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id )
+		{
+			$this->model->last_error = 'Unable to find site: '.$site;
+			return false;
+		}
+		
+		add_user_to_blog( $blog_id, $user_id, $role );
 		
 		return true;
 	}
@@ -2629,7 +2848,15 @@ class OrgHub_UploadModel
 	 */
 	private function delete_user( &$item )
 	{
+		extract($item);
 		
+		if( !($user_id = $this->get_author_id($user)) )
+		{
+			return true;
+		}
+		
+		//TODO: check with alex.
+		wp_delete_user( $user_id, null );
 		
 		return true;
 	}
@@ -2642,7 +2869,17 @@ class OrgHub_UploadModel
 	 */
 	private function add_meta_user( &$item )
 	{
+		extract($item);
 		
+		if( !($user_id = $this->get_author_id($user)) )
+		{
+			$this->model->last_error = 'Unable to find user account: '.$user;
+			return false;
+		}
+		
+		$result = add_user_meta( $user_id, $name, $value, true );
+		
+		if( $result === false ) return false;
 		return true;
 	}
 
@@ -2654,6 +2891,22 @@ class OrgHub_UploadModel
 	 */
 	private function update_meta_user( &$item )
 	{
+		extract($item);
+		
+		if( !($user_id = $this->get_author_id($user)) )
+		{
+			$this->model->last_error = 'Unable to find user account: '.$user;
+			return false;
+		}
+		
+		$user_meta = get_user_meta( $user_id, $name, false );
+		if( count($user_meta) === 0 )
+		{
+			$this->model->last_error = '';
+			return false;
+		}
+		
+		update_user_meta( $user_id, $name, $value );
 		
 		return true;
 	}
@@ -2664,8 +2917,25 @@ class OrgHub_UploadModel
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
-	private function rename_meta_user( &$item )
+	private function replace_meta_user( &$item )
 	{
+		extract($item);
+		
+		if( !($user_id = $this->get_author_id($user)) )
+		{
+			$this->model->last_error = 'Unable to find user account: '.$user;
+			return false;
+		}
+		
+		$user_meta = get_user_meta( $user_id, $name, false );
+		if( count($user_meta) === 0 )
+		{
+			add_user_meta( $user_id, $name, $value, true );
+		}
+		else
+		{
+			update_user_meta( $user_id, $name, $value );
+		}
 		
 		return true;
 	}
@@ -2678,6 +2948,40 @@ class OrgHub_UploadModel
 	 */
 	private function delete_meta_user( &$item )
 	{
+		extract($item);
+		
+		if( !($user_id = $this->get_author_id($user)) )
+		{
+			$this->model->last_error = 'Unable to find user account: '.$user;
+			return false;
+		}
+		
+		delete_user_meta( $user_id, $name );
+		
+		return true;
+	}
+	
+	
+	/**
+	 *
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function copy_meta_user( &$item )
+	{
+		extract($item);
+		
+		if( !($user_id = $this->get_author_id($user)) )
+		{
+			$this->model->last_error = 'Unable to find user account: '.$user;
+			return false;
+		}
+		
+		$user_meta = get_user_meta( $user_id, $name, false );
+		if( count($user_meta) === 0 ) return false;
+		
+		$user_meta = $user_meta[0];
+		update_user_meta( $user_id, $new_name, $user_meta );
 		
 		return true;
 	}
@@ -2801,9 +3105,18 @@ class OrgHub_UploadModel
 	 */
 	private function add_option( &$item )
 	{
+		extract($item);
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id ) return false;
 		
-		return true;
+		switch_to_blog( $blog_id );
+		
+		$result = add_option( $name, $value );
+		
+		restore_current_blog();
+		
+		return $result;
 	}
 	
 	
@@ -2814,7 +3127,17 @@ class OrgHub_UploadModel
 	 */
 	private function update_option( &$item )
 	{
+		extract($item);
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id ) return false;
+		
+		switch_to_blog( $blog_id );
+		
+		if( get_option( $name ) !== false )
+			update_option( $name, $value );
+		
+		restore_current_blog();
 		
 		return true;
 	}
@@ -2827,7 +3150,16 @@ class OrgHub_UploadModel
 	 */
 	private function replace_option( &$item )
 	{
+		extract($item);
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id ) return false;
+		
+		switch_to_blog( $blog_id );
+		
+		update_option( $name, $value );
+		
+		restore_current_blog();
 		
 		return true;
 	}
@@ -2840,7 +3172,16 @@ class OrgHub_UploadModel
 	 */
 	private function delete_option( &$item )
 	{
+		extract($item);
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id ) return false;
+		
+		switch_to_blog( $blog_id );
+		
+		delete_option( $name );
+		
+		restore_current_blog();
 		
 		return true;
 	}
@@ -2851,9 +3192,19 @@ class OrgHub_UploadModel
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
-	private function rename_option( &$item )
+	private function copy_option( &$item )
 	{
+		extract($item);
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id ) return false;
+		
+		switch_to_blog( $blog_id );
+		
+		$value = get_option( $name );
+		update_option( $new_name, $value );
+		
+		restore_current_blog();
 		
 		return true;
 	}	
@@ -2866,7 +3217,36 @@ class OrgHub_UploadModel
 	 */
 	private function grep_option( &$item )
 	{
+		extract($item);
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id ) return false;
+		
+		switch_to_blog( $blog_id );
+
+		$options = array();
+		
+		if( !empty($name) )
+		{
+			$value = get_option($name);
+			if( $value !== false )
+				$options[] = array( $name => $value );
+		}
+		else
+		{
+			$options = wp_load_alloptions();
+		}
+		
+		foreach( $options as $key => $value )
+		{
+			if( !preg_match_all("/$regex_key/", $value, $matches) ) continue;
+			
+			foreach( $matches as $match ) $value = str_replace( $match, $replace_text, $value );
+			
+			update_option( $key, $value );
+		}
+		
+		restore_current_blog();
 		
 		return true;
 	}
@@ -2879,11 +3259,17 @@ class OrgHub_UploadModel
    	/**
 	 * 
 	 */
-	protected function get_author_id( $author )
+	protected function get_author_id( $author, $create = false, $password = false, $email = false )
 	{
 		if( is_numeric($author) ) return intval( $author );
 		
 		$author_data = get_user_by( 'login', $author );
+		
+		if( !$author_data )
+		{
+			wp_create_user( $author, $password, $email );
+			$author_data = get_user_by( 'login', $author );
+		}
 		
 		return ( $author_data ? $author_data->ID : 0 );
 	}
