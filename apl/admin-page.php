@@ -526,8 +526,8 @@ abstract class APL_AdminPage
 			$this->display_notice();
 			$this->display_error();
 
-			$this->clear_error();
 			$this->clear_notice();
+			$this->clear_error();
 			
 		 	if( $this->handler->current_tab ):
 		 		$this->handler->current_tab->display();
