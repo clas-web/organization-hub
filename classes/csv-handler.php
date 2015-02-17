@@ -44,7 +44,8 @@ class OrgHub_CsvHandler
         	self::$last_error = 'Unable to open file: "'.$filename.'".';
         	return false;
 		}
-
+		
+		$use_comment_column = false;
         while( $keys = fgetcsv($resource, self::$length, self::$delimiter, self::$enclosure, self::$escape) )
         {
 			$keys = array_map( 'trim', $keys );
@@ -52,13 +53,23 @@ class OrgHub_CsvHandler
 			if( $headers === null ) 
 			{
 				$headers = $keys;
+				if( (count($headers) > 0) && (($headers[0] === '') || ($headers[0] === '#')) )
+					$user_comment_column = true;
 				continue;
 			}
 
 
 			$row = array();
 			
-			for( $i = 0; $i < count($keys); $i++ )
+			$i = 0;
+			
+			if( $user_comment_column )
+			{
+				$i++;
+				if( (count($keys) > 0) && ($keys[0] === '#') ) continue;
+			}
+			
+			for( ; $i < count($keys); $i++ )
 			{
 				if( ($i < count($headers)) && ($headers[$i] !== '') )
 				{
@@ -66,7 +77,7 @@ class OrgHub_CsvHandler
 				}
 			}
 			
-			for( $i = count($keys); $i < count($headers); $i++ )
+			for( ; $i < count($headers); $i++ )
 			{
 				$row[$headers[$i]] = '';
 			}
