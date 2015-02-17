@@ -2,7 +2,7 @@
 /**
  * OrgHub_UsersUploadTabAdminPage
  * 
- * This class controls the tab admin page "Upload > Users".
+ * This class controls the tab admin page "Users > Upload".
  * 
  * @package    orghub
  * @subpackage admin-pages/tabs/upload
@@ -21,7 +21,7 @@ class OrgHub_UsersUploadTabAdminPage extends APL_TabAdminPage
 	 */
 	public function __construct( $parent )
 	{
-		parent::__construct( $parent, 'users', 'Users', 'Upload Users' );
+		parent::__construct( $parent, 'upload', 'Upload', 'Upload Users' );
         $this->model = OrgHub_Model::get_instance();
 	}
 	
@@ -134,5 +134,5 @@ class OrgHub_UsersUploadTabAdminPage extends APL_TabAdminPage
 	}
 	
 } // class OrgHub_UsersUploadTabAdminPage extends APL_AdminPage
-endif; // if( !class_exists('OrgHub_UsersUploadTabAdminPage') ):
+endif; // if( !class_exists('OrgHub_UsersUploadTabAdminPage') )
 

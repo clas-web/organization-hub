@@ -13,23 +13,18 @@ if( !class_exists('OrgHub_UploadAdminPage') ):
 class OrgHub_UploadAdminPage extends APL_AdminPage
 {
 	
-	private $model = null;
-	
-	
 	/**
 	 * Creates an OrgHub_UploadAdminPage object.
 	 */
 	public function __construct()
 	{
-		parent::__construct( 'upload', 'Upload', 'Upload' );
-        $this->model = OrgHub_Model::get_instance();
+		parent::__construct( 'upload', 'Batch Upload', 'Batch Upload' );
         
-		$this->add_tab( new OrgHub_OverviewUploadTabAdminPage($this) );
-		$this->add_tab( new OrgHub_UsersUploadTabAdminPage($this) );
-		$this->add_tab( new OrgHub_SitesUploadTabAdminPage($this) );
-		$this->add_tab( new OrgHub_ContentUploadTabAdminPage($this) );
+		$this->add_tab( new OrgHub_UploadListTabAdminPage($this) );
+		$this->add_tab( new OrgHub_UploadUploadTabAdminPage($this) );
+		$this->add_tab( new OrgHub_UploadLogTabAdminPage($this) );
 	}
 	
 } // class OrgHub_UploadAdminPage extends APL_AdminPage
-endif; // if( !class_exists('OrgHub_UploadAdminPage') ):
+endif; // if( !class_exists('OrgHub_UploadAdminPage') )
 

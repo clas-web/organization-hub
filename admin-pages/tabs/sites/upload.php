@@ -2,7 +2,7 @@
 /**
  * OrgHub_SitesUploadTabAdminPage
  * 
- * This class controls the tab admin page "Upload > Sites".
+ * This class controls the tab admin page "Sites > Upload".
  * 
  * @package    orghub
  * @subpackage admin-pages/tabs/upload
@@ -17,11 +17,11 @@ class OrgHub_SitesUploadTabAdminPage extends APL_TabAdminPage
 	
 	
 	/**
-	 * Creates an OrgHub_UploadAdminPage object.
+	 * Creates an OrgHub_SitesUploadTabAdminPage object.
 	 */
 	public function __construct( $parent )
 	{
-		parent::__construct( $parent, 'sites', 'Sites', 'Upload Sites' );
+		parent::__construct( $parent, 'upload', 'Upload', 'Upload Sites' );
         $this->model = OrgHub_Model::get_instance();
 	}
 	
@@ -79,6 +79,6 @@ class OrgHub_SitesUploadTabAdminPage extends APL_TabAdminPage
  		$this->form_end();
 	}
 	
-} // class OrgHub_SitesUploadTabAdminPage extends APL_AdminPage
+} // class OrgHub_SitesUploadTabAdminPage extends APL_TabAdminPage
 endif; // if( !class_exists('OrgHub_SitesUploadTabAdminPage') ):
 

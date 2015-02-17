@@ -1427,7 +1427,7 @@ class OrgHub_UploadModel
 			'post_status'	=> $status,
 			'post_type'		=> 'page',
 			'menu_order'	=> $order,
-			'parent'		=> $this->get_post_by_title( $parent, 'page' );
+			'parent'		=> $this->get_post_by_title( $parent, 'page' ),
 			'post_author'	=> $this->get_author_id( $author ),
 			'post_password'	=> $password,
 			'guid'			=> $guid,
@@ -1473,7 +1473,7 @@ class OrgHub_UploadModel
 			'post_status'	=> $status,
 			'post_type'		=> 'page',
 			'menu_order'	=> $order,
-			'parent'		=> $this->get_post_by_title( $parent, 'page' );
+			'parent'		=> $this->get_post_by_title( $parent, 'page' ),
 			'post_author'	=> $this->get_author_id( $author ),
 			'post_password'	=> $password,
 			'post_excerpt'	=> $excerpt,
@@ -2281,7 +2281,7 @@ class OrgHub_UploadModel
 					'slug' => sanitize_title( $new_term ),
 				);
 				
-				wp_update_term( $term_object->term_id, $name, $tax_data )
+				wp_update_term( $term_object->term_id, $name, $tax_data );
 			}
 		}
 		

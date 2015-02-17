@@ -34,7 +34,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	 */
 	public function __construct( $parent )
 	{
-		parent::__construct( $parent, 'list', 'Users List' );
+		parent::__construct( $parent, 'list', 'List', 'Users List' );
 		$this->model = OrgHub_Model::get_instance();
 	}
 
@@ -335,5 +335,5 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	}
 
 } // class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
-endif; // if( !class_exists('OrgHub_UsersListTabAdminPage') ):
+endif; // if( !class_exists('OrgHub_UsersListTabAdminPage') )
 

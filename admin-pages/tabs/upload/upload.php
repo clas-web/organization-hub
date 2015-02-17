@@ -4,17 +4,17 @@ if( !class_exists('OrgHub_UploadListTable') )
 	require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/upload-list-table.php' );
 
 /**
- * OrgHub_ContentUploadTabAdminPage
+ * OrgHub_UploadUploadTabAdminPage
  * 
- * This class controls the tab admin page "Upload > Content".
+ * This class controls the tab admin page "Batch Upload > Upload".
  * 
  * @package    orghub
  * @subpackage admin-pages/tabs/upload
  * @author     Crystal Barton <cbarto11@uncc.edu>
  */
 
-if( !class_exists('OrgHub_ContentUploadTabAdminPage') ):
-class OrgHub_ContentUploadTabAdminPage extends APL_TabAdminPage
+if( !class_exists('OrgHub_UploadUploadTabAdminPage') ):
+class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
 {
 	
 	private $model = null;
@@ -23,65 +23,12 @@ class OrgHub_ContentUploadTabAdminPage extends APL_TabAdminPage
 	
 	
 	/**
-	 * Creates an OrgHub_ContentUploadTabAdminPage object.
+	 * Creates an OrgHub_UploadUploadTabAdminPage object.
 	 */
 	public function __construct( $parent )
 	{
-		parent::__construct( $parent, 'content', 'Content' );
+		parent::__construct( $parent, 'upload', 'Upload', 'Upload Batch' );
         $this->model = OrgHub_Model::get_instance();
-	}
-	
-	
-	/**
-	 * Initialize the admin page by setting up the filters and list table.
-	 */
-	public function init()
-	{
-		$this->setup_filters();
-		$this->list_table = new OrgHub_UploadListTable( $this );
-	}
-	
-	/**
-	 * Loads the list table's items.
-	 */
-	public function load()
-	{
-		$this->list_table->load();
-	}
-	
-
-	/**
-	 * Setup the filters for the list table, such as time, posts count, and page count.
-	 */
-	protected function setup_filters()
-	{
-		$this->orderby = ( !empty($_GET['orderby']) ? $_GET['orderby'] : 'timestamp' );
-		$order = ( !empty($_GET['order']) ? $_GET['order'] : 'desc' );
-		
-		switch( $order )
-		{
-			case 'asc': case 'desc': break;
-			default: $order = null; break;
-		}
-
-		switch( $this->orderby )
-		{
-			case 'timestamp':
-				if( !$order ) $order = 'desc';
-				break;
-
-			default:
-				$this->orderby = 'timestamp';
-				if( !$order ) $order = 'desc';
-				break;
-		}
-		
-
-		if( !isset($_GET) ) $_GET = array();
-		$_GET['orderby'] = $this->orderby;
-		$_GET['order'] = $order;
-		
-		$this->orderby .= ' '.$order;
 	}
 	
 	
@@ -98,14 +45,6 @@ class OrgHub_ContentUploadTabAdminPage extends APL_TabAdminPage
 		{
 			case 'upload':
 				$this->upload_file();
-				break;
-			
-			case 'clear':
-				$this->model->upload->clear_blog_batch_items();
-				$this->handler->force_redirect_url = $this->get_page_url();
-				break;
-				
-			case 'process-items':
 				break;
 		}
 	}
@@ -159,12 +98,6 @@ class OrgHub_ContentUploadTabAdminPage extends APL_TabAdminPage
 	 */
 	public function display()
 	{
-		$this->list_table->prepare_items( $this->orderby );
-
-		?>
-		<h4>Upload</h4>
-		
-		<?php
 		$this->form_start( 'upload', array('enctype' => 'multipart/form-data'), 'upload', null );
 		?>
 		
@@ -176,20 +109,8 @@ class OrgHub_ContentUploadTabAdminPage extends APL_TabAdminPage
  		
  		<?php
  		$this->form_end();
-		?>
-		
-		<h4>Batch List</h4>
-
-		<?php
-		$this->form_start_get( 'clear', null, 'clear' );
-			?><button>Clear Items</button><?php
-		$this->form_end();
-		
-		$this->form_start( 'upload-table' );
-			$this->list_table->display();
-		$this->form_end();
 	}
 	
-} // class OrgHub_ContentUploadTabAdminPage extends APL_AdminPage
-endif; // if( !class_exists('OrgHub_ContentUploadTabAdminPage') ):
+} // class OrgHub_UploadUploadTabAdminPage extends APL_AdminPage
+endif; // if( !class_exists('OrgHub_UploadUploadTabAdminPage') )
 

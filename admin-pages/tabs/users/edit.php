@@ -2,7 +2,7 @@
 /**
  * OrgHub_UsersEditTabAdminPage
  * 
- * This class controls the admin page Users when in edit user mode.
+ * This class controls the admin page "Users" when in edit user mode.
  * 
  * @package    orghub
  * @subpackage admin-pages/tabs/users
@@ -474,5 +474,5 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 	}
 
 } // class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
-endif; // if( !class_exists('OrgHub_UsersEditTabAdminPage') ):
+endif; // if( !class_exists('OrgHub_UsersEditTabAdminPage') )
 
