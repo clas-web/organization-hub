@@ -29,9 +29,10 @@ abstract class APL_TabAdminPage extends APL_AdminPage
 	 */
 	public function __construct( $page, $name, $tab_title, $page_title = null, $capability = 'administrator' )
 	{
-		parent::__construct( $name, $tab_title, $page_title, $capability );
 		$this->page = $page;
 		$this->display_tab = true;
+
+		parent::__construct( $name, $tab_title, $page_title, $capability );
 	}
 	
 	
@@ -65,6 +66,8 @@ abstract class APL_TabAdminPage extends APL_AdminPage
 	public function set_page( $page )
 	{
 		$this->page = $page;
+
+		if( !$this->page ) apl_print($this, 'no parent?? set_page');
 	}	
 
 

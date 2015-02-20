@@ -855,7 +855,7 @@ abstract class APL_AdminPage
 	/**
 	 * 
 	 */
-	protected function save_error()
+	public function save_error()
 	{
 		$_SESSION['apl-error'] = json_encode(
 			array(
@@ -885,8 +885,10 @@ abstract class APL_AdminPage
 		
 		$e = json_decode( $_SESSION['apl-error'], true );
 		
+		if( !array_key_exists('page', $e) ) return array();
 		if( $e['page'] !== $this->get_name() ) return array();
 		
+		if( !array_key_exists('messages', $e) ) return array();
 		return $e['messages'];
 	}
 	
@@ -934,7 +936,7 @@ abstract class APL_AdminPage
 	/**
 	 * 
 	 */
-	protected function save_notice()
+	public function save_notice()
 	{
 		$_SESSION['apl-notice'] = json_encode(
 			array(
@@ -964,8 +966,10 @@ abstract class APL_AdminPage
 		
 		$e = json_decode( $_SESSION['apl-notice'], true );
 		
+		if( !array_key_exists('page', $e) ) return array();
 		if( $e['page'] !== $this->get_name() ) return array();
 		
+		if( !array_key_exists('messages', $e) ) return array();
 		return $e['messages'];
 	}
 	
