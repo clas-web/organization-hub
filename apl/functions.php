@@ -88,9 +88,9 @@ function apl_get_page_url( $full_url = true )
 	else
 	{
 		if( $_SERVER['SERVER_PORT'] != '80' )
-			$page_url .= $_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].$_SERVER['SCRIPT_NAME'];
+			$page_url .= $_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].strtok( $_SERVER['REQUEST_URI'], '?' );
 		else
-			$page_url .= $_SERVER['SERVER_NAME'].$_SERVER['SCRIPT_NAME'];
+			$page_url .= $_SERVER['SERVER_NAME'].strtok( $_SERVER['REQUEST_URI'], '?' );
 	}
 	
 	return $page_url;
