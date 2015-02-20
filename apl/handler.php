@@ -219,7 +219,6 @@ class APL_Handler
 				break;
 		}
 		
-		
 		if( $this->current_page )
 		{
 			$this->current_page = $this->get_page( $this->current_page );
@@ -327,6 +326,13 @@ class APL_Handler
 	public function get_tab_name()
 	{
 		if( $this->current_tab ) return $this->current_tab->name;
+		return null;
+	}
+	
+	
+	public function get_name()
+	{
+		if( $this->controller ) return $this->controller->get_name();
 		return null;
 	}
 	

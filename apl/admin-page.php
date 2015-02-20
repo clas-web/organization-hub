@@ -80,8 +80,8 @@ abstract class APL_AdminPage
 		
 		$this->ajax = array();
 		
-		$this->notices = $this->get_notice();
-		$this->errors = $this->get_error();
+		$this->notices = array();
+		$this->errors = array();
 	}
 	
 	
@@ -95,8 +95,8 @@ abstract class APL_AdminPage
 	 * Loads the admin page.  Called during "load-{page}" action.
 	 */
 	public function load() { }
-
-
+	
+	
 	/**
 	 * Adds the admin page to the main menu and sets up all values, actions and filters.
 	 * Called during "admin_menu" or "network_admin_menu" action.
@@ -531,9 +531,6 @@ abstract class APL_AdminPage
 			
 			$this->display_notice();
 			$this->display_error();
-
-			$this->clear_notice();
-			$this->clear_error();
 			
 		 	if( $this->handler->current_tab ):
 		 		$this->handler->current_tab->display();
@@ -886,7 +883,7 @@ abstract class APL_AdminPage
 		$e = json_decode( $_SESSION['apl-error'], true );
 		
 		if( !array_key_exists('page', $e) ) return array();
-		if( $e['page'] !== $this->get_name() ) return array();
+		if( $e['page'] !== $this->handler->get_name() ) return array();
 		
 		if( !array_key_exists('messages', $e) ) return array();
 		return $e['messages'];
@@ -898,16 +895,18 @@ abstract class APL_AdminPage
 	 */
 	protected function display_error()
 	{
-		foreach( $this->errors as $message ):
+		$this->errors = array_merge( $this->get_error(), $this->errors );
 		?>
 		
-		<div class="error">
-			<?php echo $message; ?>
+		<div class="page-errors">
+		
+		<?php foreach( $this->errors as $message ): ?>
+			<div><?php echo $message; ?></div>
+		<?php endforeach; ?>
+		
 		</div>
 		
 		<?php
-		endforeach;
-
 		$this->clear_error();
 	}
 	
@@ -967,7 +966,7 @@ abstract class APL_AdminPage
 		$e = json_decode( $_SESSION['apl-notice'], true );
 		
 		if( !array_key_exists('page', $e) ) return array();
-		if( $e['page'] !== $this->get_name() ) return array();
+		if( $e['page'] !== $this->handler->get_name() ) return array();
 		
 		if( !array_key_exists('messages', $e) ) return array();
 		return $e['messages'];
@@ -979,16 +978,18 @@ abstract class APL_AdminPage
 	 */
 	protected function display_notice()
 	{
-		foreach( $this->notices as $message ):
+		$this->notices = array_merge( $this->get_notice(), $this->notices );
 		?>
 		
-		<div class="notice">
-			<?php echo $message; ?>
+		<div class="page-notices">
+		
+		<?php foreach( $this->notices as $message ): ?>
+			<div><?php echo $message; ?></div>
+		<?php endforeach; ?>
+		
 		</div>
 		
 		<?php
-		endforeach;
-
 		$this->clear_notice();
 	}
 	
