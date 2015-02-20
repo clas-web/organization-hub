@@ -37,8 +37,6 @@ class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
 	 */
 	public function process()
 	{
-		if( $this->list_table->process_batch_action() ) return;
-
 		if( empty($_REQUEST['action']) ) return;
 		
 		switch( $_REQUEST['action'] )
@@ -81,15 +79,15 @@ class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
 			}
 			else
 			{
-				$errors .= $this->model->last_error.'<br/>';
+				$this->add_error( $this->model->last_error );
 			}
 		}
 		
 		$results = count($rows) . ' rows found in file.<br/>';
 		$results .= $processed_rows . ' rows added successfully.<br/>';
 
-		$this->set_notice( $results );
-		$this->set_error( $errors );
+		$this->add_notice( count($rows) . ' rows found in file.' );
+		$this->add_notice( $processed_rows . ' rows added or updated successfully.' );
 	}
 		
 	

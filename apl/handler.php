@@ -294,6 +294,12 @@ class APL_Handler
 	 */
 	public function redirect()
 	{
+		if( $this->controller )
+		{
+			$this->controller->save_notice();
+			$this->controller->save_error();
+		}
+		
 		$redirect_url = ( $this->force_redirect_url ? $this->force_redirect_url : 
 			( !empty($_REQUEST['_wp_http_referer']) ? $_REQUEST['_wp_http_referer'] : apl_get_page_url() )
 		);

@@ -38,6 +38,9 @@ abstract class APL_AdminPage
 	public $selectable_columns;
 	
 	protected $ajax;
+	
+	protected $notices;
+	protected $errors;
 
 	
 	/**
@@ -76,6 +79,9 @@ abstract class APL_AdminPage
 		$this->selectable_columns = array();
 		
 		$this->ajax = array();
+		
+		$this->notices = $this->get_notice();
+		$this->errors = $this->get_error();
 	}
 	
 	
@@ -829,12 +835,32 @@ abstract class APL_AdminPage
 	 * Store an error in the session.
 	 * @param  string  $error  The error to store in the session.
 	 */
-	protected function set_error( $error )
+	protected function set_error( $error, $save = false )
+	{
+		$this->errors = array( $error );
+		if( $save ) $this->save_error();
+	}
+	
+	
+	/**
+	 * 
+	 */
+	protected function add_error( $error, $save = false )
+	{
+		$this->errors[] = $error;
+		if( $save ) $this->save_error();
+	}
+	
+	
+	/**
+	 * 
+	 */
+	protected function save_error()
 	{
 		$_SESSION['apl-error'] = json_encode(
 			array(
 				'page'		=> $this->get_name(),
-				'message'	=> $error,
+				'messages'	=> $this->errors,
 			)
 		);
 	}
@@ -845,7 +871,23 @@ abstract class APL_AdminPage
 	 */
 	protected function clear_error()
 	{
-		unset($_SESSION['apl-error']);
+		$this->errors = array();
+		unset( $_SESSION['apl-error'] );
+	}
+	
+	
+	/**
+	 * 
+	 */
+	protected function get_error()
+	{
+		if( !isset($_SESSION['apl-error']) ) return array();
+		
+		$e = json_decode( $_SESSION['apl-error'], true );
+		
+		if( $e['page'] !== $this->get_name() ) return array();
+		
+		return $e['messages'];
 	}
 	
 	
@@ -854,31 +896,50 @@ abstract class APL_AdminPage
 	 */
 	protected function display_error()
 	{
-		if( !isset($_SESSION['apl-error']) ) return;
-		
-		$e = json_decode( $_SESSION['apl-error'], true );
-		$this->clear_error();
-		
-		if( $e['page'] !== $this->get_name() ) return;
-		
+		foreach( $this->errors as $message ):
 		?>
+		
 		<div class="error">
-			<?php echo $e['message']; ?>
+			<?php echo $message; ?>
 		</div>
+		
 		<?php
+		endforeach;
+
+		$this->clear_error();
 	}
 	
 	
 	/**
-	 * Store a notice message in the session.
+	 * Store an notice in the session.
 	 * @param  string  $notice  The notice to store in the session.
 	 */
-	protected function set_notice( $notice )
+	protected function set_notice( $notice, $save = false )
+	{
+		$this->notices = array( $notice );
+		if( $save ) $this->save_notice();
+	}
+	
+	
+	/**
+	 * 
+	 */
+	protected function add_notice( $notice, $save = false )
+	{
+		$this->notices[] = $notice;
+		if( $save ) $this->save_notice();
+	}
+	
+	
+	/**
+	 * 
+	 */
+	protected function save_notice()
 	{
 		$_SESSION['apl-notice'] = json_encode(
 			array(
 				'page'		=> $this->get_name(),
-				'message'	=> $notice,
+				'messages'	=> $this->notices,
 			)
 		);
 	}
@@ -889,7 +950,23 @@ abstract class APL_AdminPage
 	 */
 	protected function clear_notice()
 	{
-		unset($_SESSION['apl-notice']);
+		$this->notices = array();
+		unset( $_SESSION['apl-notice'] );
+	}
+	
+	
+	/**
+	 * 
+	 */
+	protected function get_notice()
+	{
+		if( !isset($_SESSION['apl-notice']) ) return array();
+		
+		$e = json_decode( $_SESSION['apl-notice'], true );
+		
+		if( $e['page'] !== $this->get_name() ) return array();
+		
+		return $e['messages'];
 	}
 	
 	
@@ -898,18 +975,17 @@ abstract class APL_AdminPage
 	 */
 	protected function display_notice()
 	{
-		if( !isset($_SESSION['apl-notice']) ) return;
-		
-		$e = json_decode( $_SESSION['apl-notice'], true );
-		$this->clear_notice();
-		
-		if( $e['page'] !== $this->get_name() ) return;
-		
+		foreach( $this->notices as $message ):
 		?>
+		
 		<div class="notice">
-			<?php echo $e['message']; ?>
+			<?php echo $message; ?>
 		</div>
+		
 		<?php
+		endforeach;
+
+		$this->clear_notice();
 	}
 	
 	

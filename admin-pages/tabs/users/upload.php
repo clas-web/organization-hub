@@ -90,10 +90,8 @@ class OrgHub_UsersUploadTabAdminPage extends APL_TabAdminPage
 			true
 		);
 		
-		$results = count($rows) . ' rows found in file.<br/>';
-		$results .= $processed_rows . ' rows added or updated successfully.<br/>';
-
-		$this->set_notice( $results );
+		$this->add_notice( count($rows) . ' rows found in file.' );
+		$this->add_notice( $processed_rows . ' rows added or updated successfully.' );
 	}
 		
 	
