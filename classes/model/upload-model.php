@@ -320,12 +320,17 @@ class OrgHub_UploadModel
 	public function get_item_by_id( $id )
 	{
 		global $wpdb;
-		return $wpdb->get_row(
+		$item = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM ".self::$upload_table." WHERE id = %d",
 				$id
-			)
+			),
+			ARRAY_A
 		);
+		
+		if( $item ) $item['data'] = json_decode( $item['data'], true );
+		
+		return $item;
 	}
 	
 	
@@ -353,10 +358,7 @@ class OrgHub_UploadModel
 //  		apl_print( 'SELECT '.$list.' FROM '.self::$upload_table.' '.$filter );
 		$items = $wpdb->get_results( 'SELECT '.$list.' FROM '.self::$upload_table.' '.$filter, ARRAY_A );
 		
-		foreach( $items as &$item )
-		{
-			$item['data'] = json_decode( $item['data'], true );
-		}
+		foreach( $items as &$item ) $item['data'] = json_decode( $item['data'], true );
 		
 		return $items;
 	}
@@ -466,7 +468,17 @@ class OrgHub_UploadModel
 		);
 		
 		if( is_callable($function) )
-			return call_user_func_array( $function, array(&$data) );
+		{
+// 			$this->delete_item( $item['id'] );
+
+			if( !$this->switch_to_blog($data) ) return false;
+			
+			$return = call_user_func_array( $function, array(&$data) );
+			
+			$this->restore_blog();
+			
+			return $return;
+		}
 		
 		$this->model->last_error = 'Invalid type "'.$data['type'].' or action "'.$data['action'].'" specified.';
 		return false;
@@ -698,13 +710,16 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
+		$post = $this->get_post_by_title( $title, $post_type );
+		if( $post ) return false;
+		
 		$post_data = array(
 			'post_content'	=> $content,
 			'post_name'		=> $slug,
 			'post_title'	=> $title,
 			'post_status'	=> $status,
 			'post_type'		=> $post_type,
-			'post_author'	=> $this->get_author_id( $user ),
+			'post_author'	=> $this->get_author_id( $author ),
 			'post_password'	=> $password,
 			'guid'			=> $guid,
 			'post_excerpt'	=> $excerpt,
@@ -745,14 +760,13 @@ class OrgHub_UploadModel
 		if( !$post ) return false;
 		
 		$post_data = array(
-			'ID'			=> $post->ID,
+			'ID'			=> $post['ID'],
 			'post_content'	=> $this->get_string_value( $content ),
 			'post_name'		=> $slug,
 			'post_status'	=> $status,
 			'post_type'		=> $this->get_post_type( $post_type ),
-			'post_author'	=> $this->get_author_id( $user ),
+			'post_author'	=> $this->get_author_id( $author ),
 			'post_password'	=> $this->get_string_value( $password ),
-			'guid'			=> $guid,
 			'post_excerpt'	=> $this->get_string_value( $excerpt ),
 			'post_date'		=> $this->parse_date( $date ),
 			'tax_input'		=> $this->get_taxonomies( $taxonomy ),
@@ -2489,8 +2503,6 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		if( !$this->switch_to_blog($item) ) return false;
-		
 		$admin_id = $this->get_author_id( $user, true, $password, $email );
 		if( !$admin_id )
 		{
@@ -2514,8 +2526,6 @@ class OrgHub_UploadModel
 			add_user_to_blog( $blog_id, $admin_id, 'administrator' );
 			update_option( 'admin_email', $user->user_email );
 		}
-		
-		$this->restore_blog();
 		
 		return true;
 	}
@@ -2586,8 +2596,6 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		if( !$this->switch_to_blog($item) ) return false;
-		
 		switch( $subject )
 		{
 			case 'title':
@@ -2613,8 +2621,6 @@ class OrgHub_UploadModel
 			default:
 				break;
 		}
-		
-		$this->restore_blog();
 		
 		return true;		
 	}
@@ -3146,11 +3152,7 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		if( !$this->switch_to_blog($item) ) return false;
-				
 		$result = add_option( $name, $value );
-		
-		$this->restore_blog();
 		
 		return $result;
 	}
@@ -3165,12 +3167,8 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		if( !$this->switch_to_blog($item) ) return false;
-		
 		if( get_option( $name ) !== false )
 			update_option( $name, $value );
-		
-		$this->restore_blog();
 		
 		return true;
 	}
@@ -3185,11 +3183,7 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		if( !$this->switch_to_blog($item) ) return false;
-		
 		update_option( $name, $value );
-		
-		$this->restore_blog();
 		
 		return true;
 	}
@@ -3204,11 +3198,7 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		if( !$this->switch_to_blog($item) ) return false;
-		
 		delete_option( $name );
-		
-		$this->restore_blog();
 		
 		return true;
 	}
@@ -3223,12 +3213,8 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		if( !$this->switch_to_blog($item) ) return false;
-		
 		$value = get_option( $name );
 		update_option( $new_name, $value );
-		
-		$this->restore_blog();
 		
 		return true;
 	}	
@@ -3242,8 +3228,6 @@ class OrgHub_UploadModel
 	private function grep_option( &$item )
 	{
 		extract($item);
-		
-		if( !$this->switch_to_blog($item) ) return false;
 		
 		$options = array();
 		
@@ -3266,8 +3250,6 @@ class OrgHub_UploadModel
 			
 			update_option( $key, $value );
 		}
-		
-		$this->restore_blog();
 		
 		return true;
 	}
@@ -3372,7 +3354,7 @@ class OrgHub_UploadModel
 							$args = array();
 							if( $parent ) $args['parent'] = $parent;
 					
-							$result = wp_insert_term( $heirarchy[$i], $taxonomy_name, $args );
+							$result = wp_insert_term( $heirarchy[$i], $taxname, $args );
 							if( is_wp_error($result) )
 							{
 								//TODO: error: 'Unable to insert '.$taxonomy_name.'term: '.$heirarchy[$i];
@@ -3403,6 +3385,8 @@ class OrgHub_UploadModel
 	protected function get_post_by_title( $title, $post_type = 'post' )
 	{
 		if( empty($title) ) return null;
+		if( empty($post_type) ) $post_type = 'post';
+		
 		return get_page_by_title( $title, ARRAY_A, $post_type );
 	}
 	
