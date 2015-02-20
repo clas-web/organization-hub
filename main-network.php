@@ -14,7 +14,7 @@ require( dirname(__FILE__).'/main.php' );
 if( is_admin() ):
 
 add_action( 'wp_loaded', array('OrgHub_MainNetwork', 'load') );
-add_action( 'admin_menu', array('OrgHub_Main', 'update'), 5 );
+add_action( 'network_admin_menu', array('OrgHub_Main', 'update'), 5 );
 
 endif;
 
