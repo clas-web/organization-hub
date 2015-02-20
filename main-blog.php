@@ -28,7 +28,7 @@ class OrgHub_MainBlog
 		// Site admin page.
 		$orghub_pages = new APL_Handler( false );
 
-		$orghub_pages->add_page( new OrgHub_UploadAdminPage );
+		$orghub_pages->add_page( new OrgHub_UploadAdminPage('orghub-upload') );
 		$orghub_pages->setup();
 	}
 	

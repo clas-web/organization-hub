@@ -19,9 +19,13 @@ class OrgHub_UsersLogTabAdminPage extends APL_TabAdminPage
 	/**
 	 * Creates an OrgHub_UsersLogTabAdminPage object.
 	 */
-	public function __construct( $parent )
+	public function __construct(
+		$parent,
+		$name = 'log', 
+		$tab_title = 'Log', 
+		$page_title = 'Users Log' )
 	{
-		parent::__construct( $parent, 'log', 'Log', 'Users Log' );
+		parent::__construct( $parent, $name, $tab_title, $page_title );
         $this->model = OrgHub_Model::get_instance();
 	}
 	

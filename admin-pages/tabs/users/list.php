@@ -32,9 +32,13 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 	 * Constructor.
 	 * Creates an OrgHub_UsersListTabAdminPage object.
 	 */
-	public function __construct( $parent )
+	public function __construct(
+		$parent,
+		$name = 'list', 
+		$tab_title = 'List', 
+		$page_title = 'Users List' )
 	{
-		parent::__construct( $parent, 'list', 'List', 'Users List' );
+		parent::__construct( $parent, $name, $tab_title, $page_title );
 		$this->model = OrgHub_Model::get_instance();
 	}
 

@@ -16,9 +16,13 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 	/**
 	 * Creates an OrgHub_SitesAdminPage object.
 	 */
-	public function __construct()
+	public function __construct(
+		$name = 'sites',
+		$menu_title = 'Sites',
+		$page_title = 'Sites',
+		$capability = 'administrator' )
 	{
-		parent::__construct( 'sites', 'Sites', 'Sites' );
+		parent::__construct( $name, $menu_title, $page_title, $capability );
 		
 		$this->add_tab( new OrgHub_SitesListTabAdminPage($this) );
 		$this->add_tab( new OrgHub_SitesUploadTabAdminPage($this) );

@@ -25,9 +25,13 @@ class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 	/**
 	 * Creates an OrgHub_UploadListTabAdminPage object.
 	 */
-	public function __construct( $parent )
+	public function __construct(
+		$parent,
+		$name = 'list', 
+		$tab_title = 'List', 
+		$page_title = 'Upload List' )
 	{
-		parent::__construct( $parent, 'list', 'List', 'Upload List' );
+		parent::__construct( $parent, $name, $tab_title, $page_title );
         $this->model = OrgHub_Model::get_instance();
 	}
 	

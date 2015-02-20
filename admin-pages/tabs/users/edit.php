@@ -19,9 +19,13 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 	/**
 	 * Creates an OrgHub_UsersEditTabAdminPage object.
 	 */
-	public function __construct( $parent )
+	public function __construct(
+		$parent,
+		$name = 'edit', 
+		$tab_title = 'Edit', 
+		$page_title = 'Edit User' )
 	{
-		parent::__construct( $parent, 'edit', 'Edit User' );
+		parent::__construct( $parent, $name, $tab_title, $page_title );
 		$this->model = OrgHub_Model::get_instance();
 	}
 

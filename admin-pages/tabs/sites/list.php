@@ -29,9 +29,13 @@ class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 	/**
 	 * Creates an OrgHub_SitesListTabAdminPage object.
 	 */
-	public function __construct( $parent )
+	public function __construct( 
+		$parent,
+		$name = 'list', 
+		$tab_title = 'List', 
+		$page_title = 'Sites List' )
 	{
-		parent::__construct( $parent, 'list', 'List', 'Sites List' );
+		parent::__construct( $parent, $name, $tab_title, $page_title );
 		$this->model = OrgHub_Model::get_instance();
 	}
 	

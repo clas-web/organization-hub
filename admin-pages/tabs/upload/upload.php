@@ -25,9 +25,13 @@ class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
 	/**
 	 * Creates an OrgHub_UploadUploadTabAdminPage object.
 	 */
-	public function __construct( $parent )
+	public function __construct(
+		$parent,
+		$name = 'upload', 
+		$tab_title = 'Upload', 
+		$page_title = 'Upload Batch' )
 	{
-		parent::__construct( $parent, 'upload', 'Upload', 'Upload Batch' );
+		parent::__construct( $parent, $name, $tab_title, $page_title );
         $this->model = OrgHub_Model::get_instance();
 	}
 	
@@ -96,6 +100,7 @@ class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
 	 */
 	public function display()
 	{
+		$this->get_page_url();
 		$this->form_start( 'upload', array('enctype' => 'multipart/form-data'), 'upload', null );
 		?>
 		
