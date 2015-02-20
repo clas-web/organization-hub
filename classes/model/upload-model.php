@@ -964,7 +964,7 @@ class OrgHub_UploadModel
 			switch( $subject )
 			{
 				case 'excerpt':
-					if( !preg_match_all("/$regex_key/", $post->post_excerpt, $matches) ) continue;
+					if( !preg_match_all("/$regex/", $post->post_excerpt, $matches) ) continue;
 					
 					$excerpt = $post->post_excerpt;
 					foreach( $matches as $match ) $excerpt = str_replace( $match, $replace_text, $excerpt );
@@ -973,7 +973,7 @@ class OrgHub_UploadModel
 					break;
 					
 				case 'content':
-					if( !preg_match_all("/$regex_key/", $post->post_content, $matches) ) continue;
+					if( !preg_match_all("/$regex/", $post->post_content, $matches) ) continue;
 					
 					$content = $post->post_content;
 					foreach( $matches as $match ) $content = str_replace( $match, $replace_text, $content );
@@ -3387,7 +3387,7 @@ class OrgHub_UploadModel
 		if( empty($title) ) return null;
 		if( empty($post_type) ) $post_type = 'post';
 		
-		return get_page_by_title( $title, ARRAY_A, $post_type );
+		return get_page_by_title( $title, OBJECT, $post_type );
 	}
 	
 	
