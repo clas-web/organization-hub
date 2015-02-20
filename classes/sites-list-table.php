@@ -207,7 +207,6 @@ class OrgHub_SitesListTable extends WP_List_Table
 				break;
 			
 			case 'change-site-admin':
-				apl_print( 'create-site-admin' );
 				if( !isset($bulk_input['admin']) )
 				{
 					// set error
