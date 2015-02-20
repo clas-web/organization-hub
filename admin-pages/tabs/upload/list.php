@@ -109,6 +109,7 @@ class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 				}
 				
 				$this->model->upload->delete_item( $_GET['id'] );
+				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 				
 			case 'process':
@@ -118,7 +119,8 @@ class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 					return;
 				}
 				
-				$this->model->upload->delete_item( $_GET['id'] );
+				$this->model->upload->process_item( $_GET['id'] );
+				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 				
 			case 'process-items':

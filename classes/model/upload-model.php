@@ -312,7 +312,23 @@ class OrgHub_UploadModel
 //========================================================================================
 //=============================================== Retrieve upload data from database =====
 	
-
+	
+	/**
+	 *
+	 * @return null on failure
+	 */
+	public function get_item_by_id( $id )
+	{
+		global $wpdb;
+		return $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM ".self::$upload_table." WHERE id = %d",
+				$id
+			)
+		);
+	}
+	
+	
 	/**
 	 * Retrieve a complete list of OrgHub items from the database after filtering.
 	 * @param   int	 $blog_id  The blog id of the current site's batch. 
@@ -424,23 +440,36 @@ class OrgHub_UploadModel
 		
 		foreach( $items as &$item )
 		{
-			$data =& $item['data'];
-			
-			if( !$this->check_args($data, true) ) return false;
-		
-			$type = str_replace( '-', '_', $data['type'] );
-			$action = str_replace( '-', '_', $data['action'] );
-
-			$function = array(
-				$this,
-				$action.'_'.$type,
-			);
-			
-			if( is_callable($function) )
-				return call_user_func_array( $function, array(&$data) );
-			
-			$this->model->last_error = 'Invalid type "'.$data['type'].' or action "'.$data['action'].'" specified.';
+			$this->process_item( $item['id'], $item );
 		}
+	}
+
+
+	public function process_item( $id, &$item = null )
+	{
+		if( ($item === null) && ($item = $this->get_item_by_id( $id )) === null )
+		{
+			$this->model->last_error = 'Invalid item id "'.$id.'".';
+			return false;
+		}
+		
+		$data =& $item['data'];
+		
+		if( !$this->check_args($data, true) ) return false;
+	
+		$type = str_replace( '-', '_', $data['type'] );
+		$action = str_replace( '-', '_', $data['action'] );
+
+		$function = array(
+			$this,
+			$action.'_'.$type,
+		);
+		
+		if( is_callable($function) )
+			return call_user_func_array( $function, array(&$data) );
+		
+		$this->model->last_error = 'Invalid type "'.$data['type'].' or action "'.$data['action'].'" specified.';
+		return false;
 	}
 	
 	
