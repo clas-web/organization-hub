@@ -148,7 +148,7 @@ class OrgHub_UploadListTable extends WP_List_Table
 		{
 			case 'remove-items':
 				foreach( $items as $item_id )
-					$this->model->upload->remove_item( $item_id );
+					$this->model->upload->delete_item( $item_id );
 				break;
 			
 			default:
