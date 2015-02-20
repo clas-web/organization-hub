@@ -1,13 +1,4 @@
 <?php
-/*
-Plugin Name: Organization Hub - APL Test
-Plugin URI: 
-Description: 
-Version: 0.0.1
-Author: Crystal Barton
-Author URI: http://www.crystalbarton.com
-*/
-
 
 //error_reporting(-1);
 
@@ -35,14 +26,13 @@ endif;
 
 if( is_admin() ):
 
-add_action( 'wp_loaded', array('OrgHub_Main', 'load') );
-add_action( 'network_admin_menu', array('OrgHub_Main', 'update'), 5 );
 add_action( 'admin_enqueue_scripts', array('OrgHub_Main', 'enqueue_scripts') );
 
 require_once( dirname(__FILE__).'/apl/handler.php' );
 require_once( dirname(__FILE__).'/admin-pages/require.php' );
 
 endif;
+
 
 add_action( 'show_user_profile', array('OrgHub_Main', 'show_custom_user_fields') );
 add_action( 'edit_user_profile', array('OrgHub_Main', 'show_custom_user_fields') );
@@ -54,11 +44,10 @@ class OrgHub_Main
 	
 	public static function load()
 	{
-		$orghub_pages = new APL_Handler( true );
+		// Site admin page.
+		$orghub_pages = new APL_Handler( false );
 		
-		$menu = new APL_AdminMenu( 'orghub', 'Organization Hub' );
-		$menu->add_page( new OrgHub_UsersAdminPage );
-		$menu->add_page( new OrgHub_SitesAdminPage );
+		$menu = new APL_AdminMenu( 'orghub', 'Batch Upload' );
 		$menu->add_page( new OrgHub_UploadAdminPage );
 		
 		$orghub_pages->add_menu( $menu );
@@ -155,4 +144,5 @@ class OrgHub_Main
 	}
 }
 endif;
+
 
