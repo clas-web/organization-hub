@@ -154,7 +154,7 @@ class OrgHub_UploadModel
 	private function validate_args_for_db( &$args, $required_keys, $required_values, $valid_keys, $valid_regex_keys )
 	{
 		$new_args = array(
-			'site'		=> $args['site'],
+			'action'	=> $args['action'],
 			'type'		=> $args['type'],
 		);
 		
@@ -289,6 +289,22 @@ class OrgHub_UploadModel
 		}
 
 		return $item_id;
+	}
+	
+	
+	public function delete_item( $id )
+	{
+		global $wpdb;
+		
+		$wpdb->delete(
+			self::$upload_table,
+			array(
+				'id'		=> $id,
+			),
+			array( '%d' )
+		);
+		
+		return true;
 	}
 	
 	
@@ -701,14 +717,14 @@ class OrgHub_UploadModel
 		
 		$post_data = array(
 			'ID'			=> $post->ID,
-			'post_content'	=> $content,
+			'post_content'	=> $this->get_string_value( $content ),
 			'post_name'		=> $slug,
 			'post_status'	=> $status,
 			'post_type'		=> $this->get_post_type( $post_type ),
 			'post_author'	=> $this->get_author_id( $user ),
-			'post_password'	=> $password,
+			'post_password'	=> $this->get_string_value( $password ),
 			'guid'			=> $guid,
-			'post_excerpt'	=> $excerpt,
+			'post_excerpt'	=> $this->get_string_value( $excerpt ),
 			'post_date'		=> $this->parse_date( $date ),
 			'tax_input'		=> $this->get_taxonomies( $taxonomy ),
 		);
@@ -2444,8 +2460,7 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$blog_id = get_id_from_blogname( $site );
-		if( !$blog_id ) return false;
+		if( !$this->switch_to_blog($item) ) return false;
 		
 		$admin_id = $this->get_author_id( $user, true, $password, $email );
 		if( !$admin_id )
@@ -2453,8 +2468,6 @@ class OrgHub_UploadModel
 			$this->model->last_error = 'Unable to find or create admin user account.';
 			return false;
 		}
-		
-		switch_to_blog( $blog_id );
 		
 		if( $title ) update_option( 'blogname', $title );
 		if( $description ) update_option( 'blogdescription', $description );
@@ -2473,7 +2486,7 @@ class OrgHub_UploadModel
 			update_option( 'admin_email', $user->user_email );
 		}
 		
-		restore_current_blog();
+		$this->restore_blog();
 		
 		return true;
 	}
@@ -2544,10 +2557,7 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$blog_id = get_id_from_blogname( $site );
-		if( !$blog_id ) return false;
-		
-		switch_to_blog( $blog_id );
+		if( !$this->switch_to_blog($item) ) return false;
 		
 		switch( $subject )
 		{
@@ -2575,7 +2585,7 @@ class OrgHub_UploadModel
 				break;
 		}
 		
-		restore_current_blog();
+		$this->restore_blog();
 		
 		return true;		
 	}
@@ -3107,14 +3117,11 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$blog_id = get_id_from_blogname( $site );
-		if( !$blog_id ) return false;
-		
-		switch_to_blog( $blog_id );
-		
+		if( !$this->switch_to_blog($item) ) return false;
+				
 		$result = add_option( $name, $value );
 		
-		restore_current_blog();
+		$this->restore_blog();
 		
 		return $result;
 	}
@@ -3129,15 +3136,12 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$blog_id = get_id_from_blogname( $site );
-		if( !$blog_id ) return false;
-		
-		switch_to_blog( $blog_id );
+		if( !$this->switch_to_blog($item) ) return false;
 		
 		if( get_option( $name ) !== false )
 			update_option( $name, $value );
 		
-		restore_current_blog();
+		$this->restore_blog();
 		
 		return true;
 	}
@@ -3152,14 +3156,11 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$blog_id = get_id_from_blogname( $site );
-		if( !$blog_id ) return false;
-		
-		switch_to_blog( $blog_id );
+		if( !$this->switch_to_blog($item) ) return false;
 		
 		update_option( $name, $value );
 		
-		restore_current_blog();
+		$this->restore_blog();
 		
 		return true;
 	}
@@ -3174,14 +3175,11 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$blog_id = get_id_from_blogname( $site );
-		if( !$blog_id ) return false;
-		
-		switch_to_blog( $blog_id );
+		if( !$this->switch_to_blog($item) ) return false;
 		
 		delete_option( $name );
 		
-		restore_current_blog();
+		$this->restore_blog();
 		
 		return true;
 	}
@@ -3196,15 +3194,12 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$blog_id = get_id_from_blogname( $site );
-		if( !$blog_id ) return false;
-		
-		switch_to_blog( $blog_id );
+		if( !$this->switch_to_blog($item) ) return false;
 		
 		$value = get_option( $name );
 		update_option( $new_name, $value );
 		
-		restore_current_blog();
+		$this->restore_blog();
 		
 		return true;
 	}	
@@ -3219,11 +3214,8 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$blog_id = get_id_from_blogname( $site );
-		if( !$blog_id ) return false;
+		if( !$this->switch_to_blog($item) ) return false;
 		
-		switch_to_blog( $blog_id );
-
 		$options = array();
 		
 		if( !empty($name) )
@@ -3246,7 +3238,7 @@ class OrgHub_UploadModel
 			update_option( $key, $value );
 		}
 		
-		restore_current_blog();
+		$this->restore_blog();
 		
 		return true;
 	}
@@ -3421,6 +3413,46 @@ class OrgHub_UploadModel
 		}
 		
 		return $link_categories;
+	}
+	
+	
+	
+	protected function switch_to_blog( &$item )
+	{
+		if( !is_network_admin() ) return true;
+		if( !isset($item['site']) ) return false;
+		
+		$blog_id = get_id_from_blogname( $item['site'] );
+		if( !$blog_id ) return false;
+		
+		switch_to_blog( $blog_id );
+		return true;
+	}
+	
+	
+	protected function restore_blog()
+	{
+		if( !is_network_admin() ) return true;
+		
+		restore_current_blog();
+		return true;
+	}
+	
+	
+	protected function get_string_value( $value )
+	{
+		switch( $value )
+		{
+			case '[null]':
+				return null;
+				break;
+			
+			case '[empty]':
+				return null;
+				break;
+		}
+		
+		return ''.$value;
 	}
 	
 	

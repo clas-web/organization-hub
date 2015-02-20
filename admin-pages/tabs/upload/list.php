@@ -100,6 +100,26 @@ class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 				$this->model->upload->clear_blog_batch_items();
 				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
+			
+			case 'delete':
+				if( empty($_GET['id']) || !is_numeric($_GET['id']) )
+				{
+					$this->set_error( 'No id provided or is invalid.' );
+					return;
+				}
+				
+				$this->model->upload->delete_item( $_GET['id'] );
+				break;
+				
+			case 'process':
+				if( empty($_GET['id']) || !is_numeric($_GET['id']) )
+				{
+					$this->set_error( 'No id provided or is invalid.' );
+					return;
+				}
+				
+				$this->model->upload->delete_item( $_GET['id'] );
+				break;
 				
 			case 'process-items':
 				break;

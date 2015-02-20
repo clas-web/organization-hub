@@ -214,7 +214,7 @@ class OrgHub_UploadListTable extends WP_List_Table
 	public function column_cb($item)
 	{
         return sprintf(
-            '<input type="checkbox" name="user[]" value="%s" />', $item['id']
+            '<input type="checkbox" name="item[]" value="%s" />', $item['id']
         );
     }
 	
@@ -226,6 +226,11 @@ class OrgHub_UploadListTable extends WP_List_Table
 	 */
 	public function column_data( $item )
 	{
+		$actions = array(
+            'delete' => sprintf( '<a href="%s">Delete</a>', 'admin.php?page=orghub-upload&tab=list&id='.$item['id'].'&action=delete' ),
+            'process' => sprintf( '<a href="%s">Process</a>', 'admin.php?page=orghub-upload&tab=list&id='.$item['id'].'&action=process' ),
+		);
+
 		$html = '';
 		
 		foreach( $item['data'] as $key => $value )
@@ -233,7 +238,7 @@ class OrgHub_UploadListTable extends WP_List_Table
 			$html .= '<div class="key-'.$key.'"><label>'.$key.'</label>'.$value.'</div>';
 		}
 		
-		return $html;
+		return sprintf( '%1$s%2$s', $html,  $this->row_actions($actions) );
 	}
 	
 	
