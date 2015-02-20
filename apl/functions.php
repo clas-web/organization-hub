@@ -4,7 +4,7 @@
 /**
  * Print the content of a variable with a label as a "title".  The entire contents is 
  * enclosed in a <pre> block.
- * @param  mixed        $var    The variable to "dumped"/printed to screen.
+ * @param  mixed		$var	The variable to "dumped"/printed to screen.
  * @param  string|null  $label  The label/title of the variable information.
  */
 if( !function_exists('apl_print') ):
@@ -21,8 +21,8 @@ endif;
 /**
  * Prints the name of an input field.
  * @param  {args}  The keys of the input name.  For example:
- *                 apl_name_e( 'a', 'b', 'c' ) will echo "a[b][c]"
- *                 apl_name_e( array( 'a', 'b', 'c' ) ) will echo "a[b][c]"
+ *				 apl_name_e( 'a', 'b', 'c' ) will echo "a[b][c]"
+ *				 apl_name_e( array( 'a', 'b', 'c' ) ) will echo "a[b][c]"
  */
 if( !function_exists('apl_name_e') ):
 function apl_name_e()
@@ -35,9 +35,9 @@ endif;
 /**
  * Constructs the name of an input field.
  * @param   array|{args}  The keys of the input name.  For example:
- *                         apl_name( 'a', 'b', 'c' ) will return "a[b][c]"
- *                         apl_name( array( 'a', 'b', 'c' ) ) will return "a[b][c]"
- * @return  string        The constructed input name. 
+ *						 apl_name( 'a', 'b', 'c' ) will return "a[b][c]"
+ *						 apl_name( array( 'a', 'b', 'c' ) ) will return "a[b][c]"
+ * @return  string		The constructed input name. 
  */
 if( !function_exists('apl_name') ):
 function apl_name()
@@ -105,5 +105,45 @@ if( !function_exists('apl_start_session') ):
 function apl_start_session()
 {
 	if( !session_id() ) @session_start();
+}
+endif;
+
+
+if( !function_exists('apl_backtrace') ):
+function apl_backtrace()
+{
+	if(!function_exists('debug_backtrace')) 
+	{
+		apl_print( 'function debug_backtrace does not exists' ); 
+		return; 
+	}
+	
+	$title = 'Debug backtrace';
+	$text = "\r\n";
+	
+	foreach(debug_backtrace() as $t) 
+	{ 
+		$text .= "\t" . '@ '; 
+		if(isset($t['file'])) $text .= basename($t['file']) . ':' . $t['line']; 
+		else 
+		{ 
+			// if file was not set, I assumed the functioncall 
+			// was from PHP compiled source (ie XML-callbacks). 
+			$text .= '<PHP inner-code>'; 
+		} 
+
+		$text .= ' -- '; 
+
+		if(isset($t['class'])) $text .= $t['class'] . $t['type']; 
+
+		$text .= $t['function']; 
+
+		if(isset($t['args']) && sizeof($t['args']) > 0) $text .= '(...)'; 
+		else $text .= '()'; 
+
+		$text .= "\r\n"; 
+	}
+	
+	apl_print( $text, $title );
 }
 endif;
