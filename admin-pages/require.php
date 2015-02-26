@@ -17,7 +17,6 @@ require_once( dirname(__FILE__).'/tabs/users/upload.php' );
 
 require_once( dirname(__FILE__).'/tabs/sites/list.php' );
 require_once( dirname(__FILE__).'/tabs/sites/log.php' );
-require_once( dirname(__FILE__).'/tabs/sites/upload.php' );
 
 require_once( dirname(__FILE__).'/tabs/upload/list.php' );
 require_once( dirname(__FILE__).'/tabs/upload/log.php' );
