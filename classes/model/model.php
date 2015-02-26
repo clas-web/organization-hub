@@ -89,9 +89,21 @@ class OrgHub_Model
 
 
 //========================================================================================
-//===================================================================== Site options =====
-
-
+//========================================================================== Options =====
+	
+	
+	/**
+	 * 
+	 */
+	public function get_options()
+	{
+		if( is_network_admin() )
+			return get_site_option( ORGANIZATION_HUB_OPTIONS, array() );
+		
+		return get_option( ORGANIZATION_HUB_OPTIONS, array() );
+	}
+	
+	
 	/**
 	 * Get an Organization Hub option.
 	 * @param  string       $name     The name of the option.
@@ -101,7 +113,7 @@ class OrgHub_Model
 	 */
 	public function get_option( $name, $default = false )
 	{
-		$options = get_site_option( ORGANIZATION_HUB_OPTIONS, array() );
+		$options = $this->get_options();
 		
 		if( isset($options[$name]) ) return $options[$name];
 		return $default;
@@ -117,9 +129,12 @@ class OrgHub_Model
 	public function update_options( $options, $merge = false )
 	{
 		if( $merge === true )
-			$options = array_merge( get_site_option(ORGANIZATION_HUB_OPTIONS, array()), $options );
-			
-		update_site_option( ORGANIZATION_HUB_OPTIONS, $options );
+			$options = array_merge( $this->get_options(), $options );
+		
+		if( is_network_admin() )
+			update_site_option( ORGANIZATION_HUB_OPTIONS, $options );
+		else
+			update_option( ORGANIZATION_HUB_OPTIONS, $options );
 	}
 	
 	
@@ -130,8 +145,7 @@ class OrgHub_Model
 	 */
 	public function update_option( $key, $value )
 	{
-		$options = array_merge( get_site_option(ORGANIZATION_HUB_OPTIONS, array()), array( $key => $value ) );
-		update_site_option( ORGANIZATION_HUB_OPTIONS, $options );
+		$this->update_options( array( $key => $value ), true );
 	}
 
 
