@@ -477,7 +477,7 @@ abstract class APL_AdminPage
 				foreach( $this->settings as $setting )
 				{
 					if( !isset($_POST[$setting]) ) continue;
-				
+					
 					if( is_network_admin() )
 					{
 						update_site_option( $setting, $_POST[$setting] );
@@ -834,7 +834,8 @@ abstract class APL_AdminPage
 	 */
 	protected function set_error( $error, $save = false )
 	{
-		$this->errors = array( $error );
+		if( !is_array($error) ) $error = array( $error );
+		$this->errors = $error;
 		if( $save ) $this->save_error();
 	}
 	
@@ -917,7 +918,8 @@ abstract class APL_AdminPage
 	 */
 	protected function set_notice( $notice, $save = false )
 	{
-		$this->notices = array( $notice );
+		if( !is_array($notice) ) $notice = array( $notice );
+		$this->notices = $notice;
 		if( $save ) $this->save_notice();
 	}
 	
