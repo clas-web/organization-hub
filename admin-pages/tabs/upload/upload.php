@@ -74,6 +74,7 @@ class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
 		}
 		
 		$processed_rows = 0;
+		$count = 1;
 		$errors = '';
 		foreach( $rows as &$row )
 		{
@@ -83,13 +84,15 @@ class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
 			}
 			else
 			{
-				$this->add_error( $this->model->last_error );
+				$this->add_error( 'Row '.$count.': '.$this->model->last_error );
 			}
+			$count++;
 		}
 		
 		$results = count($rows) . ' rows found in file.<br/>';
 		$results .= $processed_rows . ' rows added successfully.<br/>';
 
+		$this->add_notice( 'Upload file: "'.$_FILES['upload']['name'].'".' );
 		$this->add_notice( count($rows) . ' rows found in file.' );
 		$this->add_notice( $processed_rows . ' rows added or updated successfully.' );
 	}

@@ -123,7 +123,11 @@ class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 					return;
 				}
 				
-				$this->model->upload->process_item( $_GET['id'] );
+				$result = $this->model->upload->process_item( $_GET['id'] );
+				if( !$result )
+					$this->set_error( $this->model->last_error );
+				else
+					$this->set_notice( 'Successfully processed item: '.$_GET['id'] );
 				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 				
