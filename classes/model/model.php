@@ -243,6 +243,78 @@ class OrgHub_Model
 		return $list;
 	}
 	
+	
+	/**
+	 * 
+	 */
+	public function create_user( $username, $password, $email )
+	{
+		$user = null;
+		
+		// Determine how the user should be created.
+		$create_user_type = $this->get_option( 'create-user-type', 'local' );
+		
+		if( ($create_user_type == 'wpmu-ldap') && (!$this->is_ldap_plugin_active()) )
+		{
+			$this->last_error( 'WPMU LDAP plugin not active.' );
+			return null;
+		}
+		
+		// Create the user.
+		switch( $create_user_type )
+		{
+			case 'local':
+				if( empty($password) )
+					$password = wp_generate_password( 8, false );
+				
+				$result = wp_create_user( $username, $password, $email );
+				
+				if( is_wp_error($result) )
+				{
+					$this->last_error = $result->get_error_messages();
+					return null;
+				}
+				
+				$user = get_user_by( 'login', $username );
+				break;
+			
+			case 'wpmu-ldap':
+				$result = wpmuLdapSearchUser(
+					array(
+						'username' => $username,
+						'new_role' => 'subscriber',
+						'createUser' => true
+					)
+				);
+
+				if( is_wp_error($result) )
+				{
+					$this->last_error = $result;
+					return null;
+				}
+				
+				$user = get_user_by( 'login', $username );
+				break;
+			
+			default:
+				do_action( 'orghub_create_user-'.$create_user_type, $username, $password, $email );
+				$user = get_user_by( 'login', $username );
+				break;
+		}
+		
+		return $user;
+	}
+
+
+	/**
+	 * Determines if the WPMU Ldap plugin is active.
+	 * @return  bool  True if the plugin is active, otherwise false.
+	 */
+	public function is_ldap_plugin_active()
+	{
+		return is_plugin_active_for_network('wpmuldap/ldap_auth.php');
+	}
+		
 		
 } // class OrgHub_Model
 endif; // if( !class_exists('OrgHub_Model') ):

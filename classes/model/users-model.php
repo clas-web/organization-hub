@@ -1178,7 +1178,12 @@ class OrgHub_UsersModel
 		$user = get_user_by( 'login', $db_user['username'] );
 		$user_id = false;
 		
-		if( $user !== false )
+		if( $user === false )
+		{
+			$user = $this->model->create_user( $db_user['username'], null, $db_user['email'] );
+		}
+		
+		if( $user )
 		{
 			// set the user's id.
 			$user_id = $user->ID;
@@ -1186,61 +1191,9 @@ class OrgHub_UsersModel
 		}
 		else
 		{
-			// Determine how the user should be created.
-			$create_user_type = $this->model->get_option( 'create-user-type', 'local' );
-			
-			if( ($create_user_type == 'wpmu-ldap') && (!$this->is_ldap_plugin_active()) )
-			{
-				$this->model->write_to_log( $db_user['username'], 'WPMU LDAP plugin not active.' );
-				$this->set_user_column( $db_user, 'wp_user_error', 'WPMU LDAP plugin not active.' );
-				return null;
-			}
-			
-			// Create the user.
-			switch( $create_user_type )
-			{
-				case 'local':
-					$random_password = wp_generate_password( 8, false );
-					wp_create_user( $db_user['username'], $random_password, $db_user['email'] );
-
-					$user = get_user_by( 'login', $db_user['username'] );
-					if( $user )
-					{
-						$user_id = $user->ID;
-						$this->update_user_data( $db_user, $user );
-					}
-					break;
-				
-				case 'wpmu-ldap':
-					$result = wpmuLdapSearchUser(
-						array(
-							'username' => $db_user['username'],
-							'new_role' => 'subscriber',
-							'createUser' => true
-						)
-					);
-
-					if( is_wp_error($result) )
-					{
-						$this->model->write_to_log( $db_user['username'], $result );
-						$this->set_user_column( $db_user, 'wp_user_error', $result );
-						return null;
-					}
-					
-					$user = get_user_by( 'login', $db_user['username'] );
-					if( $user )
-					{
-						$user_id = $user->ID;
-						$this->update_user_data( $db_user, $user );
-					}
-					break;
-				
-				default:
-					$this->model->write_to_log( $db_user['username'], 'Invalid create user type ("'.$create_user_type.'").' );
-					$this->set_user_column( $db_user, 'wp_user_error', 'Invalid create user type ("'.$create_user_type.'").' );
-					return null;
-					break;
-			}
+			$this->model->write_to_log( $db_user['username'], $this->model->last_error );
+			$this->set_user_column( $db_user, 'wp_user_error', $this->model->last_error );
+			return null;
 		}
 		
 		//
@@ -1248,6 +1201,8 @@ class OrgHub_UsersModel
 		//
 		if( $user_id )
 		{
+			$this->update_user_data( $db_user );
+			
 			$result = $this->set_user_column( $db_user, 'wp_user_id', $user_id );
 			$this->update_user_data( $db_user );
 		
@@ -2210,16 +2165,6 @@ class OrgHub_UsersModel
 //=================================================================== Util Functions =====
 	
 	
-	/**
-	 * Determines if the WPMU Ldap plugin is active.
-	 * @return  bool  True if the plugin is active, otherwise false.
-	 */
-	public function is_ldap_plugin_active()
-	{
-		return is_plugin_active_for_network('wpmuldap/ldap_auth.php');
-	}
-	
-
 	/**
 	 * Retrieves the blog_id of a blog using it's path.
 	 * @param   string  $path  The path of the blog.
