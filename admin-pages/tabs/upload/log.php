@@ -23,7 +23,7 @@ class OrgHub_UploadLogTabAdminPage extends APL_TabAdminPage
 		$parent,
 		$name = 'log', 
 		$tab_title = 'Log', 
-		$page_title = 'Upload Log' )
+		$page_title = 'Upload Batch Log' )
 	{
 		parent::__construct( $parent, $name, $tab_title, $page_title );
         $this->model = OrgHub_Model::get_instance();

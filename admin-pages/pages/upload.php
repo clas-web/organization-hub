@@ -27,6 +27,11 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 		$this->add_tab( new OrgHub_UploadListTabAdminPage($this) );
 		$this->add_tab( new OrgHub_UploadUploadTabAdminPage($this) );
 		$this->add_tab( new OrgHub_UploadLogTabAdminPage($this) );
+		
+		if( !is_network_admin() )
+		{
+			$this->add_tab( new OrgHub_UploadSettingsTabAdminPage($this) );
+		}
 	}
 	
 } // class OrgHub_UploadAdminPage extends APL_AdminPage

@@ -25,7 +25,6 @@ class OrgHub_SitesAdminPage extends APL_AdminPage
 		parent::__construct( $name, $menu_title, $page_title, $capability );
 		
 		$this->add_tab( new OrgHub_SitesListTabAdminPage($this) );
-		$this->add_tab( new OrgHub_SitesUploadTabAdminPage($this) );
 		$this->add_tab( new OrgHub_SitesLogTabAdminPage($this) );
 	}
 	
