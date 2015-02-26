@@ -556,7 +556,7 @@ class OrgHub_UploadModel
 				*/
 				$required_keys = array( 'site', 'title' );
 				$required_keys = array( 'site', 'title' );
-				$valid_keys = array( 'excerpt', 'content' );
+				$valid_keys = array( 'excerpt', 'content', 'post-type' );
 				break;
 			
 			case 'append':
@@ -568,7 +568,7 @@ class OrgHub_UploadModel
 				*/
 				$required_keys = array( 'site', 'title' );
 				$required_keys = array( 'site', 'title' );
-				$valid_keys = array( 'excerpt', 'content' );
+				$valid_keys = array( 'excerpt', 'content', 'post-type' );
 				break;
 			
 			case 'delete':
@@ -579,7 +579,7 @@ class OrgHub_UploadModel
 					type, action, site, title
 				*/
 				$required_keys = array( 'site', 'title' );
-				$required_values = array( 'site', 'title' );
+				$required_values = array( 'site', 'title', 'post-type' );
 				break;
 				
 			case 'rename':
@@ -590,7 +590,7 @@ class OrgHub_UploadModel
 					type, action, site, title, new-title
 				*/
 				$required_keys = array( 'site', 'title', 'new-title' );
-				$required_values = array( 'site', 'title', 'new-title' );
+				$required_values = array( 'site', 'title', 'new-title', 'post-type' );
 				break;
 				
 			case 'grep':
@@ -616,7 +616,7 @@ class OrgHub_UploadModel
 				*/
 				$required_keys = array( 'site', 'title' );
 				$required_values = array( 'site', 'title' );
-				$valid_keys = array( 'categories', 'tags' );
+				$valid_keys = array( 'categories', 'tags', 'post-type' );
 				$valid_keys_regex = array( '(taxonomy)\-([a-zA-Z0-9\-_]+)' );
 				break;
 			
@@ -629,6 +629,7 @@ class OrgHub_UploadModel
 				*/
 				$required_keys = array( 'site', 'title', 'name', 'value' );
 				$required_values = array( 'site', 'title', 'name' );
+				$valid_keys = array( 'post-type' );
 				break;
 			
 			case 'update-meta':
@@ -640,6 +641,7 @@ class OrgHub_UploadModel
 				*/
 				$required_keys = array( 'site', 'title', 'name', 'value' );
 				$required_values = array( 'site', 'title', 'name' );
+				$valid_keys = array( 'post-type' );
 				break;
 			
 			case 'replace-meta':
@@ -651,6 +653,7 @@ class OrgHub_UploadModel
 				*/
 				$required_keys = array( 'site', 'title', 'name', 'value' );
 				$required_values = array( 'site', 'title', 'name' );
+				$valid_keys = array( 'post-type' );
 				break;
 			
 			case 'delete-meta':
@@ -662,6 +665,7 @@ class OrgHub_UploadModel
 				*/
 				$required_keys = array( 'site', 'title', 'name' );
 				$required_values = array( 'site', 'title', 'name' );
+				$valid_keys = array( 'post-type' );
 				break;
 			
 			case 'copy-meta':
@@ -673,6 +677,7 @@ class OrgHub_UploadModel
 				*/
 				$required_keys = array( 'site', 'title', 'name', 'new-name' );
 				$required_values = array( 'site', 'title', 'name', 'new-name' );
+				$valid_keys = array( 'post-type' );
 				break;
 			
 			default:
@@ -714,19 +719,20 @@ class OrgHub_UploadModel
 		if( $post ) return false;
 		
 		$post_data = array(
-			'post_content'	=> $content,
-			'post_name'		=> $slug,
+			'post_content'	=> $this->get_string_value( $content, true ),
+			'post_name'		=> $this->get_string_value( $slug, true ),
 			'post_title'	=> $title,
-			'post_status'	=> $status,
-			'post_type'		=> $post_type,
+			'post_status'	=> $this->get_string_value( $status, true ),
+			'post_type'		=> $this->get_post_type( $post_type ),
 			'post_author'	=> $this->get_author_id( $author ),
-			'post_password'	=> $password,
-			'guid'			=> $guid,
-			'post_excerpt'	=> $excerpt,
-			'post_date'		=> $this->parse_date( $date ),
-			'tax_input'		=> $this->get_taxonomies( $taxonomy ),
+			'post_password'	=> $this->get_string_value( $password, true ),
+			'guid'			=> $this->get_string_value( $guid, true ),
+			'post_excerpt'	=> $this->get_string_value( $excerpt, true ),
+			'post_date'		=> $this->parse_date( $date, true ),
+			'tax_input'		=> $this->get_taxonomies( $taxonomy, true ),
 		);
 		
+		$this->filter_post_data( $post_data );	
 		$post_id = wp_insert_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -760,18 +766,19 @@ class OrgHub_UploadModel
 		if( !$post ) return false;
 		
 		$post_data = array(
-			'ID'			=> $post['ID'],
-			'post_content'	=> $this->get_string_value( $content ),
-			'post_name'		=> $slug,
-			'post_status'	=> $status,
+			'ID'			=> $post->ID,
+			'post_content'	=> $this->get_string_value( $content, true ),
+			'post_name'		=> $this->get_string_value( $slug, true ),
+			'post_status'	=> $this->get_string_value( $status, true ),
 			'post_type'		=> $this->get_post_type( $post_type ),
 			'post_author'	=> $this->get_author_id( $author ),
-			'post_password'	=> $this->get_string_value( $password ),
-			'post_excerpt'	=> $this->get_string_value( $excerpt ),
-			'post_date'		=> $this->parse_date( $date ),
-			'tax_input'		=> $this->get_taxonomies( $taxonomy ),
+			'post_password'	=> $this->get_string_value( $password, true ),
+			'post_excerpt'	=> $this->get_string_value( $excerpt, true ),
+			'post_date'		=> $this->parse_date( $date, true ),
+			'tax_input'		=> $this->get_taxonomies( $taxonomy, true ),
 		);
 		
+		$this->filter_post_data( $post_data );	
 		$post_id = wp_update_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -824,9 +831,10 @@ class OrgHub_UploadModel
 		$post_data = array(
 			'ID'			=> $post->ID,
 			'post_excerpt'	=> $excerpt.$post->post_excerpt,
-			'post_content'	=> $content.$post->post_content,
+			'post_content'	=> $this->prepend_to_content( $post->post_content, $content ),
 		);
-		
+
+		$this->filter_post_data( $post_data );
 		$post_id = wp_update_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -856,9 +864,10 @@ class OrgHub_UploadModel
 		$post_data = array(
 			'ID'			=> $post->ID,
 			'post_excerpt'	=> $post->post_excerpt.$excerpt,
-			'post_content'	=> $post->post_content.$content,
+			'post_content'	=> $this->append_to_content( $post->post_content, $content ),
 		);
 		
+		$this->filter_post_data( $post_data );
 		$post_id = wp_update_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -913,6 +922,7 @@ class OrgHub_UploadModel
 			'post_title'	=> $new_title,
 		);
 		
+		$this->filter_post_data( $post_data );
 		$post_id = wp_update_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -985,6 +995,7 @@ class OrgHub_UploadModel
 					continue; break;
 			}
 			
+			$this->filter_post_data( $post_data );
 			$post_id = wp_update_post( $post_data );
 		
 			if( !is_numeric($post_id) || ($post_id == 0) )
@@ -1055,6 +1066,7 @@ class OrgHub_UploadModel
 			'tax_input'		=> $existing_taxonomies,
 		);
 		
+		$this->filter_post_data( $post_data );
 		wp_update_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -1082,19 +1094,10 @@ class OrgHub_UploadModel
 		$post = $this->get_post_by_title( $title, $post_type );
 		if( !$post ) return false;
 		
-		$post_data = array(
-			'ID'			=> $post->ID,
-			'tax_input'		=> $this->get_taxonomies( $taxonomy ),
-		);
-		
-		wp_update_post( $post_data );
-		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		$taxonomies = $this->get_taxonomies( $taxonomy, true );
+		foreach( $taxonomies as $taxname => $terms )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
-			return false;
+			wp_set_post_terms( $post_id, $terms, $taxname ); 
 		}
 		
 		return true;
@@ -1158,6 +1161,7 @@ class OrgHub_UploadModel
 			'tax_input'		=> $existing_taxonomies,
 		);
 		
+		$this->filter_post_data( $post_data );
 		wp_update_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -1311,9 +1315,9 @@ class OrgHub_UploadModel
 					type, action, site, title, content, date, author, slug, guid, parent, 
 					status, order, password, meta-{name}
 				*/
-				$required_keys = array( 'title' );
-				$required_values = array( 'title' );
-				$valid_keys = array( 'excerpt', 'content', 'date', 'author', 'slug', 'guid', 'parent', 'status', 'menu-order', 'password' );
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
+				$valid_keys = array( 'excerpt', 'content', 'date', 'author', 'slug', 'guid', 'parent', 'status', 'order', 'password' );
 				$valid_regex_keys = array( '(meta)\-([a-zA-Z0-9\-_]+)' );
 				break;
 				
@@ -1325,9 +1329,9 @@ class OrgHub_UploadModel
 					type, action, site, title, content, date, author, slug, parent, 
 					status, order, password, meta-{name}
 				*/
-				$required_keys = array( 'title' );
-				$required_values = array( 'title' );
-				$valid_keys = array( 'excerpt', 'content', 'date', 'author', 'slug', 'parent', 'status', 'menu-order', 'password' );
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
+				$valid_keys = array( 'excerpt', 'content', 'date', 'author', 'slug', 'parent', 'status', 'order', 'password' );
 				$valid_regex_keys = array( '(meta)\-([a-zA-Z0-9\-_]+)' );
 				break;
 				
@@ -1339,9 +1343,9 @@ class OrgHub_UploadModel
 					type, action, site, title, content, date, author, slug, guid, parent, 
 					status, order, password, meta-{name}
 				*/
-				$required_keys = array( 'title' );
-				$required_values = array( 'title' );
-				$valid_keys = array( 'excerpt', 'content', 'date', 'author', 'slug', 'guid', 'parent', 'status', 'menu-order', 'password' );
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
+				$valid_keys = array( 'excerpt', 'content', 'date', 'author', 'slug', 'guid', 'parent', 'status', 'order', 'password' );
 				$valid_regex_keys = array( '(meta)\-([a-zA-Z0-9\-_]+)' );
 				break;
 			
@@ -1352,8 +1356,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, content
 				*/
-				$required_keys = array( 'title' );
-				$required_values = array( 'title' );
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
 				$valid_keys = array( 'excerpt', 'content' );
 				break;
 				
@@ -1364,8 +1368,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, content
 				*/
-				$required_keys = array( 'title' );
-				$required_values = array( 'title' );
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
 				$valid_keys = array( 'excerpt', 'content' );
 				break;
 				
@@ -1376,8 +1380,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title
 				*/
-				$required_keys = array( 'title' );
-				$required_values = array( 'title' );
+				$required_keys = array( 'site', 'title' );
+				$required_values = array( 'site', 'title' );
 				break;
 				
 			case 'rename':
@@ -1387,8 +1391,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, new-title
 				*/
-				$required_keys = array( 'title', 'new-title' );
-				$required_values = array( 'title', 'new-title' );
+				$required_keys = array( 'site', 'title', 'new-title' );
+				$required_values = array( 'site', 'title', 'new-title' );
 				break;
 				
 			case 'grep':
@@ -1398,8 +1402,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, subject, regex, replace-text
 				*/
-				$required_keys = array( 'subject', 'regex', 'replace-text' );
-				$required_values = array( 'subject', 'regex' );
+				$required_keys = array( 'site', 'subject', 'regex', 'replace-text' );
+				$required_values = array( 'site', 'subject', 'regex' );
 				$valid_keys = array( 'title' );
 				break;
 				
@@ -1410,8 +1414,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, name, value
 				*/
-				$required_keys = array( 'title', 'name', 'value' );
-				$required_values = array( 'title', 'name' );
+				$required_keys = array( 'site', 'title', 'name', 'value' );
+				$required_values = array( 'site', 'title', 'name' );
 				break;
 			
 			case 'update-meta':
@@ -1421,8 +1425,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, name, value
 				*/
-				$required_keys = array( 'title', 'name', 'value' );
-				$required_values = array( 'title', 'name' );
+				$required_keys = array( 'site', 'title', 'name', 'value' );
+				$required_values = array( 'site', 'title', 'name' );
 				break;
 			
 			case 'replace-meta':
@@ -1432,8 +1436,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, name, value
 				*/
-				$required_keys = array( 'title', 'name', 'new-name' );
-				$required_values = array( 'title', 'name', 'new-name' );
+				$required_keys = array( 'site', 'title', 'name', 'value' );
+				$required_values = array( 'site', 'title', 'name' );
 				break;
 			
 			case 'delete-meta':
@@ -1443,8 +1447,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, name
 				*/
-				$required_keys = array( 'title', 'name' );
-				$required_values = array( 'title', 'name' );
+				$required_keys = array( 'site', 'title', 'name' );
+				$required_values = array( 'site', 'title', 'name' );
 				break;
 
 			case 'copy-meta':
@@ -1454,8 +1458,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, name, new-name
 				*/
-				$required_keys = array( 'title', 'name' );
-				$required_values = array( 'title', 'name' );
+				$required_keys = array( 'site', 'title', 'name', 'new-name' );
+				$required_values = array( 'site', 'title', 'name', 'new-name' );
 				break;
 			
 			default:
@@ -1491,22 +1495,26 @@ class OrgHub_UploadModel
 	private function add_page( &$item )
 	{
 		extract($item);
-		
+
+		$post = $this->get_post_by_title( $title, 'page' );
+		if( $post ) return false;
+				
 		$post_data = array(
-			'post_content'	=> $content,
-			'post_name'		=> $slug,
+			'post_content'	=> $this->get_string_value( $content, true ),
+			'post_name'		=> $this->get_string_value( $slug, true ),
 			'post_title'	=> $title,
-			'post_status'	=> $status,
+			'post_status'	=> $this->get_string_value( $status, true ),
 			'post_type'		=> 'page',
-			'menu_order'	=> $order,
+			'menu_order'	=> $this->get_int_value( $order, true ),
 			'parent'		=> $this->get_post_by_title( $parent, 'page' ),
-			'post_author'	=> $this->get_author_id( $user ),
-			'post_password'	=> $password,
-			'guid'			=> $guid,
-			'post_excerpt'	=> $excerpt,
-			'post_date'		=> $this->parse_date( $date ),
+			'post_author'	=> $this->get_author_id( $author ),
+			'post_password'	=> $this->get_string_value( $password, true ),
+			'guid'			=> $this->get_string_value( $guid, true ),
+			'post_excerpt'	=> $this->get_string_value( $excerpt, true ),
+			'post_date'		=> $this->parse_date( $date, true ),
 		);
 		
+		$this->filter_post_data( $post_data );
 		$post_id = wp_insert_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -1535,23 +1543,24 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$post = $this->get_post_by_title( $title, $post_type );
+		$post = $this->get_post_by_title( $title, 'page' );
 		if( !$post ) return false;
 		
 		$post_data = array(
 			'ID'			=> $post->ID,
-			'post_content'	=> $content,
-			'post_name'		=> $slug,
-			'post_status'	=> $status,
+			'post_content'	=> $this->get_string_value( $content, true ),
+			'post_name'		=> $this->get_string_value( $slug, true ),
+			'post_status'	=> $this->get_string_value( $status, true ),
 			'post_type'		=> 'page',
-			'menu_order'	=> $order,
+			'menu_order'	=> $this->get_int_value( $order ),
 			'parent'		=> $this->get_post_by_title( $parent, 'page' ),
-			'post_author'	=> $this->get_author_id( $user ),
-			'post_password'	=> $password,
-			'post_excerpt'	=> $excerpt,
-			'post_date'		=> $this->parse_date( $date ),
+			'post_author'	=> $this->get_author_id( $author ),
+			'post_password'	=> $this->get_string_value( $password, true ),
+			'post_excerpt'	=> $this->get_string_value( $excerpt, true ),
+			'post_date'		=> $this->parse_date( $date, true ),
 		);
 		
+		$this->filter_post_data( $post_data );
 		$post_id = wp_update_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -1603,9 +1612,10 @@ class OrgHub_UploadModel
 		$post_data = array(
 			'ID'			=> $post->ID,
 			'post_excerpt'	=> $excerpt.$post->post_excerpt,
-			'post_content'	=> $content.$post->post_content,
+			'post_content'	=> $this->prepend_to_content( $post->post_content, $content ),
 		);
 		
+		$this->filter_post_data( $post_data );
 		$post_id = wp_update_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -1635,9 +1645,10 @@ class OrgHub_UploadModel
 		$post_data = array(
 			'ID'			=> $post->ID,
 			'post_excerpt'	=> $post->post_excerpt.$excerpt,
-			'post_content'	=> $post->post_content.$content,
+			'post_content'	=> $this->append_to_content( $post->post_content, $content ),
 		);
 		
+		$this->filter_post_data( $post_data );
 		$post_id = wp_update_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -1692,6 +1703,7 @@ class OrgHub_UploadModel
 			'post_title'	=> $new_title,
 		);
 		
+		$this->filter_post_data( $post_data );
 		$post_id = wp_update_post( $post_data );
 		
 		if( !is_numeric($post_id) || ($post_id == 0) )
@@ -1742,7 +1754,7 @@ class OrgHub_UploadModel
 			switch( $subject )
 			{
 				case 'content':
-					if( !preg_match_all("/$regex_key/", $post->post_content, $matches) ) continue;
+					if( !preg_match_all("/$regex/", $post->post_content, $matches) ) continue;
 					
 					$content = $post->post_content;
 					foreach( $matches as $match ) $content = str_replace( $match, $replace_text, $content );
@@ -1754,6 +1766,7 @@ class OrgHub_UploadModel
 					continue; break;
 			}
 			
+			$this->filter_post_data( $post_data );
 			$post_id = wp_update_post( $post_data );
 		
 			if( !is_numeric($post_id) || ($post_id == 0) )
@@ -1801,8 +1814,8 @@ class OrgHub_UploadModel
 		
 		return true;
 	}
-
-
+	
+	
 	/**
 	 *
 	 * @param   array  $item  The data for the batch item.
@@ -1877,8 +1890,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, url, description, target, categories
 				*/
-				$required_keys = array( 'name', 'url' );
-				$required_values = array( 'name', 'url' );
+				$required_keys = array( 'site', 'name', 'url' );
+				$required_values = array( 'site', 'name', 'url' );
 				$valid_keys = array( 'description', 'target', 'categories' );
 				break;
 			
@@ -1889,8 +1902,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, url, description, target, categories
 				*/
-				$required_keys = array( 'name', 'url' );
-				$required_values = array( 'name', 'url' );
+				$required_keys = array( 'site', 'name', 'url' );
+				$required_values = array( 'site', 'name', 'url' );
 				$valid_keys = array( 'description', 'target', 'categories' );
 				break;
 			
@@ -1901,8 +1914,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, url, description, target, categories
 				*/
-				$required_keys = array( 'name', 'url' );
-				$required_values = array( 'name', 'url' );
+				$required_keys = array( 'site', 'name', 'url' );
+				$required_values = array( 'site', 'name', 'url' );
 				$valid_keys = array( 'description', 'target', 'categories' );
 				break;
 			
@@ -1913,8 +1926,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name
 				*/
-				$required_keys = array( 'name' );
-				$required_values = array( 'name' );
+				$required_keys = array( 'site', 'name' );
+				$required_values = array( 'site', 'name' );
 				break;
 			
 			case 'rename':
@@ -1924,8 +1937,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, new-name
 				*/
-				$required_keys = array( 'name', 'new-name' );
-				$required_values = array( 'name', 'new-name' );
+				$required_keys = array( 'site', 'name', 'new-name' );
+				$required_values = array( 'site', 'name', 'new-name' );
 				break;
 				
 			case 'grep':
@@ -1935,8 +1948,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, subject, regex, replace-text
 				*/
-				$required_keys = array( 'subject', 'regex', 'replace-text' );
-				$required_values = array( 'subject', 'regex' );
+				$required_keys = array( 'site', 'subject', 'regex', 'replace-text' );
+				$required_values = array( 'site', 'subject', 'regex' );
 				$valid_keys = array( 'name' );
 				break;
 				
@@ -1978,11 +1991,11 @@ class OrgHub_UploadModel
 		if( $link ) return false;
 		
 		$link_data = array(
-			'link_url'			=> $url,
+			'link_url'			=> $this->get_string_value( $url, true ),
 			'link_name'			=> $name,
-			'link_target'		=> $target,
-			'link_description'	=> $description,
-			'link_category'		=> $this->get_link_category( $category ),
+			'link_target'		=> $this->get_string_value( $target, true ),
+			'link_description'	=> $this->get_string_value( $description, true ),
+			'link_category'		=> $this->get_link_category( $category, true ),
 		);
 		
 		$link_id = wp_insert_link( $link_data, true );
@@ -2013,11 +2026,11 @@ class OrgHub_UploadModel
 		
 		$link_data = array(
 			'link_id'			=> $link->link_id,
-			'link_url'			=> $url,
+			'link_url'			=> $this->get_string_value( $url, true ),
 			'link_name'			=> $name,
-			'link_target'		=> $target,
-			'link_description'	=> $description,
-			'link_category'		=> $this->get_link_category( $category ),
+			'link_target'		=> $this->get_string_value( $target, true ),
+			'link_description'	=> $this->get_string_value( $description, true ),
+			'link_category'		=> $this->get_link_category( $category, true ),
 		);
 		
 		$link_id = wp_insert_link( $link_data, true );
@@ -2191,8 +2204,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, terms
 				*/
-				$required_keys = array( 'name', 'terms' );
-				$required_values = array( 'name', 'terms' );
+				$required_keys = array( 'site', 'name', 'terms' );
+				$required_values = array( 'site', 'name', 'terms' );
 				break;
 			
 			case 'delete':
@@ -2202,8 +2215,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, terms
 				*/
-				$required_keys = array( 'name', 'terms' );
-				$required_values = array( 'name', 'terms' );
+				$required_keys = array( 'site', 'name', 'terms' );
+				$required_values = array( 'site', 'name', 'terms' );
 				break;
 			
 			case 'rename':
@@ -2213,8 +2226,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, terms, new-terms
 				*/
-				$required_keys = array( 'name', 'terms', 'new-terms' );
-				$required_values = array( 'name', 'terms', 'new-terms' );
+				$required_keys = array( 'site', 'name', 'terms', 'new-terms' );
+				$required_values = array( 'site', 'name', 'terms', 'new-terms' );
 				break;
 				
 			default:
@@ -2257,7 +2270,7 @@ class OrgHub_UploadModel
 			return false;
 		}
 		
-		$term_list = str_getcsv( $terms, ",", '"', "\\" );
+		$term_list = str_getcsv( $terms, ',', '"', "\\" );
 		
 		if( !is_taxonomy_hierarchical($taxname) )
 		{
@@ -2311,12 +2324,14 @@ class OrgHub_UploadModel
 			return false;
 		}
 		
-		$term_list = str_getcsv( $terms, ",", '"', "\\" );
+		$term_list = str_getcsv( $terms, ',', '"', "\\" );
 		
 		foreach( $term_list as $term )
 		{
 			if( $term_object = term_exists( $term, $name ) )
-				wp_delete_term( $term_object->term_id, $name );
+			{
+				wp_delete_term( $term_object['term_id'], $name );
+			}
 		}
 		
 		return true;
@@ -2338,8 +2353,8 @@ class OrgHub_UploadModel
 			return false;
 		}
 		
-		$term_list = str_getcsv( $terms, ",", '"', "\\" );
-		$new_terms_list = str_getcsv( $new_terms, ",", '"', "\\" );
+		$term_list = str_getcsv( $terms, ',', '"', "\\" );
+		$new_terms_list = str_getcsv( $new_terms, ',', '"', "\\" );
 		
 		foreach( $term_list as $i => $term )
 		{
@@ -2353,7 +2368,7 @@ class OrgHub_UploadModel
 					'slug' => sanitize_title( $new_term ),
 				);
 				
-				wp_update_term( $term_object->term_id, $name, $tax_data );
+				wp_update_term( $term_object['term_id'], $name, $tax_data );
 			}
 		}
 		
@@ -2386,8 +2401,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, description, domain, user, password, email, option-{name}
 				*/
-				$required_keys = array( 'title', 'user' );
-				$required_values = array( 'title', 'user' );
+				$required_keys = array( 'site', 'title', 'user' );
+				$required_values = array( 'site', 'title', 'user' );
 				$valid_keys = array( 'description', 'domain', 'password', 'email' );
 				$valid_regex_keys = array( 'option\-([a-zA-Z0-9\-_]+)' );
 				break;
@@ -2399,6 +2414,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, title, description, user, password, email, option-{name}
 				*/
+				$required_keys = array( 'site' );
+				$required_values = array( 'site' );
 				$valid_keys = array( 'title', 'description', 'user', 'password', 'email' );
 				$valid_regex_keys = array( 'option\-([a-zA-Z0-9\-_]+)' );
 				break;
@@ -2474,7 +2491,7 @@ class OrgHub_UploadModel
 		}
 		
 		$meta_data = array(
-			'blogdescription'	=> $description,
+			'blogdescription'	=> $this->get_string_value( $description ),
 		);
 		foreach( $option as $key => $value )
 		{
@@ -2486,7 +2503,7 @@ class OrgHub_UploadModel
 		
 		if( is_wp_error($blog_id))
 		{
-			$this->model->last_error( $blog_id->get_error_message() );
+			$this->model->last_error = $blog_id->get_error_message();
 			return false;
 		}
 		
@@ -2652,9 +2669,9 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, user, password, email, role, meta-{name}
 				*/
-				$required_keys = array( 'user', 'role' );
-				$required_values = array( 'user', 'role' );
-				$valid_keys = array( 'password', 'email' );
+				$required_keys = array( 'user', 'password', 'email' );
+				$required_values = array( 'user', 'email' );
+				$valid_keys = array( 'site', 'role' );
 				break;
 			
 			case 'update':
@@ -2666,7 +2683,7 @@ class OrgHub_UploadModel
 				*/
 				$required_keys = array( 'user' );
 				$required_values = array( 'user' );
-				$valid_keys = array( 'password', 'email', 'role' );
+				$valid_keys = array( 'site', 'password', 'email', 'role' );
 				break;
 				
 			case 'replace':
@@ -2676,9 +2693,9 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, user, password, email, role, meta-{name}
 				*/
-				$required_keys = array( 'user', 'role' );
-				$required_values = array( 'user', 'role' );
-				$valid_keys = array( 'password', 'email' );
+				$required_keys = array( 'user' );
+				$required_values = array( 'user' );
+				$valid_keys = array( 'site', 'role', 'password', 'email' );
 				break;
 			
 			case 'delete':
@@ -2690,6 +2707,7 @@ class OrgHub_UploadModel
 				*/
 				$required_keys = array( 'user' );
 				$required_values = array( 'user' );
+				$valid_keys = array( 'site' );
 				break;
 
 			case 'add-meta':
@@ -2721,8 +2739,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, user, name, value
 				*/
-				$required_keys = array( 'name', 'new-name' );
-				$required_values = array( 'name', 'new-name' );
+				$required_keys = array( 'name', 'value' );
+				$required_values = array( 'name' );
 				break;
 			
 			case 'delete-meta':
@@ -2743,8 +2761,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, user, name, new-name
 				*/
-				$required_keys = array( 'name' );
-				$required_values = array( 'name' );
+				$required_keys = array( 'name', 'new-name' );
+				$required_values = array( 'name', 'new-name' );
 				break;
 							
 			default:
@@ -2893,17 +2911,20 @@ class OrgHub_UploadModel
 	 */
 	private function delete_user( &$item )
 	{
-		extract($item);
+// 		extract($item);
+// 		
+// 		if( !($user_id = $this->get_author_id($user)) )
+// 		{
+// 			return true;
+// 		}
+// 		
+// 		//TODO: check with alex.
+// 		wp_delete_user( $user_id, null );
+// 		
+// 		return true;
 		
-		if( !($user_id = $this->get_author_id($user)) )
-		{
-			return true;
-		}
-		
-		//TODO: check with alex.
-		wp_delete_user( $user_id, null );
-		
-		return true;
+		$this->model->last_error = 'Delete user currently not functioning.';
+		return false;
 	}
 
 
@@ -3058,8 +3079,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, value
 				*/
-				$required_keys = array( 'name', 'value' );
-				$required_values = array( 'name' );
+				$required_keys = array( 'site', 'name', 'value' );
+				$required_values = array( 'site', 'name' );
 				break;
 			
 			case 'update':
@@ -3069,8 +3090,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, value
 				*/
-				$required_keys = array( 'name', 'value' );
-				$required_values = array( 'name' );
+				$required_keys = array( 'site', 'name', 'value' );
+				$required_values = array( 'site', 'name' );
 				break;
 			
 			case 'replace':
@@ -3080,8 +3101,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, value
 				*/
-				$required_keys = array( 'name', 'value' );
-				$required_values = array( 'name' );
+				$required_keys = array( 'site', 'name', 'value' );
+				$required_values = array( 'site', 'name' );
 				break;
 			
 			case 'delete':
@@ -3091,8 +3112,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name
 				*/
-				$required_keys = array( 'name' );
-				$required_values = array( 'name' );
+				$required_keys = array( 'site', 'name' );
+				$required_values = array( 'site', 'name' );
 				break;
 			
 			case 'copy':
@@ -3102,8 +3123,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, new-name
 				*/
-				$required_keys = array( 'name', 'new-name' );
-				$required_values = array( 'name', 'new-name' );
+				$required_keys = array( 'site', 'name', 'new-name' );
+				$required_values = array( 'site', 'name', 'new-name' );
 				break;
 				
 			case 'grep':
@@ -3113,8 +3134,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, name, regex, replace-text
 				*/
-				$required_keys = array( 'regex', 'replace-text' );
-				$required_values = array( 'regex' );
+				$required_keys = array( 'site', 'regex', 'replace-text' );
+				$required_values = array( 'site', 'regex' );
 				$valid_keys = array( 'name' );
 				break;
 				
@@ -3235,16 +3256,18 @@ class OrgHub_UploadModel
 		{
 			$value = get_option($name);
 			if( $value !== false )
-				$options[] = array( $name => $value );
+				$options[$name] = $value;
 		}
 		else
 		{
 			$options = wp_load_alloptions();
 		}
 		
+// 		apl_print($options);
+		
 		foreach( $options as $key => $value )
 		{
-			if( !preg_match_all("/$regex_key/", $value, $matches) ) continue;
+			if( !preg_match_all("/$regex/", $value, $matches) ) continue;
 			
 			foreach( $matches as $match ) $value = str_replace( $match, $replace_text, $value );
 			
@@ -3259,7 +3282,7 @@ class OrgHub_UploadModel
 //=================================================================== Util Functions =====
 	
 	
-   	/**
+	/**
 	 * 
 	 */
 	protected function get_author_id( $author, $create = false, $password = false, $email = false )
@@ -3267,22 +3290,22 @@ class OrgHub_UploadModel
 		if( is_numeric($author) ) return intval( $author );
 		
 		$author_data = get_user_by( 'login', $author );
-		
-		if( !$author_data )
+		if( !$author_data && $create && $email )
 		{
-			wp_create_user( $author, $password, $email );
-			$author_data = get_user_by( 'login', $author );
+			$author_data = $this->model->create_user( $author, $password, $email );
 		}
 		
-		return ( $author_data ? $author_data->ID : 0 );
+		return ( $author_data ? $author_data->ID : null );
 	}
 	
 	
-   	/**
+	/**
 	 * 
 	 */
-	protected function parse_date( $date )
+	protected function parse_date( $date, $supports_null = false )
 	{
+		if( $date === '' && $supports_null ) return null;
+		
 		$timestamp = strtotime( $date );
 		
 		if( $timestamp === false ) return '';
@@ -3291,7 +3314,7 @@ class OrgHub_UploadModel
 	}
 	
 	
-   	/**
+	/**
 	 * 
 	 */
 	protected function get_post_type( $post_type )
@@ -3301,7 +3324,7 @@ class OrgHub_UploadModel
 	}
 
 	
-   	/**
+	/**
 	 * 
 	 */
 	protected function get_post_parent( $parent )
@@ -3316,11 +3339,13 @@ class OrgHub_UploadModel
 	}
 	
 	
-   	/**
+	/**
 	 * 
 	 */
-	protected function get_taxonomies( $taxonomies )
+	protected function get_taxonomies( $taxonomies, $supports_null = false )
 	{
+		if( $taxonomies === '' && $supports_null ) return null;
+		
 		$new_taxonomies = array();
 		
 		foreach( $taxonomies as $taxname => $terms )
@@ -3407,7 +3432,7 @@ class OrgHub_UploadModel
 	
 	protected function get_link_category( $category )
 	{
-		if( empty($category) ) return array();
+		if( empty($category) ) return null;
 		
 		$link_categories = array();
 		$term_list = str_getcsv( $category, ",", '"', "\\" );
@@ -3418,7 +3443,7 @@ class OrgHub_UploadModel
 			
 			$term_object = term_exists( $term, 'link_category' );
 			if( $term_object )
-				$term_id = $term_object->term_id;
+				$term_id = $term_object['term_id'];
 			else
 				$term_id = wp_insert_term( $term, 'link_category' );
 			
@@ -3433,7 +3458,7 @@ class OrgHub_UploadModel
 	protected function switch_to_blog( &$item )
 	{
 		if( !is_network_admin() ) return true;
-		if( !isset($item['site']) ) return false;
+		if( !array_key_exists('site', $item) ) return false;
 		
 		$blog_id = get_id_from_blogname( $item['site'] );
 		if( !$blog_id ) return false;
@@ -3452,20 +3477,139 @@ class OrgHub_UploadModel
 	}
 	
 	
-	protected function get_string_value( $value )
+	protected function get_string_value( $value, $supports_null = false )
 	{
-		switch( $value )
+		if( $value === '' && $supports_null ) return null;
+		return ''.$value;
+	}
+	
+	
+	protected function get_int_value( $value, $supports_null = false )
+	{
+		if( (!is_numeric($value) || $value === '') && ($supports_null) ) return null;
+		return intval($value);
+	}
+	
+	
+	/**
+	 * Inserts a string into another string at the offset.
+	 *
+	 * @param string $insert
+	 * @param string $subject
+	 * @param int $offset
+	 * @param string
+	 */
+	public function str_insert( $insert, $subject, $offset )
+	{
+		return substr($subject, 0, $offset).$insert.substr($subject, $offset);
+	}
+
+
+
+	/**
+	 * Determines if the first characters of the content is one of the search tags.
+	 *
+	 * @param string $content
+	 * @param array $search_terms
+	 * @return string|null
+	 */
+    protected function find_start_tag( $content, $search_tags )
+    {
+ 		$found_term = NULL;
+		
+		$content = str_replace( array("\n", "\r"), '', $content );
+		foreach( $search_tags as $term )
 		{
-			case '[null]':
-				return null;
+			$tag = '<'.$term.'>';
+			if( substr($content, 0, strlen($tag)) == $tag )
+			{
+				$found_term = $term;
 				break;
-			
-			case '[empty]':
-				return null;
+			}
+
+			$tag = '<'.$term.' ';
+			if( substr($content, 0, strlen($tag)) == $tag )
+			{
+				$found_term = $term;
 				break;
+			}
 		}
 		
-		return ''.$value;
+		return $found_term;
+	}
+
+
+
+	/**
+	 * Determines if the last characters of the content is one of the search tags.
+	 *
+	 * @param string $content
+	 * @param array $search_terms
+	 * @return string|null
+	 */
+    protected function find_end_tag($content, $search_tags)
+    {
+		$found_term = NULL;
+		
+		$content = str_replace( array("\n", "\r"), '', $content );
+		foreach( $search_tags as $term )
+		{
+			$tag = '</'.$term.'>';
+			if( substr($content, strlen($content)-strlen($tag)) === $tag )
+			{
+				$found_term = $term;
+				break;
+			}
+		}
+		
+		return $found_term;
+    }
+    
+    
+    public function prepend_to_content( $post_content, $prepend_content )
+    {
+    	if( empty($post_content) ) return $post_content;
+
+		if( ($this->find_end_tag($prepend_content, array('p','div')) === NULL) &&
+			($this->find_start_tag($post_content, array('p','div')) !== NULL) )
+		{
+			$offset = strpos( $post_content, '>' );
+			if( $offset !== FALSE )
+				$post_content = $this->str_insert($prepend_content, $post_content, $offset+1);
+		}
+		else
+		{
+			$post_content = $prepend_content.$post_content;
+		}
+		
+		return $post_content;
+    }
+    
+    
+    
+    public function append_to_content( $post_content, $append_content )
+    {
+    	if( empty($post_content) ) return $post_content;
+    	
+		if( ($this->find_start_tag($append_content, array('p','div')) === NULL) &&
+		    ($this->find_end_tag($post_content, array('p','div')) !== NULL) )
+		{
+			$offset = strrpos( $post_content, '<' );
+			if( $offset !== FALSE )
+				$post_content = $this->str_insert($append_content, $post_content, $offset);
+		}
+		else
+		{
+	   		$post_content = $post_content.$append_content;
+		}
+		
+		return $post_content;
+	}
+	
+	
+	protected function filter_post_data( &$post_data )
+	{
+		$post_data = array_filter( $post_data );
 	}
 	
 	
