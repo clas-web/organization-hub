@@ -219,15 +219,16 @@ class OrgHub_UploadModel
 		{
 			foreach( $valid_regex_keys as $regex )
 			{
-				$regex_key = '\(([a-zA-Z0-9\-]+)\)';
+				$regex_key = '([a-zA-Z0-9]+)\\\-';
 				if( !preg_match("/$regex_key/", $regex, $matches) ) continue;
 				
-				if( !array_key_exists($matches[0], $args) )
-					$args[$matches[0]] = array();
+				$args_key = $matches[1];
+				if( !array_key_exists($args_key, $args) )
+					$args[$args_key] = array();
 					
 				if( !preg_match("/^$regex$/", $key, $matches) ) continue;
 				
-				$args[$matches[1]][$matches[2]] = $args[$key];
+				$args[$args_key][$matches[1]] = $args[$key];
 				unset($args[$key]);
 			}
 		}
