@@ -133,6 +133,12 @@ class OrgHub_UploadModel
 			}
 		}
 		
+		if( !is_network_admin() && $args['type'] === 'site' )
+		{
+			$this->model->last_error = 'Unable to create/alter a site from a site.';
+			return false;
+		}
+		
 		$function = array(
 			$this,
 			'check_'.(str_replace('-', '_', $args['type'])).'_args',
@@ -684,6 +690,14 @@ class OrgHub_UploadModel
 				$this->model->last_error = 'Invalid action for type: "post" => "'.$args['action'].'".';
 				return false;
 				break;
+		}
+		
+		if( !is_network_admin() )
+		{
+			$a = array( 'site' );
+			$required_keys = array_diff( $required_keys, $a );
+			$required_values = array_diff( $required_values, $a );
+			$valid_keys = array_diff( $valid_keys, $a );
 		}
 		
 		if( $validate_for_action )
@@ -1468,6 +1482,14 @@ class OrgHub_UploadModel
 				break;
 		}
 		
+		if( !is_network_admin() )
+		{
+			$a = array( 'site' );
+			$required_keys = array_diff( $required_keys, $a );
+			$required_values = array_diff( $required_values, $a );
+			$valid_keys = array_diff( $valid_keys, $a );
+		}
+		
 		if( $validate_for_action )
 		{
 			return $this->validate_args_for_action( 
@@ -1778,8 +1800,8 @@ class OrgHub_UploadModel
 		
 		return true;
 	}
-
-
+	
+	
 	/**
 	 *
 	 * @param   array  $item  The data for the batch item.
@@ -1814,8 +1836,8 @@ class OrgHub_UploadModel
 		
 		return true;
 	}
-	
-	
+
+
 	/**
 	 *
 	 * @param   array  $item  The data for the batch item.
@@ -1957,6 +1979,14 @@ class OrgHub_UploadModel
 				$this->model->last_error = 'Invalid action for type: "link" => "'.$args['action'].'".';
 				return false;
 				break;
+		}
+		
+		if( !is_network_admin() )
+		{
+			$a = array( 'site' );
+			$required_keys = array_diff( $required_keys, $a );
+			$required_values = array_diff( $required_values, $a );
+			$valid_keys = array_diff( $valid_keys, $a );
 		}
 
 		if( $validate_for_action )
@@ -2234,6 +2264,14 @@ class OrgHub_UploadModel
 				$this->model->last_error = 'Invalid action for type: "taxonomy" => "'.$args['action'].'".';
 				return false;
 				break;
+		}
+		
+		if( !is_network_admin() )
+		{
+			$a = array( 'site' );
+			$required_keys = array_diff( $required_keys, $a );
+			$required_values = array_diff( $required_values, $a );
+			$valid_keys = array_diff( $valid_keys, $a );
 		}
 
 		if( $validate_for_action )
@@ -2771,6 +2809,14 @@ class OrgHub_UploadModel
 				break;
 		}
 		
+		if( !is_network_admin() )
+		{
+			$a = array( 'site' );
+			$required_keys = array_diff( $required_keys, $a );
+			$required_values = array_diff( $required_values, $a );
+			$valid_keys = array_diff( $valid_keys, $a );
+		}
+		
 		if( $validate_for_action )
 		{
 			return $this->validate_args_for_action( 
@@ -3143,6 +3189,14 @@ class OrgHub_UploadModel
 				$this->model->last_error = 'Invalid action for type: "option" => "'.$args['action'].'".';
 				return false;
 				break;
+		}
+		
+		if( !is_network_admin() )
+		{
+			$a = array( 'site' );
+			$required_keys = array_diff( $required_keys, $a );
+			$required_values = array_diff( $required_values, $a );
+			$valid_keys = array_diff( $valid_keys, $a );
 		}
 		
 		if( $validate_for_action )
