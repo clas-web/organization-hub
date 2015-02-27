@@ -6,6 +6,7 @@ Description:
 Version: 0.0.1
 Author: Crystal Barton
 Author URI: http://www.crystalbarton.com
+Network: True
 */
 
 

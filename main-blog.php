@@ -6,8 +6,11 @@ Description:
 Version: 0.0.1
 Author: Crystal Barton
 Author URI: http://www.crystalbarton.com
+Network: False
 */
 
+
+register_activation_hook( __FILE__, array('OrgHub_MainBlog', 'activate') );
 
 require( dirname(__FILE__).'/main.php' );
 
@@ -30,6 +33,17 @@ class OrgHub_MainBlog
 
 		$orghub_pages->add_page( new OrgHub_UploadAdminPage('orghub-upload') );
 		$orghub_pages->setup();
+	}
+	
+	public static function activate()
+	{
+		if ( ! $network_wide )
+			return;
+
+		deactivate_plugins( plugin_basename( __FILE__ ), TRUE, TRUE );
+
+		header( 'Location: ' . network_admin_url( 'plugins.php?deactivate=true' ) );
+		exit;
 	}
 	
 }
