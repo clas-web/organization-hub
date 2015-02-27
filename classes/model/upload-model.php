@@ -456,6 +456,8 @@ class OrgHub_UploadModel
 
 	public function process_item( $id, &$item = null )
 	{
+		$this->model->last_error = '';
+		
 		if( ($item === null) && ($item = $this->get_item_by_id( $id )) === null )
 		{
 			$this->model->last_error = 'Invalid item id "'.$id.'".';
@@ -2846,15 +2848,10 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		if( $user_id = $this->get_author_id($user) )
-		{
-			$this->model->last_error = 'User already exists: '.$user;
-			return false;
-		}
-		
 		if( !($user_id = $this->get_author_id($user, true, $password, $email)) )
 		{
-			$this->model->last_error = 'Unable to find or create user account: '.$user;
+			if( !$this->model->last_error )
+				$this->model->last_error = 'Unable to create user account: '.$user;
 			return false;
 		}
 		
@@ -2862,10 +2859,10 @@ class OrgHub_UploadModel
 		{
 			update_user_meta( $user_id, $key, $value );
 		}
-				
-		if( !$site ) return true;
-		if( !$role ) return true;
-
+		
+		if( !isset($site) ) return true;
+		if( !isset($role) ) return true;
+		
 		$blog_id = get_id_from_blogname( $site );
 		if( !$blog_id )
 		{
@@ -2898,10 +2895,10 @@ class OrgHub_UploadModel
 		{
 			update_user_meta( $user_id, $key, $value );
 		}
-				
-		if( !$site ) return true;
-		if( !$role ) return true;
-
+		
+		if( !isset($site) ) return true;
+		if( !isset($role) ) return true;
+		
 		$blog_id = get_id_from_blogname( $site );
 		if( !$blog_id )
 		{
@@ -2924,7 +2921,7 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		if( !($user_id = $this->get_author_id($user)) )
+		if( $user_id = $this->get_author_id($user, true, $password, $email) );
 		{
 			$this->model->last_error = 'Unable to find or create user account: '.$user;
 			return false;
@@ -2934,10 +2931,10 @@ class OrgHub_UploadModel
 		{
 			update_user_meta( $user_id, $key, $value );
 		}
-				
-		if( !$site ) return true;
-		if( !$role ) return true;
-
+		
+		if( !isset($site) ) return true;
+		if( !isset($role) ) return true;
+		
 		$blog_id = get_id_from_blogname( $site );
 		if( !$blog_id )
 		{
@@ -3342,8 +3339,6 @@ class OrgHub_UploadModel
 	 */
 	protected function get_author_id( $author, $create = false, $password = false, $email = false )
 	{
-		if( is_numeric($author) ) return intval( $author );
-		
 		$author_data = get_user_by( 'login', $author );
 		if( !$author_data && $create && $email )
 		{
