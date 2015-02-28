@@ -480,10 +480,18 @@ class OrgHub_UploadModel
 		{
 // 			$this->delete_item( $item['id'] );
 
-			if( !$this->switch_to_blog($data) ) return false;
-			
+			if( !(($type === 'site') && ($action === 'add')) )
+			{
+				if( !$this->switch_to_blog($data) )
+				{
+					$site = ( isset($data['site']) ? '"'.$data['site'].'"' : '[not specified]' );
+					$this->model->last_error = 'Unable to switch to site: '.$site;
+					return false;
+				}
+			}
+
 			$return = call_user_func_array( $function, array(&$data) );
-			
+
 			$this->restore_blog();
 			
 			return $return;
@@ -2468,6 +2476,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site
 				*/
+				$required_keys = array( 'site' );
+				$required_values = array( 'site' );
 				break;
 				
 			case 'archive':
@@ -2477,6 +2487,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site
 				*/
+				$required_keys = array( 'site' );
+				$required_values = array( 'site' );
 				break;
 				
 			case 'grep':
@@ -2486,8 +2498,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, site, subject, regex, replace-text
 				*/
-				$required_keys = array( 'subject', 'regex', 'replace-text' );
-				$required_values = array( 'subject', 'regex' );
+				$required_keys = array( 'site', 'subject', 'regex', 'replace-text' );
+				$required_values = array( 'site', 'subject', 'regex' );
 				break;
 				
 			default:
@@ -2531,6 +2543,13 @@ class OrgHub_UploadModel
 			return false;
 		}
 		
+		$blog_id = get_id_from_blogname( $site );
+		if( $blog_id )
+		{
+			$this->model->last_error = 'The site already exists: "'.$site.'".';
+			return false;
+		}
+		
 		$meta_data = array(
 			'blogdescription'	=> $this->get_string_value( $description ),
 		);
@@ -2539,8 +2558,11 @@ class OrgHub_UploadModel
 			$meta_data[$key] = $value;
 		}
 		
+		$path = $site;
+		$this->model->get_site_url( $domain, $path );
+
 		// Create the blog.
-		$blog_id = wpmu_create_blog( $domain, $site, $title, $admin_id, $meta_data );
+		$blog_id = wpmu_create_blog( $domain, '/'.$path, $title, $admin_id, $meta_data );
 		
 		if( is_wp_error($blog_id))
 		{
@@ -2565,6 +2587,13 @@ class OrgHub_UploadModel
 		if( !$admin_id )
 		{
 			$this->model->last_error = 'Unable to find or create admin user account.';
+			return false;
+		}
+
+		$blog_id = get_id_from_blogname( $site );
+		if( !$blog_id )
+		{
+			$this->model->last_error = 'Unable to find blog: "'.$site.'".';
 			return false;
 		}
 		
@@ -2599,7 +2628,11 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$blog_id = get_id_from_blogname( $site );
-		if( !$blog_id ) return false;
+		if( !$blog_id )
+		{
+			$this->model->last_error = 'Unable to find blog: "'.$site.'".';
+			return false;
+		}
 		
 		global $wpdb;
 		$result = $wpdb->update(
@@ -2627,7 +2660,11 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$blog_id = get_id_from_blogname( $site );
-		if( !$blog_id ) return false;
+		if( !$blog_id )
+		{
+			$this->model->last_error = 'Unable to find blog: "'.$site.'".';
+			return false;
+		}
 		
 		global $wpdb;
 		$result = $wpdb->update(
@@ -2658,7 +2695,7 @@ class OrgHub_UploadModel
 		{
 			case 'title':
 				$title = get_option( 'blogname' );
-				if( !preg_match_all("/$regex_key/", $title, $matches) ) continue;
+				if( !preg_match_all("/$regex/", $title, $matches) ) continue;
 				
 				foreach( $matches as $match )
 					$title = str_replace( $match, $replace_text, $title );
@@ -2668,7 +2705,7 @@ class OrgHub_UploadModel
 				
 			case 'description':
 				$description = get_option( 'blogdescription' );
-				if( !preg_match_all("/$regex_key/", $description, $matches) ) continue;
+				if( !preg_match_all("/$regex/", $description, $matches) ) continue;
 				
 				foreach( $matches as $match )
 					$description = str_replace( $match, $replace_text, $description );

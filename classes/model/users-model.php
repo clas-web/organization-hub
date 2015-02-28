@@ -1378,18 +1378,7 @@ class OrgHub_UsersModel
 		
 		$domain = $db_user['site_domain'];
 		$path = $db_user['site_path'];
-		
-		if( !$domain )
-		{
-			$url_parts = parse_url( get_site_url(1) );
-			$domain = $url_parts['host'];
-			if( array_key_exists('path', $url_parts) && $url_parts['path'] !== '/' )
-			{
-				$path = $url_parts['path'].'/'.$path;
-			}
-		}
-		
-		if( (strlen($path) > 0) && ($path[0] === '/') ) $path = substr( $path, 1 );
+		$this->model->get_site_url( $domain, $path );
 		
 		//
 		// Check if blog already exists.
@@ -1425,7 +1414,7 @@ class OrgHub_UsersModel
 			if( is_wp_error($blog_id))
 			{
 				$this->model->write_to_log( $db_user['username'], $blog_id->get_error_message() );
-				$this->model->write_to_log( '', 'Blog: '.$site_domain.'/'.$path );
+				$this->model->write_to_log( '', 'Blog: '.$domain.'/'.$path );
 				$this->set_user_column( $db_user, 'profile_blog_error', $blog_id->get_error_message() );
 				return false;
 			}

@@ -256,7 +256,7 @@ class OrgHub_Model
 		
 		if( ($create_user_type == 'wpmu-ldap') && (!$this->is_ldap_plugin_active()) )
 		{
-			$this->last_error( 'WPMU LDAP plugin not active.' );
+			$this->last_error = 'WPMU LDAP plugin not active.';
 			return null;
 		}
 		
@@ -271,7 +271,7 @@ class OrgHub_Model
 				
 				if( is_wp_error($result) )
 				{
-					$this->last_error = $result->get_error_messages();
+					$this->last_error = $result->get_error_message();
 					return null;
 				}
 				
@@ -303,6 +303,27 @@ class OrgHub_Model
 		}
 		
 		return $user;
+	}
+	
+	
+	public function get_site_url( &$domain, &$path, $add_to_path = true )
+	{
+		$url_parts = parse_url( get_site_url(1) );
+		
+		if( !$domain )
+		{
+			$domain = $url_parts['host'];
+		}
+		
+		if( $add_to_path )
+		{
+			if( array_key_exists('path', $url_parts) && $url_parts['path'] !== '/' )
+				$path = $url_parts['path'].'/'.$path;
+		}
+		
+		if( (strlen($path) > 0) && ($path[0] === '/') ) $path = substr( $path, 1 );
+		
+		return $domain.$path;
 	}
 
 
