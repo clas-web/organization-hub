@@ -27,6 +27,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 	{
 		parent::__construct( $parent, $name, $tab_title, $page_title );
 		$this->model = OrgHub_Model::get_instance();
+		$this->display_tab = false;
 	}
 
 
@@ -110,9 +111,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 	 */
 	public function display()
 	{
-		$id = $_REQUEST['id'];
-
-		if( empty($id) )
+		if( empty($_REQUEST['id']) )
 		{
 			?>
 			<p class="no-id">No id provided.</p>
@@ -120,6 +119,7 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 			return;
 		}
 
+		$id = $_REQUEST['id'];
 		$user = $this->model->user->get_user_by_id( $id );
 		
 		if( empty($user) )

@@ -27,6 +27,8 @@ class OrgHub_UsersAdminPage extends APL_AdminPage
 		$this->add_tab( new OrgHub_UsersListTabAdminPage($this) );
 		$this->add_tab( new OrgHub_UsersUploadTabAdminPage($this) );
 		$this->add_tab( new OrgHub_UsersLogTabAdminPage($this) );
+
+		$this->add_tab( new OrgHub_UsersEditTabAdminPage($this) );
 	}
 		
 } // class OrgHub_UsersAdminPage extends APL_AdminPage
