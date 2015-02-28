@@ -54,7 +54,7 @@ class OrgHub_CsvHandler
 			{
 				$headers = $keys;
 				if( (count($headers) > 0) && (($headers[0] === '') || ($headers[0] === '#')) )
-					$user_comment_column = true;
+					$use_comment_column = true;
 				continue;
 			}
 
@@ -63,7 +63,7 @@ class OrgHub_CsvHandler
 			
 			$i = 0;
 			
-			if( $user_comment_column )
+			if( $use_comment_column )
 			{
 				$i++;
 				if( (count($keys) > 0) && ($keys[0] === '#') ) continue;
