@@ -1138,8 +1138,8 @@ class OrgHub_UsersModel
 			
 			case 'new':
 			case 'active':
-				$this->create_wp_user( $db_user );
-				if( $db_user['wp_user_id'] )
+				$user_id = $this->create_wp_user( $db_user );
+				if( $user_id )
 				{
 					$this->create_profile_blog( $db_user );
 					$this->process_all_connections_posts( $db_user );
@@ -1152,7 +1152,6 @@ class OrgHub_UsersModel
 		}
 		
 		$this->update_user_data( $db_user );
-		
 		return true;
 	}
 
@@ -1215,8 +1214,6 @@ class OrgHub_UsersModel
 		//
 		if( $user_id )
 		{
-			$this->update_user_data( $db_user );
-			
 			$result = $this->set_user_column( $db_user, 'wp_user_id', $user_id );
 			$this->update_user_data( $db_user );
 		
@@ -1226,12 +1223,10 @@ class OrgHub_UsersModel
 				$this->set_user_column( $db_user, 'status', 'active' );
 				return $user_id;
 			}
-			else
-			{
-				$this->model->write_to_log( $db_user['username'], 'Unable to save user id ("'.$user_id.'") to database.' );
-				$this->set_user_column( $db_user, 'wp_user_error', 'Unable to save user id ("'.$user_id.'") to database.' );
-				return null;
-			}
+
+			$this->model->write_to_log( $db_user['username'], 'Unable to save user id ("'.$user_id.'") to database.' );
+			$this->set_user_column( $db_user, 'wp_user_error', 'Unable to save user id ("'.$user_id.'") to database.' );
+			return null;
 		}
 		
 		//
