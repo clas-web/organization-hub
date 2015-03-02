@@ -94,7 +94,7 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 			
 			case 'export':
 		        require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
-				$this->model->user->get_csv_export( $this->filters, $this->search, $this->show_errors, $this->orderby );
+				$this->model->user->csv_export( $this->filters, $this->search, $this->show_errors, $this->orderby );
 				exit;
 				break;
 		}
