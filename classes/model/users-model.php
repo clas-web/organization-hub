@@ -646,6 +646,9 @@ class OrgHub_UsersModel
 			'wp_user_id', 'wp_user_warning', 'wp_user_error',
 			'profile_blog_id', 'profile_blog_warning', 'profile_blog_error', 
 		);
+		$list[self::$connections_table] = array(
+			'site AS connection'
+		);
 		$list[$wpdb->blogs] = array(
 			'archived AS profile_blog_archived', 'deleted AS profile_blog_deleted'
 		);
@@ -653,9 +656,9 @@ class OrgHub_UsersModel
 		$list = $this->model->get_column_list( $list );
 		
 		$groupby = self::$user_table.".id";
-		//apl_print("SELECT * FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit));
+// 		apl_print( "SELECT $list FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit) );
 		$users = $wpdb->get_results( "SELECT $list FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit), ARRAY_A );
-		//apl_print($users, '$users (get_users-results)');
+// 		apl_print($users, '$users (get_users-results)');
 		
 		if( !is_array($users) ) return false;
 		
@@ -753,35 +756,46 @@ class OrgHub_UsersModel
 				$key = $keys[$i];
 				$where_string .= ' ( ';
 				
-				if( $key == 'site' )
+				switch( $key )
 				{
-					for( $j = 0; $j < count($filter[$key]); $j++ )
-					{
-						switch( $filter[$key][$j] )
+					case 'site':
+						for( $j = 0; $j < count($filter[$key]); $j++ )
 						{
-							case 'na-site':
-								$where_string .= "site_path = '' ";
-								break;
+							switch( $filter[$key][$j] )
+							{
+								case 'na-site':
+									$where_string .= "site_path = '' ";
+									break;
 							
-							case 'no-site':
-								$where_string .= "( site_path != '' AND profile_blog_id IS NULL ) ";
-								break;
+								case 'no-site':
+									$where_string .= "( site_path != '' AND profile_blog_id IS NULL ) ";
+									break;
 								
-							case 'has-site':
-								$where_string .= "( site_path != '' AND profile_blog_id IS NOT NULL ) ";
-								break;
+								case 'has-site':
+									$where_string .= "( site_path != '' AND profile_blog_id IS NOT NULL ) ";
+									break;
+							}
+							if( $j < count($filter[$key])-1 ) $where_string .= ' OR ';
 						}
-						if( $j < count($filter[$key])-1 ) $where_string .= ' OR ';
-					}
+						break;
+					
+					case 'connection':
+						for( $j = 0; $j < count($filter[$key]); $j++ )
+						{
+							$where_string .= self::$connections_table.".site = '".$filter[$key][$j]."' ";
+							if( $j < count($filter[$key])-1 ) $where_string .= ' OR ';
+						}
+						break;
+					
+					default:
+						for( $j = 0; $j < count($filter[$key]); $j++ )
+						{
+							$where_string .= $key." = '".$filter[$key][$j]."' ";
+							if( $j < count($filter[$key])-1 ) $where_string .= ' OR ';
+						}
+						break;
 				}
-				else
-				{
-					for( $j = 0; $j < count($filter[$key]); $j++ )
-					{
-						$where_string .= $key." = '".$filter[$key][$j]."' ";
-						if( $j < count($filter[$key])-1 ) $where_string .= ' OR ';
-					}
-				}
+				
 				$where_string .= ' ) ';
 				
 				if( $i < count($keys)-1 ) $where_string .= ' AND ';
@@ -841,9 +855,9 @@ class OrgHub_UsersModel
 		$join .= 'LEFT JOIN '.self::$category_table.' ON '.self::$user_table.'.id = '.self::$category_table.'.user_id ';
 		$join .= 'LEFT JOIN '.self::$connections_table.' ON '.self::$user_table.'.id = '.self::$connections_table.'.user_id ';
 		$join .= 'LEFT JOIN '.$wpdb->blogs.' ON '.self::$user_table.'.profile_blog_id = '.$wpdb->blogs.'.blog_id';
-
+		
 		if( !$groupby ) $groupby = ''; else $groupby = 'GROUP BY '.$groupby;
-			
+		
 		return $join.' '.$where_string.' '.$groupby.' '.$orderby.' '.$limit_string;
 	}
 	
