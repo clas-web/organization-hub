@@ -11,8 +11,15 @@ if( !function_exists('apl_print') ):
 function apl_print( $var, $label = null )
 {
 	echo '<pre>';
-	if( $label !== null ) echo "<strong>$label:</strong><br/>";
+	
+	if( $label !== null )
+	{
+		$label = print_r( $label, true );
+		echo "<strong>$label:</strong><br/>";
+	}
+	
 	var_dump($var);
+	
 	echo '</pre>';
 }
 endif;

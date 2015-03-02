@@ -81,6 +81,7 @@ class OrgHub_Model
 	 */
 	public function write_to_log( $username, $text, $newline = true )
 	{
+		$text = print_r( $text, true );
 		if( $newline ) $text .= "\n";
 		$text = str_pad( $username, 8, ' ', STR_PAD_RIGHT ).' : '.$text;
 		file_put_contents( ORGANIZATION_HUB_LOG_FILE, $text, FILE_APPEND );
