@@ -94,7 +94,8 @@ class OrgHub_Model
 	
 	
 	/**
-	 * 
+	 * Gets the complete array of Organization Hub options.
+	 * @return array  The Organization Hub option array.
 	 */
 	public function get_options()
 	{
@@ -246,7 +247,11 @@ class OrgHub_Model
 	
 	
 	/**
-	 * 
+	 * Creates a user.
+	 * @param  string        $username  The user's login name.
+	 * @param  string        $password  The user's password.
+	 * @param  string        $email     The user's email.
+	 * @return WP_User|null  The user object on success, otherwise null.
 	 */
 	public function create_user( $username, $password, $email )
 	{
@@ -307,6 +312,14 @@ class OrgHub_Model
 	}
 	
 	
+	/**
+	 * Gets the complete site url and alters the domain and variables.
+	 * @param  string  $domain       The domain of the site. If domain is empty then the
+	 *                               default domain is used.
+	 * @param  string  $path         The path of the site.
+	 * @param  bool    $add_to_path  Prepend the default site's path to the path.
+	 * @return string  The complete path from the domain and path.
+	 */
 	public function get_site_url( &$domain, &$path, $add_to_path = true )
 	{
 		$url_parts = parse_url( get_site_url(1) );

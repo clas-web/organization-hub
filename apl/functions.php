@@ -28,8 +28,8 @@ endif;
 /**
  * Prints the name of an input field.
  * @param  {args}  The keys of the input name.  For example:
- *				 apl_name_e( 'a', 'b', 'c' ) will echo "a[b][c]"
- *				 apl_name_e( array( 'a', 'b', 'c' ) ) will echo "a[b][c]"
+ *                   apl_name_e( 'a', 'b', 'c' ) will echo "a[b][c]"
+ *                   apl_name_e( array( 'a', 'b', 'c' ) ) will echo "a[b][c]"
  */
 if( !function_exists('apl_name_e') ):
 function apl_name_e()
@@ -42,8 +42,8 @@ endif;
 /**
  * Constructs the name of an input field.
  * @param   array|{args}  The keys of the input name.  For example:
- *						 apl_name( 'a', 'b', 'c' ) will return "a[b][c]"
- *						 apl_name( array( 'a', 'b', 'c' ) ) will return "a[b][c]"
+ *                          apl_name( 'a', 'b', 'c' ) will return "a[b][c]"
+ *                          apl_name( array( 'a', 'b', 'c' ) ) will return "a[b][c]"
  * @return  string		The constructed input name. 
  */
 if( !function_exists('apl_name') ):
@@ -106,7 +106,7 @@ endif;
 
 
 /**
- * 
+ * Starts a session if not already started.
  */
 if( !function_exists('apl_start_session') ):
 function apl_start_session()
@@ -116,6 +116,9 @@ function apl_start_session()
 endif;
 
 
+/**
+ * Prints a backtrace for debugging.
+ */
 if( !function_exists('apl_backtrace') ):
 function apl_backtrace()
 {
@@ -154,3 +157,4 @@ function apl_backtrace()
 	apl_print( $text, $title );
 }
 endif;
+
