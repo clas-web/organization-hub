@@ -260,12 +260,6 @@ class OrgHub_Model
 		// Determine how the user should be created.
 		$create_user_type = $this->get_option( 'create-user-type', 'local' );
 		
-		if( ($create_user_type == 'wpmu-ldap') && (!$this->is_ldap_plugin_active()) )
-		{
-			$this->last_error = 'WPMU LDAP plugin not active.';
-			return null;
-		}
-		
 		// Create the user.
 		switch( $create_user_type )
 		{
@@ -280,34 +274,65 @@ class OrgHub_Model
 					$this->last_error = $result->get_error_message();
 					return null;
 				}
-				
-				$user = get_user_by( 'login', $username );
 				break;
 			
 			case 'wpmu-ldap':
-				$result = wpmuLdapSearchUser(
-					array(
-						'username' => $username,
-						'new_role' => 'subscriber',
-						'createUser' => true
-					)
-				);
-
-				if( is_wp_error($result) )
+				if( !$this->is_ldap_plugin_active() )
 				{
-					$this->last_error = $result;
+					$this->last_error = 'WPMU LDAP plugin not active.';
 					return null;
 				}
 				
-				$user = get_user_by( 'login', $username );
+				if( !function_exists('wpmuLdapCreateWPUserFromLdap') )
+				{
+					$this->last_error = 'WPMU LDAP plugin not setup.';
+					return null;
+				}
+				
+				// Bind to directory, search for username
+				$ldapString = wpmuSetupLdapOptions();
+				$userDataArray = null;
+				if( !wpmuLdapSearch($ldapString, $username, $userDataArray) ) 
+				{
+					$this->last_error = 'Unable to find user in LDAP: '.$username;
+					return null;
+				}
+				
+				if( ($user_id = username_exists($username)) &&
+					(wpmuLdapAddUserToBlog($user_id, 1, 'subscriber')) )
+				{
+					break;
+				}
+
+				$user = wpmuLdapCreateWPUserFromLdap(
+					array(
+						'newUserName'	=> $username,
+						'ldapUserData'	=> $userDataArray,
+						'createBlog'	=> false,
+					)
+				);
+		
+				if( is_wp_error($user) ) 
+				{
+					$this->last_error = $user->get_error_message();
+					return null;
+				}
+				
+				if( (is_a($user, 'WP_User')) &&
+				    ($user_id = username_exists($username)) ) 
+				{
+					add_user_to_blog($blog_id, $user_id, $new_role);
+					update_usermeta($user_id, 'primary_blog', $blog_id );
+				}
+				
 				break;
-			
+				
 			default:
 				do_action( 'orghub_create_user-'.$create_user_type, $username, $password, $email );
-				$user = get_user_by( 'login', $username );
 				break;
 		}
 		
+		$user = get_user_by( 'login', $username );
 		return $user;
 	}
 	
