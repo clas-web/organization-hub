@@ -476,22 +476,25 @@ class OrgHub_UploadModel
 			$action.'_'.$type,
 		);
 		
+		$switch_to_blog = true;
+		$site_required = true;
+		
+		if( $type === 'site' && $action === 'add' ) $switch_to_blog = false;
+		if( $type === 'user' ) $site_required = false;
+		
 		if( is_callable($function) )
 		{
 // 			$this->delete_item( $item['id'] );
-
-			if( !(($type === 'site') && ($action === 'add')) )
+			
+			if( ($switch_to_blog) && (!$this->switch_to_blog($data, $site_required)) )
 			{
-				if( !$this->switch_to_blog($data) )
-				{
-					$site = ( isset($data['site']) ? '"'.$data['site'].'"' : '[not specified]' );
-					$this->model->last_error = 'Unable to switch to site: '.$site;
-					return false;
-				}
+				$site = ( isset($data['site']) ? '"'.$data['site'].'"' : '[not specified]' );
+				$this->model->last_error = 'Unable to switch to site: '.$site;
+				return false;
 			}
-
+			
 			$return = call_user_func_array( $function, array(&$data) );
-
+			
 			$this->restore_blog();
 			
 			return $return;
@@ -3542,10 +3545,11 @@ class OrgHub_UploadModel
 	
 	
 	
-	protected function switch_to_blog( &$item )
+	protected function switch_to_blog( &$item, $site_required = true )
 	{
 		if( !is_network_admin() ) return true;
-		if( !array_key_exists('site', $item) ) return false;
+		if( !array_key_exists('site', $item) ) return !$site_required;
+		if( empty($item['site']) ) return !$site_required;
 		
 		$blog_id = get_id_from_blogname( $item['site'] );
 		if( !$blog_id ) return false;
