@@ -328,7 +328,24 @@ class OrgHub_Model
 				break;
 				
 			default:
-				do_action( 'orghub_create_user-'.$create_user_type, $username, $password, $email );
+				$user = apply_filters( "orghub_create_user-$create_user_type", null, $username, $password, $email );
+				
+				if( is_numeric($user) || is_a($user, 'WP_User') )
+				{
+					break;
+				}
+				
+				if( is_wp_error($user) )
+				{
+					$this->last_error = $user->get_error_message();
+					return null;
+				}
+				
+				if( is_string($user) )
+				{
+					$this->last_error = $user;
+					return null;
+				}
 				break;
 		}
 		
