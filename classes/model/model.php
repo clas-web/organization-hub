@@ -283,16 +283,13 @@ class OrgHub_Model
 					return null;
 				}
 				
-				if( !function_exists('wpmuLdapCreateWPUserFromLdap') )
+				if( get_site_option('ldapAuth') !== '1' )
 				{
-					$this->last_error = 'WPMU LDAP plugin not setup.';
+					$this->last_error = 'WPMU LDAP plugin not enabled.';
 					return null;
 				}
 				
-				// Bind to directory, search for username
-				$ldapString = wpmuSetupLdapOptions();
-				$userDataArray = null;
-				if( !wpmuLdapSearch($ldapString, $username, $userDataArray) ) 
+				if( !wpmuLdapSearch(wpmuSetupLdapOptions(), $username, null) ) 
 				{
 					$this->last_error = 'Unable to find user in LDAP: '.$username;
 					return null;
@@ -307,7 +304,7 @@ class OrgHub_Model
 				$user = wpmuLdapCreateWPUserFromLdap(
 					array(
 						'newUserName'	=> $username,
-						'ldapUserData'	=> $userDataArray,
+						'ldapUserData'	=> null,
 						'createBlog'	=> false,
 					)
 				);
@@ -328,7 +325,13 @@ class OrgHub_Model
 				break;
 				
 			default:
-				$user = apply_filters( "orghub_create_user-$create_user_type", null, $username, $password, $email );
+				$user = apply_filters(
+					"orghub_create_user-$create_user_type",
+					get_user_by( 'login', $username ),
+					$username,
+					$password,
+					$email
+				);
 				
 				if( is_numeric($user) || is_a($user, 'WP_User') )
 				{
