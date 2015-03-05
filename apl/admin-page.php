@@ -273,8 +273,6 @@ abstract class APL_AdminPage
 	 */
 	public function add_screen_options() { }
 	
-	
-
 
 	/**
 	 * Sets up the screen options for the admin page.
@@ -609,6 +607,10 @@ abstract class APL_AdminPage
 	
 	/**
 	 * Processes and displays the output of an ajax request.
+	 * @param   string  $action  The AJAX action.
+	 * @param   array   $input   The AJAX input array.
+	 * @param   int     $count   When multiple AJAX calls are made, the current count.
+	 * @param   int     $total   When multiple AJAX calls are made, the total count.
 	 */
 	public function ajax_request( $action, $input, $count, $total ) { }
 
@@ -829,8 +831,9 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * Store an error in the session.
-	 * @param  string  $error  The error to store in the session.
+	 * Set the error as the only error message for the page.
+	 * @param   string  $error  The error message.
+	 * @param   bool    $save   True to save the error data to the session.
 	 */
 	protected function set_error( $error, $save = false )
 	{
@@ -841,7 +844,9 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Add a error to the page errors.
+	 * @param   string  $error  The error message.
+	 * @param   bool    $save    True to save the error data to the session.
 	 */
 	protected function add_error( $error, $save = false )
 	{
@@ -851,7 +856,7 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Save the errors in the session data.
 	 */
 	public function save_error()
 	{
@@ -875,7 +880,8 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Gets the apl-error session data, if it exists and matches the current page.
+	 * @return  array  The error messages for the current page.
 	 */
 	protected function get_error()
 	{
@@ -913,8 +919,9 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * Store an notice in the session.
-	 * @param  string  $notice  The notice to store in the session.
+	 * Set the notice as the only notice message for the page.
+	 * @param   string  $notice  The notice message.
+	 * @param   bool    $save    True to save the notice data to the session.
 	 */
 	protected function set_notice( $notice, $save = false )
 	{
@@ -925,7 +932,9 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Add a notice to the page notices.
+	 * @param   string  $notice  The notice message.
+	 * @param   bool    $save    True to save the notice data to the session.
 	 */
 	protected function add_notice( $notice, $save = false )
 	{
@@ -935,7 +944,7 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Save the notices in the session data.
 	 */
 	public function save_notice()
 	{
@@ -959,7 +968,8 @@ abstract class APL_AdminPage
 	
 	
 	/**
-	 * 
+	 * Gets the apl-notice session data, if it exists and matches the current page.
+	 * @return  array  The notice messages for the current page.
 	 */
 	protected function get_notice()
 	{

@@ -82,7 +82,7 @@ class OrgHub_CsvHandler
 				$row[$headers[$i]] = '';
 			}
 			
-			array_push($rows, $row);
+			array_push( $rows, $row );
         }
 
         fclose( $resource );

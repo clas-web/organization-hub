@@ -76,6 +76,8 @@ endif;
 
 /**
  * Constructs the current page's complete url.
+ * @param   bool    True if the full url with domain, path, and arguments should be 
+ *                  returned, otherwise just the domain and path url.
  * @return  string  The constructed page URL.
  */
 if( !function_exists('apl_get_page_url') ):

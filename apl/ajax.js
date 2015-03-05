@@ -3,6 +3,7 @@
 jQuery(document).ready(
 	function()
 	{
+		// setup all APL Ajax Buttons.
 		jQuery('button.apl-ajax-button').AplAjaxButton();
 	}
 );
@@ -42,9 +43,11 @@ jQuery(document).ready(
 		 */
 		function perform_form_ajax( fi, settings )
 		{
+			// first item: call start callback, if it exists.
 			if( fi === 0 && settings.cb_start )
 				settings.cb_start( settings );
 			
+			// no more items: call end callback, if it exists.
 			if( settings.forms.length == 0 || fi >= settings.forms.length )
 			{
 				if( settings.cb_end ) settings.cb_end( settings );
@@ -53,10 +56,11 @@ jQuery(document).ready(
 			
 			var current_form = settings.forms[fi];
 
+			// start loop: call start loop callback, if it exists.
 			if( settings.cb_loop_start )
 				settings.cb_loop_start( fi, settings );
 			
-			// Setup up AJAX data.
+			// setup up AJAX data.
 			var data = {};
 			data['admin-page'] = settings.page;
 			data['admin-tab'] = settings.tab;
@@ -66,7 +70,7 @@ jQuery(document).ready(
 			data['count'] = fi+1;
 			data['total'] = settings.forms.length;
 			
-			// Serialize data from form/input data.
+			// serialize data from form/input data.
 			if( settings.inputs && settings.inputs.length > 0 )
 			{
 				data['input'] = {};
@@ -80,7 +84,7 @@ jQuery(document).ready(
 				data['input'] = $(current_form).serialize();
 			}
 			
-			// Perform the AJAX request.
+			// perform the AJAX request.
 			$.ajax({
 				type: 'POST',
 				url: ajaxurl,
@@ -89,11 +93,13 @@ jQuery(document).ready(
 			})
 			.done(function( data )
 			{
+				// end loop: call end loop callback, if it exists.
 				if( settings.cb_loop_end )
 					settings.cb_loop_end( fi, settings, true, data );
 				
 				if( data.ajax )
 				{
+					// new ajax data to process, start processing the data.
 					data.ajax.cb_start = (data.ajax.cb_start ? window[data.ajax.cb_start] : null);
 					data.ajax.cb_end = (data.ajax.cb_end ? window[data.ajax.cb_end] : null);
 					data.ajax.cb_loop_start = (data.ajax.cb_loop_start ? window[data.ajax.cb_loop_start] : null);
@@ -102,14 +108,17 @@ jQuery(document).ready(
 				}
 				else
 				{
+					// perform ajax action on next form.
 					perform_form_ajax( fi+1, settings );
 				}
 			})
 			.fail(function( jqXHR, textStatus )
 			{
+				// end loop: call end loop callback, if it exists.
 				if( settings.cb_loop_end )
 					settings.cb_loop_end( fi, settings, false, { message: jqXHR.responseText+': '+textStatus } );
 				
+				// perform ajax action on next form.
 				perform_form_ajax( fi+1, settings );
 			});
 		}
@@ -136,9 +145,12 @@ jQuery(document).ready(
 		 */
 		function perform_data_ajax( fi, settings, ai, ajax )
 		{
+			// first item: call start callback, if it exists.
 			if( ai === 0 && ajax.cb_start )
 				ajax.cb_start( ajax );
 			
+			// no more items: call end callback, if it exists, also perform ajax action 
+			// on next form.
 			if( ajax.items.length == 0 || ai >= ajax.items.length )
 			{
 				if( ajax.cb_end ) ajax.cb_end( ajax );
@@ -146,10 +158,11 @@ jQuery(document).ready(
 				return;
 			}
 			
+			// start loop: call start loop callback, if it exists.
 			if( ajax.cb_loop_start )
 				ajax.cb_loop_start( fi, settings, ai, ajax );
 			
-			// Setup up AJAX data.
+			// setup up AJAX data.
 			var data = {};
 			data['admin-page'] = ajax.page;
 			data['admin-tab'] = ajax.tab;
@@ -160,7 +173,7 @@ jQuery(document).ready(
 			data['count'] = ai+1;
 			data['total'] = ajax.items.length;
 						
-			// Perform the AJAX request.
+			// perform the AJAX request.
 			$.ajax({
 				type: 'POST',
 				url: ajaxurl,
@@ -169,16 +182,20 @@ jQuery(document).ready(
 			})
 			.done(function( data )
 			{
+				// end loop: call end loop callback, if it exists.
 				if( ajax.cb_loop_end )
 					ajax.cb_loop_end( fi, settings, ai, ajax, true, data );
 				
+				// perform ajax action on next item in ajax items.
 				perform_data_ajax( fi, settings, ai+1, ajax );
 			})
 			.fail(function( jqXHR, textStatus )
 			{
+				// end loop: call end loop callback, if it exists.
 				if( settings.cb_loop_end )
 					settings.cb_loop_end( fi, settings, false, { message: jqXHR.responseText+': '+textStatus } );
 				
+				// perform ajax action on next item in ajax items.
 				perform_data_ajax( fi, settings, ai+1, ajax );
 			});
 		}
@@ -189,6 +206,7 @@ jQuery(document).ready(
 		 */
 		return this.each(function() {
 			
+			// create a compilation of the settings.
 			var settings = {
 				'this'     : this,
 				'page'     : (($(this).attr('page')) ? $(this).attr('page') : null),
@@ -204,9 +222,10 @@ jQuery(document).ready(
 			};
 			if(options) $.extend(settings, options);
 			
-			if( !settings.page || !settings.action || !settings.nonce )
-				return;
+			// need page, action, and nonce values.
+			if( !settings.page || !settings.action || !settings.nonce ) return;
 
+			// store the forms that will be processed.
 			var form_objects = [];
 			if( settings.forms.length === 1 && settings.forms[0] === '' )
 			{
@@ -228,11 +247,13 @@ jQuery(document).ready(
 
 			settings.forms = form_objects;
 			
+			// determine if inputs should be processed.
 			if( settings.inputs && settings.inputs.length === 1 && settings.inputs[0] === '' )
 			{
 				settings.inputs = null;
 			}
 			
+			// setup APL AJAX button to perform AJAX action on the forms in settings.
 			$(this)
 				.click( function() {
 					perform_form_ajax( 0, settings );

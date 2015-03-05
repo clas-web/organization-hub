@@ -16,7 +16,6 @@ require_once( dirname(__FILE__).'/tab-link.php' );
  * @package    apl
  * @author     Crystal Barton <cbarto11@uncc.edu>
  */
-
 if( !class_exists('APL_Handler') ):
 class APL_Handler
 {
@@ -330,6 +329,10 @@ class APL_Handler
 	}
 	
 	
+	/**
+	 * Returns the name of the current controller (page or tab).
+	 * @return  string|null  The name of the current controller, if exists, otherwise null.
+	 */
 	public function get_name()
 	{
 		if( $this->controller ) return $this->controller->get_name();
