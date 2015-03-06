@@ -2093,7 +2093,7 @@ class OrgHub_UsersModel
 			);
 		}
 		
-		OrgHub_CsvHandler::export( 'users', $headers, $users );
+		CsvHandler::export( 'users', $headers, $users );
 		exit;
 	}
 	

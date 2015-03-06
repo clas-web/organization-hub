@@ -63,13 +63,13 @@ class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
             return;
         }
 		
-        require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
+		require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/libraries/csv-handler/csv-handler.php' );
 
 		$rows = array();
-		$results = OrgHub_CsvHandler::import( $_FILES['upload']['tmp_name'], $rows, false );
+		$results = CsvHandler::import( $_FILES['upload']['tmp_name'], $rows, false );
 		if( $results === false )
 		{
-			$this->set_error( OrgHub_CsvHandler::$last_error );
+			$this->set_error( CsvHandler::$last_error );
             return;
 		}
 		

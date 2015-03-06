@@ -93,7 +93,7 @@ class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 				break;
 
 			case 'export':
-				require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/csv-handler.php' );
+				require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/libraries/csv-handler/csv-handler.php' );
 				$this->model->site->get_site_csv_export( $this->filters, $this->search, $this->orderby );
 				exit;
 				break;

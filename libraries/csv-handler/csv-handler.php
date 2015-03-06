@@ -1,16 +1,15 @@
 <?php
 /**
- * OrgHub_CsvHandler
+ * CsvHandler
  * 
  * A general purpose CSV Handler for importing and exporting.
  * 
- * @package    orghub
- * @subpackage classes
+ * @package    csv-handler
  * @author     Crystal Barton <cbarto11@uncc.edu>
  */
 
-if( !class_exists('OrgHub_CsvHandler') ):
-class OrgHub_CsvHandler
+if( !class_exists('CsvHandler') ):
+class CsvHandler
 {
 	public static $length = 99999;		// The maximum length of a line in CSV file.
 	public static $delimiter = ',';		// The field delimiter character.
@@ -114,12 +113,10 @@ class OrgHub_CsvHandler
     					if( preg_match("/(?:${delimiter_esc}|${enclosure_esc}|${space_esc}|\s)/", $c) )
     					{
 	    					$c = self::$enclosure.str_replace(self::$enclosure, self::$enclosure.self::$enclosure, $c).self::$enclosure;
-//	    					$c = str_replace(self::$enclosure, self::$enclosure.self::$enclosure, $c);
 	    				}
     				}
     				endif;
 
-//					$column = self::$enclosure.implode( self::$enclosure.self::$delimiter.self::$enclosure, $column ).self::$enclosure;
 					$column = implode( self::$delimiter, $column );
 				}
 			}
@@ -143,6 +140,6 @@ class OrgHub_CsvHandler
 		exit;
     }
 
-} // if( !class_exists('OrgHub_CsvHandler') ):
-endif; // class OrgHub_CsvHandler
+} // if( !class_exists('CsvHandler') ):
+endif; // class CsvHandler
 
