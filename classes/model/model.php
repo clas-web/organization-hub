@@ -289,7 +289,8 @@ class OrgHub_Model
 					return null;
 				}
 				
-				if( !wpmuLdapSearch(wpmuSetupLdapOptions(), $username, null) ) 
+				$user_data = null;
+				if( !wpmuLdapSearch(wpmuSetupLdapOptions(), $username, $user_data) ) 
 				{
 					$this->last_error = 'Unable to find user in LDAP: '.$username;
 					return null;
