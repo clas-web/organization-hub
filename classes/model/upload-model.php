@@ -3483,6 +3483,8 @@ class OrgHub_UploadModel
 							//TODO: error: 'Invalid '.$taxonomy_name.'term: '.$heirarchy[$i];
 							break;
 						}
+						
+						$parent = $termobject->term_id;
 					}
 					
 					if( isset($termobject) && !is_wp_error($termobject) )
