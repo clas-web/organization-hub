@@ -219,7 +219,7 @@ class OrgHub_UploadModel
 		{
 			foreach( $valid_regex_keys as $regex )
 			{
-				$regex_key = '([a-zA-Z0-9]+)\\\-';
+				$regex_key = '\(([a-zA-Z0-9]+)\)\\\-';
 				if( !preg_match("/$regex_key/", $regex, $matches) ) continue;
 				
 				$args_key = $matches[1];
@@ -228,7 +228,7 @@ class OrgHub_UploadModel
 					
 				if( !preg_match("/^$regex$/", $key, $matches) ) continue;
 				
-				$args[$args_key][$matches[1]] = $args[$key];
+				$args[$args_key][$matches[2]] = $args[$key];
 				unset($args[$key]);
 			}
 		}
@@ -2456,7 +2456,7 @@ class OrgHub_UploadModel
 				$required_keys = array( 'site', 'title', 'user' );
 				$required_values = array( 'site', 'title', 'user' );
 				$valid_keys = array( 'description', 'domain', 'password', 'email' );
-				$valid_regex_keys = array( 'option\-([a-zA-Z0-9\-_]+)' );
+				$valid_regex_keys = array( '(option)\-([a-zA-Z0-9\-_]+)' );
 				break;
 			
 			case 'update':
@@ -2469,7 +2469,7 @@ class OrgHub_UploadModel
 				$required_keys = array( 'site' );
 				$required_values = array( 'site' );
 				$valid_keys = array( 'title', 'description', 'user', 'password', 'email' );
-				$valid_regex_keys = array( 'option\-([a-zA-Z0-9\-_]+)' );
+				$valid_regex_keys = array( '(option)\-([a-zA-Z0-9\-_]+)' );
 				break;
 				
 			case 'delete':
