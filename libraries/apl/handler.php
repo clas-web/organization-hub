@@ -1,11 +1,4 @@
 <?php
-require_once( dirname(__FILE__).'/functions.php' );
-require_once( dirname(__FILE__).'/admin-menu.php' );
-require_once( dirname(__FILE__).'/admin-page.php' );
-require_once( dirname(__FILE__).'/tab-admin-page.php' );
-require_once( dirname(__FILE__).'/tab-link.php' );
-
-
 
 /**
  * APL_Handler
@@ -232,12 +225,20 @@ class APL_Handler
 			}
 		}
 		
-		if( $this->current_tab )
+		$this->controller = null;
+		if( !$this->current_page )
+		{
+			$this->current_page = null;
+			$this->current_tab = null;
+		}
+		elseif( $this->current_tab )
+		{
 			$this->controller = $this->current_tab;
+		}
 		elseif( $this->current_page )
+		{
 			$this->controller = $this->current_page;
-		else
-			$this->controller = null;
+		}
 		
 		if( !$this->controller )
 		{

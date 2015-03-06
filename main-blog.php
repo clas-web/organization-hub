@@ -28,6 +28,8 @@ class OrgHub_MainBlog
 	
 	public static function load()
 	{
+		require_once( dirname(__FILE__).'/admin-pages/require.php' );
+		
 		// Site admin page.
 		$orghub_pages = new APL_Handler( false );
 

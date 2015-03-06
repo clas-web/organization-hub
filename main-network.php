@@ -26,6 +26,8 @@ class OrgHub_MainNetwork
 	
 	public static function load()
 	{
+		require_once( dirname(__FILE__).'/admin-pages/require.php' );
+		
 		// Network admin pages.
 		$orghub_pages = new APL_Handler( true );
 		
