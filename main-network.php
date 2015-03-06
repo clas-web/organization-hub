@@ -15,7 +15,7 @@ require( dirname(__FILE__).'/main.php' );
 if( is_admin() ):
 
 add_action( 'wp_loaded', array('OrgHub_MainNetwork', 'load') );
-add_action( 'network_admin_menu', array('OrgHub_Main', 'update'), 5 );
+add_action( 'network_admin_menu', array('OrgHub_MainNetwork', 'update'), 5 );
 
 endif;
 
@@ -39,6 +39,19 @@ class OrgHub_MainNetwork
 		
 		$orghub_pages->add_menu( $menu );
 		$orghub_pages->setup();
+	}
+
+	public static function update()
+	{
+//		$version = get_site_option( ORGANIZATION_HUB_DB_VERSION_OPTION );
+//  	if( $version !== ORGANIZATION_HUB_DB_VERSION )
+//  	{
+ 			$model = OrgHub_Model::get_instance();
+ 			$model->create_tables();
+//  	}
+ 		
+ 		update_site_option( ORGANIZATION_HUB_VERSION_OPTION, ORGANIZATION_HUB_VERSION );
+ 		update_site_option( ORGANIZATION_HUB_DB_VERSION_OPTION, ORGANIZATION_HUB_DB_VERSION );
 	}
 	
 }

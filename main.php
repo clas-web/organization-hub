@@ -40,31 +40,6 @@ if( !class_exists('OrgHub_Main') ):
 class OrgHub_Main
 {
 	
-	public static function load()
-	{
-		// Site admin page.
-		$orghub_pages = new APL_Handler( false );
-		
-		$menu = new APL_AdminMenu( 'orghub', 'Batch Upload' );
-		$menu->add_page( new OrgHub_UploadAdminPage );
-		
-		$orghub_pages->add_menu( $menu );
-		$orghub_pages->setup();
-	}
-	
-	public static function update()
-	{
-//		$version = get_site_option( ORGANIZATION_HUB_DB_VERSION_OPTION );
-//  	if( $version !== ORGANIZATION_HUB_DB_VERSION )
-//  	{
- 			$model = OrgHub_Model::get_instance();
- 			$model->create_tables();
-//  	}
- 		
- 		update_site_option( ORGANIZATION_HUB_VERSION_OPTION, ORGANIZATION_HUB_VERSION );
- 		update_site_option( ORGANIZATION_HUB_DB_VERSION_OPTION, ORGANIZATION_HUB_DB_VERSION );
-	}
-
 	public static function enqueue_scripts()
 	{
 		wp_enqueue_script( 'apl-ajax', plugins_url('apl/ajax.js', __FILE__), array('jquery') );
