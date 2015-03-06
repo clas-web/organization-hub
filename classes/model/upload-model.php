@@ -484,7 +484,7 @@ class OrgHub_UploadModel
 		
 		if( is_callable($function) )
 		{
-// 			$this->delete_item( $item['id'] );
+ 			$this->delete_item( $item['id'] );
 			
 			if( ($switch_to_blog) && (!$this->switch_to_blog($data, $site_required)) )
 			{
