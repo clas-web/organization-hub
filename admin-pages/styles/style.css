@@ -280,5 +280,55 @@
 	div.page-errors > div {
 		border-left-color:red;
 	}
+
+	table.orghub-upload td > div.description {
+		padding:0.5em 1em;
+		border:solid 1px #ccc;
+	}
 	
+	table.orghub-upload td > div.extended-data {
+//		background-color:#f9f9f6;
+		padding:0.5em 0em;
+		margin-bottom:0.5em;
+		border:solid 1px #ccc;
+		border-top:0;
+//		display:none;
+	}
+	
+	table.orghub-upload td > div.extended-data > div {
+		display:block;
+	}
+	
+	table.orghub-upload td > div.extended-data > div > label {
+		display:inline-block;
+		width:25%;
+		min-width:6em;
+		font-weight:bold;
+		text-align:right;
+		margin-right:2%;
+	}
+	
+	table.orghub-upload .description {
+		position:relative;
+	}
+	
+	table.orghub-upload .more-data-button {
+		position:absolute;;
+		border:solid 1px #ccc;
+		line-height:1.5em;
+		bottom:-1em;
+		right:1em;
+		padding:0.2em 0.5em;
+		background-color:#f3f3f3;
+	}
+
+	table.orghub-upload .more-data-button:hover {
+		cursor:pointer;
+	}
+	
+	table.orghub-sites.fixed,
+	table.orghub-users.fixed,
+	table.orghub-upload.fixed {
+		table-layout:auto !important;
+	}
 	

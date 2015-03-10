@@ -140,6 +140,14 @@ class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 		}
 	}
 	
+
+	/**
+	 * Enqueues all the scripts or styles needed for the admin page. 
+	 */
+	public function enqueue_scripts()
+	{
+		wp_enqueue_script( 'orghub-upload-extended-data', ORGANIZATION_HUB_PLUGIN_URL.'/admin-pages/scripts/upload-extended-data.js' );		
+	}
 	
 	/**
 	 * Displays the current admin page.

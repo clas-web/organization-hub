@@ -197,6 +197,24 @@ class OrgHub_UploadListTable extends WP_List_Table
 	
 
 	/**
+	 * Echos the current row's html.
+	 * @param  array  $item  The item for the current row.
+	 */
+	public function single_row( $item )
+	{
+		static $row_class = '';
+		$row_class = ( $row_class == '' ? 'alternate' : '' );
+
+		$action = ( isset($item['data']['action']) ? $item['data']['action'] : 'no-action' );
+		$type = ( isset($item['data']['type']) ? $item['data']['type'] : 'no-type' );
+		
+		echo '<tr class="'.$action.' '.$type.' '.$row_class.'">';
+		$this->single_row_columns( $item );
+		echo '</tr>';
+	}
+	
+	
+	/**
 	 * Echos the text to display when no users are found.
 	 */
 	public function no_items()
@@ -241,13 +259,19 @@ class OrgHub_UploadListTable extends WP_List_Table
             'delete' => sprintf( '<a href="%s">Delete</a>', 'admin.php?page=orghub-upload&tab=list&id='.$item['id'].'&action=delete' ),
             'process' => sprintf( '<a href="%s">Process</a>', 'admin.php?page=orghub-upload&tab=list&id='.$item['id'].'&action=process' ),
 		);
-
-		$html = '';
 		
+		$html = '<div class="description">';
+		$html .= $this->data_description( $item['id'], $item['data'] );
+		$html .= '<div class="more-data-button">Extended Data</div>';
+		$html .= '</div>';
+		
+		
+		$html .= '<div class="extended-data">';
 		foreach( $item['data'] as $key => $value )
 		{
 			$html .= '<div class="key-'.$key.'"><label>'.$key.'</label>'.$value.'</div>';
 		}
+		$html .= '</div>';
 		
 		return sprintf( '%1$s%2$s', $html,  $this->row_actions($actions) );
 	}
@@ -261,6 +285,54 @@ class OrgHub_UploadListTable extends WP_List_Table
 	public function column_timestamp( $item )
 	{
 		return $item['timestamp'];
+	}
+	
+	
+	protected function data_description( $id, &$item )
+	{
+		extract( $item );
+		
+		$keys = array( 'action', 'type' );
+		switch( $item['type'] )
+		{
+			case 'post':
+			case 'page':
+				$keys[] = 'site'; $keys[] = 'title';
+				break;
+			
+			case 'link':
+				$keys[] = 'site'; $keys[] = 'name';
+				break;
+				
+			case 'taxonomy':
+				$keys[] = 'site'; $keys[] = 'name';
+				break;
+			
+			case 'site':
+				$keys[] = 'site';
+				break;
+				
+			case 'option':
+				$keys[] = 'site'; $keys[] = 'name';
+				break;
+			
+			case 'user':
+				$keys[] = 'site'; $keys[] = 'user'; $keys[] = 'role';
+				break;
+		}
+		
+		$html = '';
+		$count = 0;
+		foreach( $keys as $key )
+		{
+			if( empty($$key) ) $html .= "[no $key]";
+			else $html .= $$key;
+			
+			if( $count < count($keys)-1 ) $html .= ' : ';
+			$count++;
+		}
+		
+		return $html;
 	}
 	
 } // class OrgHub_UsersListTable extends WP_List_Table
