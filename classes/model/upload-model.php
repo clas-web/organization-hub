@@ -153,9 +153,17 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 * 
-	 * 
-	 * 
+	 * Validates the arguments for an item based on required key, values, and other
+	 * checks that checks for errors before writting to the database.
+	 * @param   array  $args              The arguments.
+	 * @param   array  $required_keys     The required keys that must exist in the args.
+	 * @param   array  $required_values   The keys that must have non-empty values in the args.
+	 * @param   array  $valid_keys        Others keys that are also valid in the args and 
+	 *                                    should not be ignored or should be created if
+	 *                                    they are missing.
+	 * @param   array  $valid_regex_keys  Regular expression that need to be matched to 
+	 *                                    determine there any other valid keys.
+	 * @return  bool   True if all args where validated, otherwise false on error.
 	 */
 	private function validate_args_for_db( &$args, $required_keys, $required_values, $valid_keys, $valid_regex_keys )
 	{
@@ -199,6 +207,19 @@ class OrgHub_UploadModel
 	}
 	
 	
+	/**
+	 * Validates the arguments for an item based on required key, values, and other
+	 * checks that checks for errors before processing.
+	 * @param   array  $args              The arguments.
+	 * @param   array  $required_keys     The required keys that must exist in the args.
+	 * @param   array  $required_values   The keys that must have non-empty values in the args.
+	 * @param   array  $valid_keys        Others keys that are also valid in the args and 
+	 *                                    should not be ignored or should be created if
+	 *                                    they are missing.
+	 * @param   array  $valid_regex_keys  Regular expression that need to be matched to 
+	 *                                    determine there any other valid keys.
+	 * @return  bool   True if all args where validated, otherwise false on error.
+	 */
 	private function validate_args_for_action( &$args, $required_keys, $required_values, $valid_keys, $valid_regex_keys )
 	{
 		$result = $this->validate_args_for_db( 
@@ -234,15 +255,18 @@ class OrgHub_UploadModel
 		}
 		
 		// Taxonomies
-		if( array_key_exists('categories', $args) )
+		if( $args['type'] === 'post' )
 		{
-			$args['taxonomy']['category'] = $args['categories'];
-			unset($args['categories']);
-		}
-		if( array_key_exists('tags', $args) )
-		{
-			$args['taxonomy']['post_tag'] = $args['tags'];
-			unset($args['tags']);
+			if( array_key_exists('categories', $args) )
+			{
+				$args['taxonomy']['category'] = $args['categories'];
+				unset($args['categories']);
+			}
+			if( array_key_exists('tags', $args) )
+			{
+				$args['taxonomy']['post_tag'] = $args['tags'];
+				unset($args['tags']);
+			}
 		}
 		
 		$array_keys = array_keys($args);
@@ -299,6 +323,11 @@ class OrgHub_UploadModel
 	}
 	
 	
+	/**
+	 * Delete an OrgHub upload item from the database.
+	 * @param   int   $id  The id of the item to delete.
+	 * @return  bool  True if the item was deleted successfully, otherwise false.
+	 */
 	public function delete_item( $id )
 	{
 		global $wpdb;
@@ -321,8 +350,9 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
-	 * @return null on failure
+	 * Gets an item based on the id.
+	 * @param   int         $id  The id of the item
+	 * @return  array|null  The item if found, otherwise null on failure or not found.
 	 */
 	public function get_item_by_id( $id )
 	{
@@ -426,7 +456,8 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 * 
+	 * Gets the current blog's id.
+	 * @return  int  The current blog's id.
 	 */
 	public function get_current_blog_id()
 	{
@@ -441,32 +472,56 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 * Process the items in the upload table.
+	 * Process all the items in the upload table.
+	 * @return  bool  True if no errors occurred, otherwise false.
 	 */
 	public function process_items()
 	{
 		$items = $this->get_items();
 		
+		$errors = array();
 		foreach( $items as &$item )
 		{
-			$this->process_item( $item['id'], $item );
+			$result = $this->process_item( $item['id'], $item );
+			
+			if( !$result )
+				$errors[] = $this->model->last_error;
 		}
+		
+		if( !empty($errors) )
+		{
+			$this->model->last_error = $errors;
+			return false;
+		}
+		
+		return true;
 	}
 
-
+	
+	/**
+	 * Process a single item in the upload table.
+	 * @param   int         $id    The id of the item to process.
+	 * @param   array|null  $item  The item to process or null in order to get item from db.
+	 * @return  bool        True if no errors occured, otherwise false.
+	 */
 	public function process_item( $id, &$item = null )
 	{
 		$this->model->last_error = '';
 		
 		if( ($item === null) && ($item = $this->get_item_by_id( $id )) === null )
 		{
-			$this->model->last_error = 'Invalid item id "'.$id.'".';
+			$this->model->last_error = "Item # $id: Invalid item id.";
 			return false;
 		}
 		
 		$data =& $item['data'];
+		$error = $this->get_item_description( $id, $data ).' error: ';
 		
-		if( !$this->check_args($data, true) ) return false;
+		if( !$this->check_args($data, true) )
+		{
+			$this->model->last_error = $error . $this->model->last_error;
+			return false;
+		}
 	
 		$type = str_replace( '-', '_', $data['type'] );
 		$action = str_replace( '-', '_', $data['action'] );
@@ -484,12 +539,14 @@ class OrgHub_UploadModel
 		
 		if( is_callable($function) )
 		{
- 			$this->delete_item( $item['id'] );
+// 			apl_print($action.'_'.$type, 'FUNCTION');
+			
+			$this->delete_item( $item['id'] );
 			
 			if( ($switch_to_blog) && (!$this->switch_to_blog($data, $site_required)) )
 			{
 				$site = ( isset($data['site']) ? '"'.$data['site'].'"' : '[not specified]' );
-				$this->model->last_error = 'Unable to switch to site: '.$site;
+				$this->model->last_error = $error . 'Unable to switch to site: "'.$site.'". ';
 				return false;
 			}
 			
@@ -497,10 +554,13 @@ class OrgHub_UploadModel
 			
 			$this->restore_blog();
 			
+			if( !$return )
+				$this->model->last_error = $error . $this->model->last_error;
+			
 			return $return;
 		}
 		
-		$this->model->last_error = 'Invalid type "'.$data['type'].' or action "'.$data['action'].'" specified.';
+		$this->model->last_error = $error . 'Invalid type "'.$data['type'].' or action "'.$data['action'].'" specified.';
 		return false;
 	}
 	
@@ -512,7 +572,6 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Verifies that all the required fields are present for "post" types.
-	 *
 	 * @param  array  $args  An array of user values.
 	 * @return  bool  True if the args are valid, otherwise False.
 	 */
@@ -599,7 +658,8 @@ class OrgHub_UploadModel
 					type, action, site, title
 				*/
 				$required_keys = array( 'site', 'title' );
-				$required_values = array( 'site', 'title', 'post-type' );
+				$required_values = array( 'site', 'title' );
+				$valid_keys = array( 'post-type' );
 				break;
 				
 			case 'rename':
@@ -610,7 +670,8 @@ class OrgHub_UploadModel
 					type, action, site, title, new-title
 				*/
 				$required_keys = array( 'site', 'title', 'new-title' );
-				$required_values = array( 'site', 'title', 'new-title', 'post-type' );
+				$required_values = array( 'site', 'title', 'new-title' );
+				$valid_keys = array( 'post-type' );
 				break;
 				
 			case 'grep':
@@ -744,13 +805,17 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( $post ) return false;
+		if( $post ) 
+		{
+			$this->model->last_error = 'Post already exists "'.$title.'". ';
+			return false;
+		}
 		
 		$post_data = array(
 			'post_content'	=> $this->get_string_value( $content, true ),
 			'post_name'		=> $this->get_string_value( $slug, true ),
 			'post_title'	=> $title,
-			'post_status'	=> $this->get_string_value( $status, true ),
+			'post_status'	=> $this->get_post_status( $status ),
 			'post_type'		=> $this->get_post_type( $post_type ),
 			'post_author'	=> $this->get_author_id( $author ),
 			'post_password'	=> $this->get_string_value( $password, true ),
@@ -761,16 +826,15 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );	
-		$post_id = wp_insert_post( $post_data );
+		$result = wp_insert_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to insert post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
+		$post_id = $result;
 		foreach( $meta as $key => $value )
 		{
 			update_post_meta( $post_id, $key, $value );
@@ -791,13 +855,17 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$post_data = array(
 			'ID'			=> $post->ID,
 			'post_content'	=> $this->get_string_value( $content, true ),
 			'post_name'		=> $this->get_string_value( $slug, true ),
-			'post_status'	=> $this->get_string_value( $status, true ),
+			'post_status'	=> $this->get_post_status( $status ),
 			'post_type'		=> $this->get_post_type( $post_type ),
 			'post_author'	=> $this->get_author_id( $author ),
 			'post_password'	=> $this->get_string_value( $password, true ),
@@ -807,16 +875,15 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );	
-		$post_id = wp_update_post( $post_data );
+		$result = wp_update_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
+		$post_id = $result;
 		foreach( $meta as $key => $value )
 		{
 			update_post_meta( $post_id, $key, $value );
@@ -854,7 +921,11 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
+		if( !$post ) 
+		{
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$post_data = array(
 			'ID'			=> $post->ID,
@@ -863,13 +934,11 @@ class OrgHub_UploadModel
 		);
 
 		$this->filter_post_data( $post_data );
-		$post_id = wp_update_post( $post_data );
+		$result = wp_update_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -887,7 +956,11 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$post_data = array(
 			'ID'			=> $post->ID,
@@ -896,13 +969,11 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );
-		$post_id = wp_update_post( $post_data );
+		$result = wp_update_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -920,12 +991,16 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
-		
-		$deleted_post = wp_delete_post( $post->ID, true );
-		if( $deleted_post === false )
+		if( !$post )
 		{
-			$this->model->last_error = 'Unable to delete post: '.$title;
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
+		
+		$result = wp_delete_post( $post->ID, true );
+		if( $result === false )
+		{
+			$this->model->last_error = 'Unable to delete post "'.$title.'". ';
 			return false;
 		}
 		
@@ -943,7 +1018,11 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$post_data = array(
 			'ID'			=> $post->ID,
@@ -951,13 +1030,11 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );
-		$post_id = wp_update_post( $post_data );
+		$result = wp_update_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -980,7 +1057,11 @@ class OrgHub_UploadModel
 		if( !empty($title) )
 		{
 			$post = $this->get_post_by_title( $title, $post_type );
-			if( !$post ) return false;
+			if( !$post )
+			{
+				$this->model->last_error = 'Post does not exist "'.$title.'". ';
+				return false;
+			}
 			
 			$posts[] = $post;
 		}
@@ -995,6 +1076,7 @@ class OrgHub_UploadModel
 			);
 		}
 		
+		$errors = array();
 		foreach( $posts as $post )
 		{
 			$post_data = array( 'ID' => $post->ID );
@@ -1024,13 +1106,19 @@ class OrgHub_UploadModel
 			}
 			
 			$this->filter_post_data( $post_data );
-			$post_id = wp_update_post( $post_data );
+			$result = wp_update_post( $post_data, true );
 		
-			if( !is_numeric($post_id) || ($post_id == 0) )
+			if( is_wp_error($result) )
 			{
-				//TODO: error.
+				$errors[] = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 				continue;
 			}
+		}
+		
+		if( !empty($errors) )
+		{
+			$this->model->last_error = $this->format_errors_into_string( $errors );
+			return false;
 		}
 		
 		return true;
@@ -1047,13 +1135,18 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
-		
-		$existing_taxonomies = wp_get_object_terms( $post->ID, array_keys($taxonomy) );
-		if( is_wp_error($existing_taxonomies) )
+		if( !$post )
 		{
-			// TODO: error.
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
 			return false;
+		}
+		
+		$existing_taxonomies = array();
+		$taxonomy_names = array_keys($taxonomy);
+		foreach( $taxonomy_names as $taxname )
+		{
+			$taxterms = wp_get_object_terms( $post->ID, array($taxname) );
+			$existing_taxonomies[$taxname] = $taxterms;
 		}
 		
 		$new_taxonomies = $this->get_taxonomies( $taxonomy );
@@ -1065,28 +1158,30 @@ class OrgHub_UploadModel
 				continue;
 			}
 
-			if( is_taxonomy_heirarchical($taxname) )
+			if( is_taxonomy_hierarchical($taxname) )
 			{
-				$existing_taxonomies_ids = array_filter(
-					$existing_taxonomies,
+				$existing_taxonomies_ids = array_map(
 					function( $term )
 					{
 						return $term->term_id;
-					}
+					},
+					$existing_taxonomies[$taxname]
 				);
 				$existing_taxonomies[$taxname] = array_merge( $existing_taxonomies_ids, $new_taxonomies[$taxname] );
 			}
 			else
 			{
-				$existing_taxonomies_names = array_filter(
-					$existing_taxonomies,
+				$existing_taxonomies_names = array_map(
 					function( $term )
 					{
 						return $term->name;
-					}
+					},
+					$existing_taxonomies[$taxname]
 				);
 				$existing_taxonomies[$taxname] = array_merge( $existing_taxonomies_names, $new_taxonomies[$taxname] );
 			}
+
+			$existing_taxonomies[$taxname] = array_unique( $existing_taxonomies[$taxname] );
 		}
 		
 		$post_data = array(
@@ -1095,13 +1190,11 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );
-		wp_update_post( $post_data );
+		$result = wp_update_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -1120,12 +1213,16 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$taxonomies = $this->get_taxonomies( $taxonomy, true );
 		foreach( $taxonomies as $taxname => $terms )
 		{
-			wp_set_post_terms( $post_id, $terms, $taxname ); 
+			wp_set_post_terms( $post->ID, $terms, $taxname ); 
 		}
 		
 		return true;
@@ -1142,13 +1239,18 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
-		
-		$existing_taxonomies = wp_get_object_terms( $post->ID, array_keys($taxonomy) );
-		if( is_wp_error($existing_taxonomies) )
+		if( !$post )
 		{
-			// TODO: error.
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
 			return false;
+		}
+		
+		$existing_taxonomies = array();
+		$taxonomy_names = array_keys($taxonomy);
+		foreach( $taxonomy_names as $taxname )
+		{
+			$taxterms = wp_get_object_terms( $post->ID, array($taxname) );
+			$existing_taxonomies[$taxname] = $taxterms;
 		}
 		
 		$new_taxonomies = $this->get_taxonomies( $taxonomy );
@@ -1160,25 +1262,25 @@ class OrgHub_UploadModel
 				continue;
 			}
 
-			if( is_taxonomy_heirarchical($taxname) )
+			if( is_taxonomy_hierarchical($taxname) )
 			{
-				$existing_taxonomies_ids = array_filter(
-					$existing_taxonomies,
+				$existing_taxonomies_ids = array_map(
 					function( $term )
 					{
 						return $term->term_id;
-					}
+					},
+					$existing_taxonomies[$taxname]
 				);
 				$existing_taxonomies[$taxname] = array_diff( $existing_taxonomies_ids, $new_taxonomies[$taxname] );
 			}
 			else
 			{
-				$existing_taxonomies_names = array_filter(
-					$existing_taxonomies,
+				$existing_taxonomies_names = array_map(
 					function( $term )
 					{
 						return $term->name;
-					}
+					},
+					$existing_taxonomies[$taxname]
 				);
 				$existing_taxonomies[$taxname] = array_diff( $existing_taxonomies_names, $new_taxonomies[$taxname] );
 			}
@@ -1190,13 +1292,11 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );
-		wp_update_post( $post_data );
+		$result = wp_update_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -1215,9 +1315,17 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
 		
-		add_post_meta( $post->ID, $name, $value, true );
+		if( !add_post_meta($post->ID, $name, $value, true) )
+		{
+			$this->model->last_error = 'Unable to update meta data "'.$name.'" for post "'.$title.'". ';
+			return false;
+		}
 		
 		return true;
 	}
@@ -1234,9 +1342,17 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
 		
-		update_post_meta( $post->ID, $name, $value, true );
+		if( !update_post_meta($post->ID, $name, $value, true) )
+		{
+			$this->model->last_error = 'Unable to update meta data "'.$name.'" for post "'.$title.'". ';
+			return false;
+		}
 		
 		return true;
 	}
@@ -1254,11 +1370,15 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		if( !add_post_meta($post->ID, $name, $value, true) && !update_post_meta($post->ID, $name, $value, true) )
 		{
-			//TODO: error.
+			$this->model->last_error = 'Unable to add or update meta data "'.$name.'" for post "'.$title.'". ';
 			return false;
 		}
 		
@@ -1276,9 +1396,17 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
 		
-		delete_post_meta( $post->ID, $name );
+		if( !delete_post_meta($post->ID, $name) )
+		{
+			$this->model->last_error = 'Unable to delete meta data "'.$name.'" for post "'.$title.'". ';
+			return false;
+		}
 		
 		return true;
 	}
@@ -1296,19 +1424,23 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, $post_type );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Post does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$value = get_post_meta( $post->ID, $name, false );
 		if( $value === array() )
 		{
-			//TODO: error.
+			$this->model->last_error = 'Unable to get original meta data "'.$name.'" for post "'.$title.'". ';
 			return false;
 		}
 		
 		$value = $value[0];
 		if( !add_post_meta($post->ID, $name, $value, true) && !update_post_meta($post->ID, $name, $value, true) )
 		{
-			//TODO: error.
+			$this->model->last_error = 'Unable to add or update meta data "'.$name.'" for post "'.$title.'". ';
 			return false;
 		}
 		
@@ -1524,7 +1656,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Adds a new page if an existing page with same title does not exist.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1533,13 +1665,17 @@ class OrgHub_UploadModel
 		extract($item);
 
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( $post ) return false;
+		if( $post )
+		{
+			$this->model->last_error = 'Page already exists "'.$title.'". ';
+			return false;
+		}
 				
 		$post_data = array(
 			'post_content'	=> $this->get_string_value( $content, true ),
 			'post_name'		=> $this->get_string_value( $slug, true ),
 			'post_title'	=> $title,
-			'post_status'	=> $this->get_string_value( $status, true ),
+			'post_status'	=> $this->get_post_status( $status ),
 			'post_type'		=> 'page',
 			'menu_order'	=> $this->get_int_value( $order, true ),
 			'parent'		=> $this->get_post_by_title( $parent, 'page' ),
@@ -1551,16 +1687,15 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );
-		$post_id = wp_insert_post( $post_data );
+		$result = wp_insert_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to insert post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
+		$post_id = $result;
 		foreach( $meta as $key => $value )
 		{
 			update_post_meta( $post_id, $key, $value );
@@ -1571,7 +1706,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Updates an existing page.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1580,13 +1715,17 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Page does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$post_data = array(
 			'ID'			=> $post->ID,
 			'post_content'	=> $this->get_string_value( $content, true ),
 			'post_name'		=> $this->get_string_value( $slug, true ),
-			'post_status'	=> $this->get_string_value( $status, true ),
+			'post_status'	=> $this->get_post_status( $status ),
 			'post_type'		=> 'page',
 			'menu_order'	=> $this->get_int_value( $order ),
 			'parent'		=> $this->get_post_by_title( $parent, 'page' ),
@@ -1597,16 +1736,15 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );
-		$post_id = wp_update_post( $post_data );
+		$result = wp_update_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
+		$post_id = $result;
 		foreach( $meta as $key => $value )
 		{
 			update_post_meta( $post_id, $key, $value );
@@ -1617,7 +1755,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Adds a new page if one does not exist, otherwise the page is updated.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1634,7 +1772,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Prepend content to the start of the page’s excerpt or content.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1643,7 +1781,11 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Page does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$post_data = array(
 			'ID'			=> $post->ID,
@@ -1652,13 +1794,11 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );
-		$post_id = wp_update_post( $post_data );
+		$result = wp_update_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -1667,7 +1807,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Append content to the start of the page’s excerpt or content.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1676,7 +1816,11 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Page does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$post_data = array(
 			'ID'			=> $post->ID,
@@ -1685,13 +1829,11 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );
-		$post_id = wp_update_post( $post_data );
+		$result = wp_update_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -1700,7 +1842,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Delete an existing page.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1709,12 +1851,17 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( !$post ) return false;
-		
-		$deleted_post = wp_delete_post( $post->ID, true );
-		if( $deleted_post === false )
+		if( !$post )
 		{
-			$this->model->last_error = 'Unable to delete page: '.$title;
+			$this->model->last_error = 'Page does not exist "'.$title.'". ';
+			return false;
+		}
+		
+		$result = wp_delete_post( $post->ID, true );
+		
+		if( $result === false )
+		{
+			$this->model->last_error = 'Unable to delete post "'.$title.'". ';
 			return false;
 		}
 		
@@ -1723,7 +1870,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Rename an existing page to new title.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1732,7 +1879,11 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Page does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$post_data = array(
 			'ID'			=> $post->ID,
@@ -1740,13 +1891,11 @@ class OrgHub_UploadModel
 		);
 		
 		$this->filter_post_data( $post_data );
-		$post_id = wp_update_post( $post_data );
+		$result = wp_update_post( $post_data, true );
 		
-		if( !is_numeric($post_id) || ($post_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($post_id) )
-				$this->model->last_error = $post_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -1755,7 +1904,8 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Search a page or all pages on a site for matches that will be replaced with
+	 * replacement text.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1768,7 +1918,11 @@ class OrgHub_UploadModel
 		if( !empty($title) )
 		{
 			$post = $this->get_post_by_title( $title, 'page' );
-			if( !$post ) return false;
+			if( !$post )
+			{
+				$this->model->last_error = 'Page does not exist "'.$title.'". ';
+				return false;
+			}
 			
 			$posts[] = $post;
 		}
@@ -1783,6 +1937,7 @@ class OrgHub_UploadModel
 			);
 		}
 		
+		$errors = array();
 		foreach( $posts as $post )
 		{
 			$post_data = array( 'ID' => $post->ID );
@@ -1803,13 +1958,19 @@ class OrgHub_UploadModel
 			}
 			
 			$this->filter_post_data( $post_data );
-			$post_id = wp_update_post( $post_data );
-		
-			if( !is_numeric($post_id) || ($post_id == 0) )
+			$result = wp_update_post( $post_data, true );
+
+			if( is_wp_error($result) )
 			{
-				//TODO: error.
+				$errors[] = 'Unable to update post "'.$title.'". '.$result->get_error_message();
 				continue;
 			}
+		}
+		
+		if( !empty($errors) )
+		{
+			$this->model->last_error = $this->format_errors_into_string( $errors );
+			return false;
 		}
 		
 		return true;
@@ -1817,7 +1978,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Add meta data to existing page.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1826,16 +1987,24 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Page does not exist "'.$title.'". ';
+			return false;
+		}
 		
-		add_post_meta( $post->ID, $name, $value, true );
+		if( !add_post_meta($post->ID, $name, $value, true) )
+		{
+			$this->model->last_error = 'Unable to add meta data "'.$name.'" for post "'.$title.'". ';
+			return false;
+		}
 		
 		return true;
 	}
 
 
 	/**
-	 *
+	 * Update meta data for an existing page.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1844,16 +2013,52 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Page does not exist "'.$title.'". ';
+			return false;
+		}
 		
-		update_post_meta( $post->ID, $name, $value, true );
+		if( !update_post_meta($post->ID, $name, $value, true) )
+		{
+			$this->model->last_error = 'Unable to update meta data "'.$name.'" for post "'.$title.'". ';
+			return false;
+		}
 		
 		return true;
 	}
 
 
 	/**
-	 *
+	 * Adds or updates an existing custom field / metadata for the page.  If the meta 
+	 * field does not exist, then it will be created.  If the meta field exists, it will 
+	 * be updated.
+	 * @param   array  $item  The data for the batch item.
+	 * @return  bool   True if the action was successful, otherwise false.
+	 */
+	private function replace_meta_page( &$item )
+	{
+		extract($item);
+		
+		$post = $this->get_post_by_title( $title, 'page' );
+		if( !$post )
+		{
+			$this->model->last_error = 'Page does not exist "'.$title.'". ';
+			return false;
+		}
+		
+		if( !add_post_meta($post->ID, $name, $value, true) && !update_post_meta($post->ID, $name, $value, true) )
+		{
+			$this->model->last_error = 'Unable to add or update meta data "'.$name.'" for post "'.$title.'". ';
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Delete meta data for an existing page.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1862,16 +2067,24 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Page does not exist "'.$title.'". ';
+			return false;
+		}
 		
-		delete_post_meta( $post->ID, $name );
+		if( !delete_post_meta($post->ID, $name) )
+		{
+			$this->model->last_error = 'Unable to delete meta data "'.$name.'" for post "'.$title.'". ';
+			return false;
+		}
 		
 		return true;
 	}
 	
 	
 	/**
-	 *
+	 * Copy meta data to a new name for an existing page.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -1880,19 +2093,23 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( !$post ) return false;
+		if( !$post )
+		{
+			$this->model->last_error = 'Page does not exist "'.$title.'". ';
+			return false;
+		}
 		
 		$value = get_post_meta( $post->ID, $name, false );
 		if( $value === array() )
 		{
-			//TODO: error.
+			$this->model->last_error = 'Unable to get original meta data "'.$name.'" for post "'.$title.'". ';
 			return false;
 		}
 		
 		$value = $value[0];
 		if( !add_post_meta($post->ID, $name, $value, true) && !update_post_meta($post->ID, $name, $value, true) )
 		{
-			//TODO: error.
+			$this->model->last_error = 'Unable to add or update meta data "'.$name.'" for post "'.$title.'". ';
 			return false;
 		}
 		
@@ -2023,7 +2240,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Adds a link if another link of the same name does not exist.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2032,23 +2249,25 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$link = $this->get_link_by_name( $name );
-		if( $link ) return false;
+		if( $link )
+		{
+			$this->model->last_error = 'Link already exist "'.$name.'". ';
+			return false;
+		}
 		
 		$link_data = array(
 			'link_url'			=> $this->get_string_value( $url, true ),
 			'link_name'			=> $name,
 			'link_target'		=> $this->get_string_value( $target, true ),
 			'link_description'	=> $this->get_string_value( $description, true ),
-			'link_category'		=> $this->get_link_category( $category, true ),
+			'link_category'		=> $this->get_link_category( $categories, true ),
 		);
 		
-		$link_id = wp_insert_link( $link_data, true );
+		$result = wp_insert_link( $link_data, true );
 		
-		if( !is_numeric($link_id) || ($link_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($link_id) )
-				$this->model->last_error = $link_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to insert link "'.$name.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -2057,7 +2276,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Updates an existing link that matches the link name.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2066,7 +2285,11 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$link = $this->get_link_by_name( $name );
-		if( !$link ) return false;
+		if( !$link )
+		{
+			$this->model->last_error = 'Link does not exist "'.$name.'". ';
+			return false;
+		}
 		
 		$link_data = array(
 			'link_id'			=> $link->link_id,
@@ -2074,16 +2297,14 @@ class OrgHub_UploadModel
 			'link_name'			=> $name,
 			'link_target'		=> $this->get_string_value( $target, true ),
 			'link_description'	=> $this->get_string_value( $description, true ),
-			'link_category'		=> $this->get_link_category( $category, true ),
+			'link_category'		=> $this->get_link_category( $categories, true ),
 		);
 		
-		$link_id = wp_insert_link( $link_data, true );
+		$result = wp_insert_link( $link_data, true );
 		
-		if( !is_numeric($link_id) || ($link_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($link_id) )
-				$this->model->last_error = $link_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to insert link "'.$name.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -2092,7 +2313,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Adds a new link if it doesn't exist or updates an existing link of the same name.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2109,7 +2330,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Delete a link that matches the link name.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2118,15 +2339,23 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$link = $this->get_link_by_name( $name );
-		if( !$link ) return false;
+		if( !$link )
+		{
+			$this->model->last_error = 'Link does not exist "'.$name.'". ';
+			return false;
+		}
 		
-		wp_delete_link( $link->link_id );
+		if( !wp_delete_link($link->link_id) )
+		{
+			$this->model->last_error = 'Unable to delete link "'.$name.'". ';
+			return false;
+		}
 		return true;
 	}
 	
 	
 	/**
-	 *
+	 * Renames a link's name to a new name.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2135,20 +2364,22 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$link = $this->get_link_by_name( $name );
-		if( !$link ) return false;
+		if( !$link )
+		{
+			$this->model->last_error = 'Unable to find orginal link "'.$name.'". ';
+			return false;
+		}
 		
 		$link_data = array(
 			'link_id'			=> $link->link_id,
 			'link_name'			=> $new_name,
 		);
 		
-		$link_id = wp_insert_link( $link_data, true );
+		$result = wp_insert_link( $link_data, true );
 		
-		if( !is_numeric($link_id) || ($link_id == 0) )
+		if( is_wp_error($result) )
 		{
-			if( is_wp_error($link_id) )
-				$this->model->last_error = $link_id->get_error_message();
-		
+			$this->model->last_error = 'Unable to insert link "'.$name.'". '.$result->get_error_message();
 			return false;
 		}
 		
@@ -2157,7 +2388,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Searches a link or all links for a match, then replaces that match with replacment text.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2170,7 +2401,11 @@ class OrgHub_UploadModel
 		if( !empty($name) )
 		{
 			$link = $this->get_link_by_name( $name );
-			if( !$link ) return false;
+			if( !$link )
+			{
+				$this->model->last_error = 'Link does not exist "'.$name.'". ';
+				return false;
+			}
 			
 			$links[] = $link;
 		}
@@ -2178,9 +2413,10 @@ class OrgHub_UploadModel
 		{
 			global $wpdb;
 			$links = $wpdb->get_results( "SELECT * FROM $wpdb->links" );
-			if( !$links ) return false;
+			if( !$links ) return true;
 		}
 		
+		$errors = array();
 		foreach( $links as $link )
 		{
 			$link_data = array( 'link_id' => $link->link_id );
@@ -2188,7 +2424,7 @@ class OrgHub_UploadModel
 			switch( $subject )
 			{
 				case 'url':
-					if( !preg_match_all("/$regex_key/", $link->link_url, $matches) ) continue;
+					if( !preg_match_all("/$regex/", $link->link_url, $matches) ) continue;
 					
 					$url = $link->link_url;
 					foreach( $matches as $match ) $url = str_replace( $match, $replace_text, $url );
@@ -2197,9 +2433,9 @@ class OrgHub_UploadModel
 					break;
 					
 				case 'description':
-					if( !preg_match_all("/$regex_key/", $link->link_description, $matches) ) continue;
+					if( !preg_match_all("/$regex/", $link->link_description, $matches) ) continue;
 					
-					$description = $post->link_description;
+					$description = $link->link_description;
 					foreach( $matches as $match ) $description = str_replace( $match, $replace_text, $description );
 					
 					$post_data['link_description'] = $description;
@@ -2209,15 +2445,21 @@ class OrgHub_UploadModel
 					continue; break;
 			}
 			
-			$link_id = wp_insert_link( $link_data );
+			$result = wp_insert_link( $link_data, true );
 		
-			if( !is_numeric($link_id) || ($link_id == 0) )
+			if( is_wp_error($result) )
 			{
-				if( is_wp_error($link_id) )
-					$this->model->last_error = $link_id->get_error_message();
+				$errors[] = 'Unable to insert link "'.$name.'". '.$result->get_error_message();
+				continue;
 			}
 		}
 		
+		if( !empty($errors) )
+		{
+			$this->model->last_error = $this->format_errors_into_string( $errors );
+			return false;
+		}
+				
 		return true;
 	}
 	
@@ -2308,7 +2550,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Add a new taxonomy terms to a site.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2318,18 +2560,26 @@ class OrgHub_UploadModel
 		
 		if( !taxonomy_exists($name) )
 		{
-			// TODO : error.
+			$this->model->last_error = 'The taxonomy "'.$name.'" does not exist. ';
 			return false;
 		}
 		
+		$taxname = $name;
 		$term_list = str_getcsv( $terms, ',', '"', "\\" );
 		
+		$errors = array();		
 		if( !is_taxonomy_hierarchical($taxname) )
 		{
 			foreach( $term_list as $term )
 			{
-				if( !term_exists( $term, $name ) )
-					$term_id = wp_insert_term( $term, $name );
+				if( term_exists($term, $taxname) ) continue;
+
+				$result = wp_insert_term( $term, $taxname );
+				if( is_wp_error($result) )
+				{
+					$errors[] = 'Unable to insert "'.$taxname.'" term "'.$term.'". '.$result->get_error_message();
+					continue;
+				}
 			}
 		}
 		else
@@ -2341,20 +2591,27 @@ class OrgHub_UploadModel
 				$parent = null;
 				for( $i = 0; $i < count($heirarchy); $i++ )
 				{
-					if( !term_exists($heirarchy[$i], $taxname, $parent) )
+					if( term_exists($heirarchy[$i], $taxname, $parent) ) continue;
+
+					$args = array();
+					if( $parent ) $args['parent'] = $parent;
+			
+					$result = wp_insert_term( $heirarchy[$i], $taxname, $args );
+					if( is_wp_error($result) )
 					{
-						$args = array();
-						if( $parent ) $args['parent'] = $parent;
-				
-						$result = wp_insert_term( $heirarchy[$i], $name, $args );
-						if( is_wp_error($result) )
-						{
-							//TODO: error: 'Unable to insert '.$taxonomy_name.'term: '.$heirarchy[$i];
-							break;
-						}
+						$errors[] = 'Unable to insert "'.$taxname.'" hierarchy terms "'.implode(' > ', $hierarchy).'". '.$result->get_error_message();
+						break;
 					}
+					
+					$parent = $result['term_id'];
 				}
 			}
+		}
+		
+		if( !empty($errors) )
+		{
+			$this->model->last_error = $this->format_errors_into_string( $errors );
+			return false;
 		}
 		
 		return true;
@@ -2362,7 +2619,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Delete taxonomy terms from a site.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2372,18 +2629,31 @@ class OrgHub_UploadModel
 		
 		if( !taxonomy_exists($name) )
 		{
-			// TODO : error.
+			$this->model->last_error = 'The taxonomy "'.$name.'" does not exist. ';
 			return false;
 		}
 		
+		$taxname = $name;
 		$term_list = str_getcsv( $terms, ',', '"', "\\" );
 		
+		$errors = array();
 		foreach( $term_list as $term )
 		{
-			if( $term_object = term_exists( $term, $name ) )
+			if( $term_object = term_exists($term, $taxname) )
 			{
-				wp_delete_term( $term_object['term_id'], $name );
+				$result = wp_delete_term( $term_object['term_id'], $taxname );
+				if( is_wp_error($result) )
+				{
+					$errors[] = 'Unable to delete "'.$taxname.'" term "'.$term.'". '.$result->get_error_message();
+					continue;
+				}
 			}
+		}
+		
+		if( !empty($errors) )
+		{
+			$this->model->last_error = $this->format_errors_into_string( $errors );
+			return false;
 		}
 		
 		return true;
@@ -2391,7 +2661,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Rename taxonomy terms for a site.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2401,13 +2671,15 @@ class OrgHub_UploadModel
 		
 		if( !taxonomy_exists($name) )
 		{
-			// TODO : error.
+			$this->model->last_error = 'The taxonomy "'.$name.'" does not exist. ';
 			return false;
 		}
 		
+		$taxname = $name;
 		$term_list = str_getcsv( $terms, ',', '"', "\\" );
 		$new_terms_list = str_getcsv( $new_terms, ',', '"', "\\" );
 		
+		$errors = array();
 		foreach( $term_list as $i => $term )
 		{
 			if( !isset($new_terms_list[$i]) ) continue;
@@ -2420,8 +2692,19 @@ class OrgHub_UploadModel
 					'slug' => sanitize_title( $new_term ),
 				);
 				
-				wp_update_term( $term_object['term_id'], $name, $tax_data );
+				$result = wp_update_term( $term_object['term_id'], $name, $tax_data );
+				if( is_wp_error($result) )
+				{
+					$errors[] = 'Unable to update "'.$taxname.'" term "'.$term.'". '.$result->get_error_message();
+					continue;
+				}
 			}
+		}
+		
+		if( !empty($errors) )
+		{
+			$this->model->last_error = $this->format_errors_into_string( $errors );
+			return false;
 		}
 		
 		return true;
@@ -2531,7 +2814,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Add a new site, if it does not already exist.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2578,7 +2861,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Update an existing site.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2622,7 +2905,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Mark an existing site as deleted.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2648,13 +2931,18 @@ class OrgHub_UploadModel
 			array( '%d' )
 		);
 		
-		if( $result ) return true;
-		return false;
+		if( !$result )
+		{
+			$this->model->last_error = 'Unable to update site "'.$site.'". '.$wpdb->last_error;
+			return false;
+		}
+		
+		return true;
 	}
 	
 	
 	/**
-	 *
+	 * Mark an existing site as archived.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2680,13 +2968,18 @@ class OrgHub_UploadModel
 			array( '%d' )
 		);
 		
-		if( $result ) return true;
-		return false;
+		if( !$result )
+		{
+			$this->model->last_error = 'Unable to update site "'.$site.'". '.$wpdb->last_error;
+			return false;
+		}
+		
+		return true;
 	}
 	
 	
 	/**
-	 * 
+	 * Search a site's option for match then replace match with replacement text.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2798,8 +3091,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, user, name, value
 				*/
-				$required_keys = array( 'name', 'value' );
-				$required_values = array( 'name' );
+				$required_keys = array( 'user', 'name', 'value' );
+				$required_values = array( 'user', 'name' );
 				break;
 			
 			case 'update-meta':
@@ -2809,8 +3102,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, user, name, value
 				*/
-				$required_keys = array( 'name', 'value' );
-				$required_values = array( 'name' );
+				$required_keys = array( 'user', 'name', 'value' );
+				$required_values = array( 'user', 'name' );
 				break;
 			
 			case 'replace-meta':
@@ -2820,8 +3113,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, user, name, value
 				*/
-				$required_keys = array( 'name', 'value' );
-				$required_values = array( 'name' );
+				$required_keys = array( 'user', 'name', 'value' );
+				$required_values = array( 'user', 'name' );
 				break;
 			
 			case 'delete-meta':
@@ -2831,8 +3124,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, user, name
 				*/
-				$required_keys = array( 'name' );
-				$required_values = array( 'name' );
+				$required_keys = array( 'user', 'name' );
+				$required_values = array( 'user', 'name' );
 				break;
 							
 			case 'copy-meta':
@@ -2842,8 +3135,8 @@ class OrgHub_UploadModel
 				all supported fields:
 					type, action, user, name, new-name
 				*/
-				$required_keys = array( 'name', 'new-name' );
-				$required_values = array( 'name', 'new-name' );
+				$required_keys = array( 'user', 'name', 'new-name' );
+				$required_values = array( 'user', 'name', 'new-name' );
 				break;
 							
 			default:
@@ -2880,7 +3173,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Add a new user if they don't already exist.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2891,7 +3184,7 @@ class OrgHub_UploadModel
 		if( !($user_id = $this->get_author_id($user, true, $password, $email)) )
 		{
 			if( !$this->model->last_error )
-				$this->model->last_error = 'Unable to create user account: '.$user;
+				$this->model->last_error = 'Unable to create user account: "'.$user.'". ';
 			return false;
 		}
 		
@@ -2917,7 +3210,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Update an existing user.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2927,7 +3220,7 @@ class OrgHub_UploadModel
 		
 		if( !($user_id = $this->get_author_id($user)) )
 		{
-			$this->model->last_error = 'Unable to find user account: '.$user;
+			$this->model->last_error = 'Unable to find user account: "'.$user.'". ';
 			return false;
 		}
 		
@@ -2953,7 +3246,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Add user if they don't exist or update the user if they do already exist.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -2963,7 +3256,7 @@ class OrgHub_UploadModel
 		
 		if( $user_id = $this->get_author_id($user, true, $password, $email) );
 		{
-			$this->model->last_error = 'Unable to find or create user account: '.$user;
+			$this->model->last_error = 'Unable to find or create user account: "'.$user.'". ';
 			return false;
 		}
 		
@@ -2989,31 +3282,21 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Delete an existing user.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
 	private function delete_user( &$item )
 	{
-// 		extract($item);
-// 		
-// 		if( !($user_id = $this->get_author_id($user)) )
-// 		{
-// 			return true;
-// 		}
-// 		
-// 		//TODO: check with alex.
-// 		wp_delete_user( $user_id, null );
-// 		
-// 		return true;
+ 		extract($item);
 		
-		$this->model->last_error = 'Delete user currently not functioning.';
+		$this->model->last_error = 'Delete user is not implemented.';
 		return false;
 	}
 
 
 	/**
-	 *
+	 * Add user data for an existing user.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3023,19 +3306,24 @@ class OrgHub_UploadModel
 		
 		if( !($user_id = $this->get_author_id($user)) )
 		{
-			$this->model->last_error = 'Unable to find user account: '.$user;
+			$this->model->last_error = 'Unable to find user account: "'.$user.'". ';
 			return false;
 		}
 		
 		$result = add_user_meta( $user_id, $name, $value, true );
 		
-		if( $result === false ) return false;
+		if( !$result )
+		{
+			$this->model->last_error = 'Unable to add user data "'.$name.'" for user "'.$user.'". ';
+			return false;
+		}
+		
 		return true;
 	}
 
 
 	/**
-	 *
+	 * Update user data for an existing user.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3045,7 +3333,7 @@ class OrgHub_UploadModel
 		
 		if( !($user_id = $this->get_author_id($user)) )
 		{
-			$this->model->last_error = 'Unable to find user account: '.$user;
+			$this->model->last_error = 'Unable to find user account: "'.$user.'". ';
 			return false;
 		}
 		
@@ -3056,14 +3344,20 @@ class OrgHub_UploadModel
 			return false;
 		}
 		
-		update_user_meta( $user_id, $name, $value );
+		$result = update_user_meta( $user_id, $name, $value );
+		
+		if( !$result )
+		{
+			$this->model->last_error = 'Unable to update user data "'.$name.'" for user "'.$user.'". ';
+			return false;
+		}
 		
 		return true;
 	}
 
 
 	/**
-	 *
+	 * Add or update user data for existing user.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3073,18 +3367,16 @@ class OrgHub_UploadModel
 		
 		if( !($user_id = $this->get_author_id($user)) )
 		{
-			$this->model->last_error = 'Unable to find user account: '.$user;
+			$this->model->last_error = 'Unable to find user account: "'.$user.'". ';
 			return false;
 		}
 		
 		$user_meta = get_user_meta( $user_id, $name, false );
-		if( count($user_meta) === 0 )
+		if( (count($user_meta) === 0 && !add_user_meta($user_id, $name, $value, true)) ||
+			(count($user_meta) > 0 && !update_user_meta($user_id, $name, $value)) )
 		{
-			add_user_meta( $user_id, $name, $value, true );
-		}
-		else
-		{
-			update_user_meta( $user_id, $name, $value );
+			$this->model->last_error = 'Unable to add or update user data "'.$name.'" for user "'.$user.'". ';
+			return false;
 		}
 		
 		return true;
@@ -3092,7 +3384,7 @@ class OrgHub_UploadModel
 
 
 	/**
-	 *
+	 * Delete user data for existing user.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3102,18 +3394,22 @@ class OrgHub_UploadModel
 		
 		if( !($user_id = $this->get_author_id($user)) )
 		{
-			$this->model->last_error = 'Unable to find user account: '.$user;
+			$this->model->last_error = 'Unable to find user account: "'.$user.'". ';
 			return false;
 		}
 		
-		delete_user_meta( $user_id, $name );
+		if( !delete_user_meta($user_id, $name) )
+		{
+			$this->model->last_error = 'Unable to delete user data "'.$name.'" for user "'.$user.'". ';
+			return false;
+		}
 		
 		return true;
 	}
 	
 	
 	/**
-	 *
+	 * Copy user data to a new name for an existing user.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3123,15 +3419,25 @@ class OrgHub_UploadModel
 		
 		if( !($user_id = $this->get_author_id($user)) )
 		{
-			$this->model->last_error = 'Unable to find user account: '.$user;
+			$this->model->last_error = 'Unable to find user account: "'.$user.'". ';
 			return false;
 		}
 		
 		$user_meta = get_user_meta( $user_id, $name, false );
-		if( count($user_meta) === 0 ) return false;
+		if( count($user_meta) === 0 )
+		{
+			$this->model->last_error = 'Unable to get original user data "'.$name.'" for user "'.$user.'". ';
+			return false;
+		}
 		
 		$user_meta = $user_meta[0];
-		update_user_meta( $user_id, $new_name, $user_meta );
+		$result = update_user_meta( $user_id, $new_name, $user_meta );
+		
+		if( !$result )
+		{
+			$this->model->last_error = 'Unable to update user data "'.$name.'" for user "'.$user.'". ';
+			return false;
+		}
 		
 		return true;
 	}
@@ -3257,7 +3563,7 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 *
+	 * Add a option key/value to a site.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3265,14 +3571,18 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$result = add_option( $name, $value );
+		if( !add_option($name, $value) )
+		{
+			$this->model->last_error = 'Unable to add option "'.$name.'" for site "'.$site.'". ';
+			return false;
+		}
 		
 		return $result;
 	}
 	
 	
 	/**
-	 *
+	 * Update an existing option value for a site.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3280,15 +3590,18 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		if( get_option( $name ) !== false )
-			update_option( $name, $value );
+		if( (get_option($name) !== false) && (!update_option($name, $value)) )
+		{
+			$this->model->last_error = 'Unable to update option "'.$name.'" for site "'.$site.'". ';
+			return false;
+		}
 		
 		return true;
 	}
 	
 	
 	/**
-	 *
+	 * Add a new option or update an existing option for a site.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3296,14 +3609,18 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		update_option( $name, $value );
+		if( !update_option($name, $value) )
+		{
+			$this->model->last_error = 'Unable to update option "'.$name.'" for site "'.$site.'". ';
+			return false;
+		}
 		
 		return true;
 	}
 	
 	
 	/**
-	 *
+	 * Delete an existing option for a site.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3311,14 +3628,18 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		delete_option( $name );
+		if( !delete_option($name) )
+		{
+			$this->model->last_error = 'Unable to delete option "'.$name.'" for site "'.$site.'". ';
+			return false;
+		}
 		
 		return true;
 	}
 	
 	
 	/**
-	 *
+	 * Copy an existing option to a new name for a site.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3327,14 +3648,25 @@ class OrgHub_UploadModel
 		extract($item);
 		
 		$value = get_option( $name );
-		update_option( $new_name, $value );
+		if( $value === false )
+		{
+			$this->model->last_error = 'Unable to retrieve original option "'.$name.'" for site "'.$site.'". ';
+			return false;
+		}
+		
+		if( !update_option($new_name, $value) )
+		{
+			$this->model->last_error = 'Unable to update option "'.$new_name.'" for site "'.$site.'". ';
+			return false;
+		}
 		
 		return true;
 	}	
 	
 	
 	/**
-	 *
+	 * Search an option's value or search all options for a match that will be replaced
+	 * with replacement text.
 	 * @param   array  $item  The data for the batch item.
 	 * @return  bool   True if the action was successful, otherwise false.
 	 */
@@ -3355,15 +3687,23 @@ class OrgHub_UploadModel
 			$options = wp_load_alloptions();
 		}
 		
-// 		apl_print($options);
-		
 		foreach( $options as $key => $value )
 		{
 			if( !preg_match_all("/$regex/", $value, $matches) ) continue;
 			
 			foreach( $matches as $match ) $value = str_replace( $match, $replace_text, $value );
 			
-			update_option( $key, $value );
+			if( !update_option($key, $value) )
+			{
+				$errors[] = 'Unable to update option "'.$key.'" for site "'.$site.'". ';
+				continue;
+			}
+		}
+		
+		if( !empty($errors) )
+		{
+			$this->model->last_error = $this->format_errors_into_string( $errors );
+			return false;
 		}
 		
 		return true;
@@ -3375,7 +3715,13 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 * 
+	 * Gets the author's id.  If the author does not exist, then they will be created if
+	 * $create is set to true.
+	 * @param   string    $author    The author's username.
+	 * @param   bool      $create    True if author should be created if they don't exist.
+	 * @param   string    $password  Password to use if user is created.
+	 * @param   string    $email     Email to use if user is created.
+	 * @return  int|null  The author's id if they exist, otherwise null.
 	 */
 	protected function get_author_id( $author, $create = false, $password = false, $email = false )
 	{
@@ -3390,7 +3736,11 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 * 
+	 * Parses the a date string and returns a SQL formatted string.
+	 * @param   string  $date           The date string to parse.
+	 * @param   bool    $supports_null  True if null should be returned on failure or 
+	 *                                  date string is empty.
+	 * @return  string  The SQL formatted datetime string.
 	 */
 	protected function parse_date( $date, $supports_null = false )
 	{
@@ -3405,7 +3755,9 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 * 
+	 * Gets the post type.
+	 * @param   string  $post_type  The post type.
+	 * @return  string  The post type on non-empty strings, otherwise 'post'.
 	 */
 	protected function get_post_type( $post_type )
 	{
@@ -3415,7 +3767,9 @@ class OrgHub_UploadModel
 
 	
 	/**
-	 * 
+	 * Gets the post id of a post that will be or currently is a parent.
+	 * @param   string|int  The parent title or post id.
+	 * @return  The parent post's id.
 	 */
 	protected function get_post_parent( $parent )
 	{
@@ -3430,7 +3784,14 @@ class OrgHub_UploadModel
 	
 	
 	/**
-	 * 
+	 * Gets a list of taxonomies with matching terms or ids (for heirarchical taxonomies).
+	 * Creates any terms that do not currently exist.
+	 * @param   array       $taxonomies     An array of taxonomies with terms in 
+	 *                                      comma-seperated string form.
+	 * @param   bool        $supports_null  True if null should be returned on failure or 
+	 *                                      taxonomy list is empty.
+	 * @return  array|null  An array of taxonomies with their terms or ids on success, 
+	 *                      otherwise null or empty array (based on supports_null).
 	 */
 	protected function get_taxonomies( $taxonomies, $supports_null = false )
 	{
@@ -3499,6 +3860,12 @@ class OrgHub_UploadModel
 	}
 	
 	
+	/**
+	 * Gets a post with the matching title.
+	 * @param   string       $title      The post title.
+	 * @param   string       $post_type  The post type.
+	 * @return  object|null  The post object if found, otherwise null.
+	 */
 	protected function get_post_by_title( $title, $post_type = 'post' )
 	{
 		if( empty($title) ) return null;
@@ -3508,6 +3875,11 @@ class OrgHub_UploadModel
 	}
 	
 	
+	/**
+	 * Gets a link with the matching name.
+	 * @param   string       $name  The name of the link.
+	 * @return  object|null  The link object if found, otherwise null.
+	 */
 	protected function get_link_by_name( $name )
 	{
 		if( empty($name) ) return null;
@@ -3522,6 +3894,11 @@ class OrgHub_UploadModel
 	}
 	
 	
+	/**
+	 * Gets a list of all link categories' ids and creates any categories that don't exist.
+	 * @param   array       $category  A comma-seperated array of link categories.
+	 * @return  array|null  An array of link category ids on success, otherwise null.
+	 */
 	protected function get_link_category( $category )
 	{
 		if( empty($category) ) return null;
@@ -3529,7 +3906,7 @@ class OrgHub_UploadModel
 		$link_categories = array();
 		$term_list = str_getcsv( $category, ",", '"', "\\" );
 
-		foreach( $terms_list as &$term )
+		foreach( $term_list as &$term )
 		{
 			$term = trim( $term );
 			
@@ -3546,7 +3923,12 @@ class OrgHub_UploadModel
 	}
 	
 	
-	
+	/**
+	 * Switches to a blog/site for network admin processing.
+	 * @param   array  $item           The item being processed.
+	 * @param   bool   $site_required  True if site is a required field for the item.
+	 * @return  bool   True if the switch occured without errors, otherwise false.
+	 */
 	protected function switch_to_blog( &$item, $site_required = true )
 	{
 		if( !is_network_admin() ) return true;
@@ -3561,6 +3943,9 @@ class OrgHub_UploadModel
 	}
 	
 	
+	/**
+	 * Restores to the current blog for network admin processing.
+	 */
 	protected function restore_blog()
 	{
 		if( !is_network_admin() ) return true;
@@ -3570,6 +3955,13 @@ class OrgHub_UploadModel
 	}
 	
 	
+	/**
+	 * Get the string value of the value.
+	 * @param   mixed        $value          The value to evaluate.
+	 * @param   bool         $supports_null  True if null can be returned if not an string 
+	 *                                       or empty string.
+	 * @return  string|null  The evaluated string value.
+	 */
 	protected function get_string_value( $value, $supports_null = false )
 	{
 		if( $value === '' && $supports_null ) return null;
@@ -3577,6 +3969,12 @@ class OrgHub_UploadModel
 	}
 	
 	
+	/**
+	 * Get the int value of the value.
+	 * @param   mixed     $value          The value to evaluate.
+	 * @param   bool      $supports_null  True if null can be returned if not an int.
+	 * @return  int|null  The evaluated int value.
+	 */
 	protected function get_int_value( $value, $supports_null = false )
 	{
 		if( (!is_numeric($value) || $value === '') && ($supports_null) ) return null;
@@ -3586,79 +3984,86 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Inserts a string into another string at the offset.
-	 *
-	 * @param string $insert
-	 * @param string $subject
-	 * @param int $offset
-	 * @param string
+	 * @param   string  $insert   The string to insert.
+	 * @param   string  $subject  The original string to insert into.
+	 * @param   int     $offset   The offset of the insert.
+	 * @return  string  The altered string with the inserted string.
 	 */
 	public function str_insert( $insert, $subject, $offset )
 	{
-		return substr($subject, 0, $offset).$insert.substr($subject, $offset);
+		return substr( $subject, 0, $offset ) . $insert . substr( $subject, $offset );
 	}
 
 
 
 	/**
-	 * Determines if the first characters of the content is one of the search tags.
-	 *
-	 * @param string $content
-	 * @param array $search_terms
-	 * @return string|null
+	 * Find the first start tag, if one is found that matches one of the search tags.
+	 * @param   string       $content      The post content.
+	 * @param   array        $search_tags  The html tags to search for at the start of content.
+	 * @return  string|null  The start tag if found, otherwise null.
 	 */
     protected function find_start_tag( $content, $search_tags )
     {
- 		$found_term = NULL;
+ 		$found_tag = null;
 		
 		$content = str_replace( array("\n", "\r"), '', $content );
-		foreach( $search_tags as $term )
+		foreach( $search_tags as $tag )
 		{
-			$tag = '<'.$term.'>';
-			if( substr($content, 0, strlen($tag)) == $tag )
+			$search_tag = "<$tag>";
+			$first_tag = substr( $content, 0, strlen($search_tag) );
+			if( $first_tag === $search_tag )
 			{
-				$found_term = $term;
+				$found_tag = $tag;
 				break;
 			}
-
-			$tag = '<'.$term.' ';
-			if( substr($content, 0, strlen($tag)) == $tag )
+			
+			$search_tag = "<$tag ";
+			$first_tag = substr( $content, 0, strlen($search_tag) );
+			if( $first_tag === $search_tag )
 			{
-				$found_term = $term;
+				$found_tag = $tag;
 				break;
 			}
 		}
 		
-		return $found_term;
+		return $found_tag;
 	}
 
 
 
 	/**
-	 * Determines if the last characters of the content is one of the search tags.
-	 *
-	 * @param string $content
-	 * @param array $search_terms
-	 * @return string|null
+	 * Find the last end tag, if one is found that matches one of the search tags.
+	 * @param   string       $content      The post content.
+	 * @param   array        $search_tags  The html tags to search for at the end of content.
+	 * @return  string|null  The end tag if found, otherwise null.
 	 */
-    protected function find_end_tag($content, $search_tags)
+    protected function find_end_tag( $content, $search_tags )
     {
-		$found_term = NULL;
+		$found_tag = null;
 		
-		$content = str_replace( array("\n", "\r"), '', $content );
-		foreach( $search_tags as $term )
+		$content = trim( str_replace(array("\n", "\r"), '', $content) );
+		
+		foreach( $search_tags as $tag )
 		{
-			$tag = '</'.$term.'>';
-			if( substr($content, strlen($content)-strlen($tag)) === $tag )
+			$search_tag = "</$tag>";
+			$last_tag = substr( $content, strlen($content) - strlen($search_tag) );
+			if( $last_tag === $search_tag )
 			{
-				$found_term = $term;
+				$found_tag = $tag;
 				break;
 			}
 		}
 		
-		return $found_term;
+		return $found_tag;
     }
     
     
+	/**
+	 * Prepends content to the original content.
+	 * @param   string  $post_content     The original content.
+	 * @param   string  $prepend_content  The prepend content.
+	 * @return  string  The content with prepended content.
+	 */
     public function prepend_to_content( $post_content, $prepend_content )
     {
     	if( empty($post_content) ) return $post_content;
@@ -3679,7 +4084,12 @@ class OrgHub_UploadModel
     }
     
     
-    
+    /**
+	 * Appends content to the original content.
+	 * @param   string  $post_content    The original content.
+	 * @param   string  $append_content  The append content.
+	 * @return  string  The content with appended content.
+	 */
     public function append_to_content( $post_content, $append_content )
     {
     	if( empty($post_content) ) return $post_content;
@@ -3700,9 +4110,62 @@ class OrgHub_UploadModel
 	}
 	
 	
+	/**
+	 * Filters out any null values from the post data array.
+	 * @param   array  $post_data  The post data array.
+	 */
 	protected function filter_post_data( &$post_data )
 	{
 		$post_data = array_filter( $post_data );
+	}
+	
+	
+	/**
+	 * Gets the post status.
+	 * @param   string  $status   The post's status.
+	 * @param   string  $default  The default value if status is empty.
+	 * @return  string  The post status value.
+	 */
+	protected function get_post_status( $status, $default = 'publish' )
+	{
+		if( empty($status) ) return $default;
+		return $this->get_string_value( $status, false );
+	}
+	
+	
+	/**
+	 * Gets the items description based on action and type values.
+	 * @param   array   $item  The item to process to create a description.
+	 * @return  string  The item's description.
+	 */
+	protected function get_item_description( $id, &$item )
+	{
+		$action = ( isset($item['action']) ? $item['action'] : '[no action]' );
+		$type = ( isset($item['type']) ? $item['type'] : '[no type]' );
+		
+		return 'Item #'.$id.': '.$action.' '.$type;
+	}
+
+	
+	/**
+	 * Formats an array of errors into a single string.
+	 * @param   array   $errors  An array of errors.
+	 * @return  string  The complete error string comprised of all the errors.
+	 */
+	protected function format_errors_into_string( &$errors )
+	{
+		if( $errors === null ) return null;
+		if( !is_array($errors) ) return print_r($errors, true);
+		
+		if( count($errors) === 1 ) return $errors[0];
+		
+		$error = count($errors).' errors occured. ';
+		foreach( $errors as $err )
+		{
+			$error .= '<br/>'.$err;
+		}
+		
+		return $error;
 	}
 	
 	
