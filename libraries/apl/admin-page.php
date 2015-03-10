@@ -836,7 +836,7 @@ abstract class APL_AdminPage
 	 * @param   string  $error  The error message.
 	 * @param   bool    $save   True to save the error data to the session.
 	 */
-	protected function set_error( $error, $save = false )
+	public function set_error( $error, $save = false )
 	{
 		if( !is_array($error) ) $error = array( $error );
 		$this->errors = $error;
@@ -849,7 +849,7 @@ abstract class APL_AdminPage
 	 * @param   string  $error  The error message.
 	 * @param   bool    $save    True to save the error data to the session.
 	 */
-	protected function add_error( $error, $save = false )
+	public function add_error( $error, $save = false )
 	{
 		$this->errors[] = $error;
 		if( $save ) $this->save_error();
@@ -873,7 +873,7 @@ abstract class APL_AdminPage
 	/**
 	 * Clears any errors stored in the session.
 	 */
-	protected function clear_error()
+	public function clear_error()
 	{
 		$this->errors = array();
 		unset( $_SESSION['apl-error'] );
@@ -884,7 +884,7 @@ abstract class APL_AdminPage
 	 * Gets the apl-error session data, if it exists and matches the current page.
 	 * @return  array  The error messages for the current page.
 	 */
-	protected function get_error()
+	public function get_error()
 	{
 		if( !isset($_SESSION['apl-error']) ) return array();
 		
@@ -924,7 +924,7 @@ abstract class APL_AdminPage
 	 * @param   string  $notice  The notice message.
 	 * @param   bool    $save    True to save the notice data to the session.
 	 */
-	protected function set_notice( $notice, $save = false )
+	public function set_notice( $notice, $save = false )
 	{
 		if( !is_array($notice) ) $notice = array( $notice );
 		$this->notices = $notice;
@@ -937,7 +937,7 @@ abstract class APL_AdminPage
 	 * @param   string  $notice  The notice message.
 	 * @param   bool    $save    True to save the notice data to the session.
 	 */
-	protected function add_notice( $notice, $save = false )
+	public function add_notice( $notice, $save = false )
 	{
 		$this->notices[] = $notice;
 		if( $save ) $this->save_notice();
@@ -961,7 +961,7 @@ abstract class APL_AdminPage
 	/**
 	 * Clears any notices stored in the session.
 	 */
-	protected function clear_notice()
+	public function clear_notice()
 	{
 		$this->notices = array();
 		unset( $_SESSION['apl-notice'] );
@@ -972,7 +972,7 @@ abstract class APL_AdminPage
 	 * Gets the apl-notice session data, if it exists and matches the current page.
 	 * @return  array  The notice messages for the current page.
 	 */
-	protected function get_notice()
+	public function get_notice()
 	{
 		if( !isset($_SESSION['apl-notice']) ) return array();
 		
