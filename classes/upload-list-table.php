@@ -130,6 +130,7 @@ class OrgHub_UploadListTable extends WP_List_Table
 	{
 		$actions = array(
 			'remove-items' => 'Remove Items',
+			'process-items' => 'Process Items',
 		);
   		return $actions;
 	}
@@ -151,6 +152,16 @@ class OrgHub_UploadListTable extends WP_List_Table
 					$this->model->upload->delete_item( $item_id );
 				break;
 			
+			case 'process-items':
+				foreach( $items as $item_id )
+				{
+					$result = $this->model->upload->process_item( $item_id );
+					if( !$result )
+						$this->parent->add_error( $this->model->last_error );
+				}
+				$this->parent->add_notice( 'Processed '.count($items).' items.' );
+				break;
+				
 			default:
 				return false;
 				break;

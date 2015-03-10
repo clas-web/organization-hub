@@ -124,14 +124,18 @@ class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 				}
 				
 				$result = $this->model->upload->process_item( $_GET['id'] );
+				$this->set_notice( 'Processed 1 item.' );
 				if( !$result )
 					$this->set_error( $this->model->last_error );
-				else
-					$this->set_notice( 'Successfully processed item: '.$_GET['id'] );
 				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 				
-			case 'process-items':
+			case 'process-all-items':
+				$result = $this->model->upload->process_items();
+				$this->set_notice( 'Processed all items.' );
+				if( !$result )
+					$this->set_error( $this->model->last_error );
+				$this->handler->force_redirect_url = $this->get_page_url();
 				break;
 		}
 	}
@@ -144,10 +148,14 @@ class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 	{
 		$this->list_table->prepare_items( $this->orderby );
 
+		$this->form_start_get( 'process-all-items', null, 'process-all-items' );
+			?><button>Process All Items</button><?php
+		$this->form_end();
+		
 		$this->form_start_get( 'clear', null, 'clear' );
 			?><button>Clear Items</button><?php
 		$this->form_end();
-		
+
 		$this->form_start( 'upload-table' );
 			$this->list_table->display();
 		$this->form_end();
