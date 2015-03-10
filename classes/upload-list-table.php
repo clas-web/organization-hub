@@ -107,7 +107,7 @@ class OrgHub_UploadListTable extends WP_List_Table
 	public function get_sortable_columns()
 	{
 		return array(
-			'timestamp' => array( 'timestamp', false ),
+			'timestamp' => array( 'timestamp', true ),
 		);
 	}
 	

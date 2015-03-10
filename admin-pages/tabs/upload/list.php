@@ -60,7 +60,7 @@ class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 	protected function setup_filters()
 	{
 		$this->orderby = ( !empty($_GET['orderby']) ? $_GET['orderby'] : 'timestamp' );
-		$order = ( !empty($_GET['order']) ? $_GET['order'] : 'desc' );
+		$order = ( !empty($_GET['order']) ? $_GET['order'] : 'asc' );
 		
 		switch( $order )
 		{
@@ -71,12 +71,12 @@ class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 		switch( $this->orderby )
 		{
 			case 'timestamp':
-				if( !$order ) $order = 'desc';
+				if( !$order ) $order = 'asc';
 				break;
 
 			default:
 				$this->orderby = 'timestamp';
-				if( !$order ) $order = 'desc';
+				if( !$order ) $order = 'asc';
 				break;
 		}
 		
