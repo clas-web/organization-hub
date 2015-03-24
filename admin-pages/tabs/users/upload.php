@@ -60,11 +60,11 @@ class OrgHub_UsersUploadTabAdminPage extends APL_TabAdminPage
 		require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/libraries/csv-handler/csv-handler.php' );
 
 		$rows = array();
-		$results = CsvHandler::import( $_FILES['upload']['tmp_name'], $rows, false );
+		$results = PHPUtil_CsvHandler::import( $_FILES['upload']['tmp_name'], $rows, false );
 		
 		if( $results === false )
 		{
-			$this->set_error( CsvHandler::$last_error );
+			$this->set_error( PHPUtil_CsvHandler::$last_error );
             return;
 		}
 		

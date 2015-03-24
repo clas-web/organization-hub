@@ -717,7 +717,7 @@ class OrgHub_SitesModel
 			);
 		}
 		
-		CsvHandler::export( 'sites', $headers, $users );
+		PHPUtil_CsvHandler::export( 'sites', $headers, $users );
 		exit;
 	}	
 	

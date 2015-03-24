@@ -57,22 +57,39 @@ class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
 	 */
 	public function upload_file()
 	{
+		// check for upload file.
 		if( !isset($_FILES) || !isset($_FILES['upload']) )
         {
         	$this->set_error( 'No uploaded file.' );
             return;
         }
-		
-		require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/libraries/csv-handler/csv-handler.php' );
+        
+		// check for file upload errors.
+		if( $_FILES['upload']['error'] > 0 )
+		{
+			$this->set_error( 'Error uploading file: "'.$_FILES['upload']['name'].'".  Error code "'.$_FILES['csv-file']['error'].'".' );
+			return;
+		}
 
+		// check that uploaded file type is supported.
+		if( $_FILES['upload']['type'] !== 'text/csv' )
+		{
+			$this->set_error( 'Error uploading file: "'.$_FILES['upload']['name'].'".  Unsupported filetype: "'.$_FILES['csv-file']['type'].'".' );
+			return;
+		}
+
+		require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/libraries/csv-handler/csv-handler.php' );
+		
+		// parse the CSV files.
 		$rows = array();
-		$results = CsvHandler::import( $_FILES['upload']['tmp_name'], $rows, false );
+		$results = PHPUtil_CsvHandler::import( $_FILES['upload']['tmp_name'], $rows, false );
 		if( $results === false )
 		{
-			$this->set_error( CsvHandler::$last_error );
+			$this->set_error( PHPUtil_CsvHandler::$last_error );
             return;
 		}
 		
+		// process each row of the CSV file.
 		$processed_rows = 0;
 		$count = 1;
 		$errors = '';
@@ -89,9 +106,7 @@ class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
 			$count++;
 		}
 		
-		$results = count($rows) . ' rows found in file.<br/>';
-		$results .= $processed_rows . ' rows added successfully.<br/>';
-
+		// store upload results to display to users.
 		$this->add_notice( 'Upload file: "'.$_FILES['upload']['name'].'".' );
 		$this->add_notice( count($rows) . ' rows found in file.' );
 		$this->add_notice( $processed_rows . ' rows added or updated successfully.' );
@@ -103,7 +118,6 @@ class OrgHub_UploadUploadTabAdminPage extends APL_TabAdminPage
 	 */
 	public function display()
 	{
-		$this->get_page_url();
 		$this->form_start( 'upload', array('enctype' => 'multipart/form-data'), 'upload', null );
 		?>
 		

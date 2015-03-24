@@ -1,6 +1,6 @@
 <?php
 /**
- * CsvHandler
+ * PHPUtil_CsvHandler
  * 
  * A general purpose CSV Handler for importing and exporting.
  * 
@@ -8,8 +8,8 @@
  * @author     Crystal Barton <cbarto11@uncc.edu>
  */
 
-if( !class_exists('CsvHandler') ):
-class CsvHandler
+if( !class_exists('PHPUtil_CsvHandler') ):
+class PHPUtil_CsvHandler
 {
 	public static $length = 99999;		// The maximum length of a line in CSV file.
 	public static $delimiter = ',';		// The field delimiter character.
@@ -140,6 +140,6 @@ class CsvHandler
 		exit;
     }
 
-} // if( !class_exists('CsvHandler') ):
-endif; // class CsvHandler
+} // if( !class_exists('PHPUtil_CsvHandler') ):
+endif; // class PHPUtil_CsvHandler
 
