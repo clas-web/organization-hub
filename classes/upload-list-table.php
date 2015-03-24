@@ -56,11 +56,9 @@ class OrgHub_UploadListTable extends WP_List_Table
 		$this->_column_headers = array( $columns, $hidden, $sortable );
 	}
 	
+	
 	/**
 	 * Prepare the table's items.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   bool    $only_errors  True if filter out OrgHub users with errors.
 	 * @param   string  $orderby      The column to orderby.
 	 */
 	public function prepare_items( $orderby = null )
