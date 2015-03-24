@@ -71,6 +71,8 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				break;
 			case 'reset-profile-site-id':
 				$this->model->user->set_user_column( $user_id, 'profile_blog_id', null );
+				$this->model->user->set_user_column( $user_id, 'profile_blog_error', null );
+				$this->model->user->set_user_column( $user_id, 'profile_blog_warning', null );
 				break;
 			case 'create-connections-post':
 				$this->model->user->create_connections_post( $user_id, $_REQUEST['site'], true );
@@ -83,6 +85,8 @@ class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 				break;
 			case 'reset-connections-post-id':
 				$this->model->user->set_connections_column( $user_id, $_REQUEST['site'], 'post_id', null );
+				$this->model->user->set_connections_column( $user_id, $_REQUEST['site'], 'connections_error', null );
+				$this->model->user->set_connections_column( $user_id, $_REQUEST['site'], 'connections_warning', null );
 				break;
 			case 'clear-username-error':
 				$this->model->user->set_user_column( $user_id, 'wp_user_error', null );
