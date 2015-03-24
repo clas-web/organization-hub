@@ -34,7 +34,14 @@ endif;
 if( !function_exists('apl_name_e') ):
 function apl_name_e()
 {
-	echo apl_name( func_get_args() );
+	$args = func_get_args();
+	if( count($args) > 0 )
+	{
+		if( is_array($args[0]) )
+			echo call_user_func_array( 'apl_name', $args[0] );
+		else
+			echo call_user_func_array( 'apl_name', $args );
+	}
 }
 endif;
 
@@ -49,10 +56,8 @@ endif;
 if( !function_exists('apl_name') ):
 function apl_name()
 {
-	$args = func_get_args();
-	if( count($args) == 1 && is_array($args[0]) ) $args = $args[0];
-	
 	$name = '';
+	$args = func_get_args();
 	
 	if( count($args) > 0 )
 	{
@@ -70,6 +75,71 @@ function apl_name()
 	}
 
 	return $name;
+}
+endif;
+
+
+/**
+ * Constructs the name of an input field.
+ * @param   array|{args}  The keys of the input name.  For example:
+ *                          apl_name( 'a', 'b', 'c' ) will return "a[b][c]"
+ *                          apl_name( array( 'a', 'b', 'c' ) ) will return "a[b][c]"
+ * @return  string		The constructed input name. 
+ */
+if( !function_exists('apl_setting_e') ):
+function apl_setting_e()
+{
+	$args = func_get_args();
+	if( count($args) > 0 )
+	{
+		if( is_array($args[0]) )
+			echo call_user_func_array( 'apl_setting', $args[0] );
+		else
+			echo call_user_func_array( 'apl_setting', $args );
+	}
+}
+endif;
+
+
+
+if( !function_exists('apl_setting') ):
+function apl_setting()
+{
+	$value = '';
+	
+	$name = '';
+	$args = func_get_args();
+	
+	if( count($args) > 0 )
+	{
+		$option = $args[0];
+	}
+
+	if( is_network_admin() )
+	{
+		$settings = get_site_option( $option, array() );
+	}
+	else
+	{
+		$settings = get_option( $option, array() );
+	}
+	
+	for( $i = 1; $i < count($args); $i++ )
+	{
+		if( !array_key_exists($args[$i], $settings) ) break;
+		
+		$settings = $settings[$args[$i]];
+		
+		if( count($args) == $i + 1 )
+		{
+			$value = $settings;
+			break;
+		}
+		
+		if( !is_array($settings) ) break;
+	}
+	
+	return $value;
 }
 endif;
 

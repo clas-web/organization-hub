@@ -398,18 +398,19 @@ abstract class APL_AdminPage
 	 * Registers the settings key for the Settings API. The settings key is associated
 	 * with an option key.  A filter is added for the option key, associated with
 	 * process_settings function, which should be overwritten by child classes.
-	 * @param  string  $key  The key for the data in the $_POST array, as well as the key
-	 *                       for the option in the options table.
+	 * @param  string  $option  The key for the data in the $_POST array, as well as the 
+	 *                          key for the option in the options table.
+	 * @param  bool    $merge   
 	 */
-	public function register_setting( $key )
+	public function register_setting( $option, $merge = true )
 	{
 		if( !$this->use_custom_settings )
 		{
-			register_setting( $this->get_name(), $key );
+			register_setting( $this->get_name(), $option );
 		}
-
-		add_filter( 'sanitize_option_'.$key, array($this, 'process_settings'), 10, 2 );
-		$this->settings[] = $key;
+	
+		add_filter( 'sanitize_option_'.$option, array($this, 'process_settings'), 10, 2 );
+		$this->settings[] = array( 'option' => $option, 'merge' => $merge );
 	}
 	
 	
@@ -431,8 +432,10 @@ abstract class APL_AdminPage
 	 * @param  string  $title     The title to display for the the section.
 	 * @param  string  $callback  The function to call when displaying the section.
 	 */
-	public function add_section( $name, $title, $callback )
+	public function add_section( $name, $title, $callback = null )
 	{
+		if( $callback === null ) $callback = 'no_echo';
+		
 		add_settings_section(
 			$name, $title, array( $this, $callback ), $this->get_name().':'.$name
 		);
@@ -447,12 +450,21 @@ abstract class APL_AdminPage
 	 * @param  string  $callback  The function to call when displaying the section.
 	 * @param  array   $args      The arguments to pass to the callback function.
 	 */
-	public function add_field( $section, $name, $title, $callback, $args = array() )
+	public function add_field( $section, $name, $title, $callback = null, $args = array() )
 	{
+		if( $callback === null ) $callback = 'no_echo';
+		
 		add_settings_field( 
 			$name, $title, array( $this, $callback ), $this->get_name().':'.$section, $section, $args
 		);
 	}
+	
+	
+	/**
+	 * 
+	 */
+	public function no_echo() { }
+	
 	
 	
 	/**
@@ -475,15 +487,21 @@ abstract class APL_AdminPage
 			{
 				foreach( $this->settings as $setting )
 				{
-					if( !isset($_POST[$setting]) ) continue;
+					$option = $setting['key'];
+					
+					if( !isset($_POST[$option]) ) continue;
+					$settings = $_POST[$option];
+					
+					if( $setting['merge'] === true )
+						$settings = $this->merge_settings( $settings, $option );
 					
 					if( is_network_admin() )
 					{
-						update_site_option( $setting, $_POST[$setting] );
+						update_site_option( $option, $settings );
 					}
 					else
 					{
-						update_option( $setting, $_POST[$setting] );
+						update_option( $option, $settings );
 					}
 				}
 			}
@@ -498,8 +516,18 @@ abstract class APL_AdminPage
 	 */
 	public function display_page()
 	{
+		$menu_name = $this->menu;
+		if( $this->menu instanceof APL_AdminMenu ) $menu_name = $this->menu->name;
+		
+		$remove = array( '.php' );
+		$menu_name = str_replace( $remove, '', $menu_name );
+		
+		$dashes = array( '?', '=' );
+		$menu_name = str_replace( $dashes, '-', $menu_name );
+		
+		$menu_name = sanitize_title($menu_name);
 		?>
-		<div class="wrap">
+		<div class="wrap <?php echo $menu_name; ?> <?php echo $this->name; ?> <?php echo $this->get_name(); ?>">
 	 
 			<div id="icon-themes" class="icon32"></div>
 			
@@ -559,6 +587,37 @@ abstract class APL_AdminPage
 	 */
 	public function process_settings( $settings, $option )
 	{
+		foreach( $this->settings as $setting )
+		{
+			if( !$setting['option'] === $option ) continue;
+			if( $setting['merge'] !== true ) break;
+			
+			$settings = $this->merge_settings( $settings, $option );
+		}
+		
+		return $settings;
+	}
+	
+	
+	/**
+	 * Merges the settings of an option with the existing settings in the database.
+	 * @param   array   $settings  The new settings for an option.
+	 * @param   string  $option    The option name.
+	 * @return  array   The merged settings.
+	 */
+	public function merge_settings( $settings, $option )
+	{
+		if( is_network_admin() )
+		{
+			$old_settings = get_site_option( $option, array() );
+			$settings = array_merge( $old_settings, $settings );
+		}
+		else
+		{
+			$old_settings = get_option( $option, array() );
+			$settings = array_merge( $old_settings, $settings );
+		}
+		
 		return $settings;
 	}
 
@@ -620,7 +679,7 @@ abstract class APL_AdminPage
 	 * Displays the start of form when using the Settings API.
 	 * @param  array|null  $attributes  Additional attributes to add to the start form tag.
 	 */
-	public function form_start_settings_api( $attributes = null )
+	public function form_start_settings_api( $attributes = array() )
 	{
 		if( $this->use_custom_settings )
 		{
