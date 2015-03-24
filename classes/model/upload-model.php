@@ -3793,7 +3793,7 @@ class OrgHub_UploadModel
 	 * @return  array|null  An array of taxonomies with their terms or ids on success, 
 	 *                      otherwise null or empty array (based on supports_null).
 	 */
-	protected function get_taxonomies( $taxonomies, $supports_null = false )
+	public function get_taxonomies( $taxonomies, $supports_null = false )
 	{
 		if( $taxonomies === '' && $supports_null ) return null;
 		
@@ -3808,7 +3808,10 @@ class OrgHub_UploadModel
 			}
 			
 			$new_taxonomies[$taxname] = array();
-			$term_list = str_getcsv( $terms, ",", '"', "\\" );
+			
+			if( is_array($terms) ) $term_list = $terms;
+			elseif( is_string($terms) ) $term_list = str_getcsv( $terms, ",", '"', "\\" );
+			else $term_list = array();
 			
 			if( !is_taxonomy_hierarchical($taxname) )
 			{

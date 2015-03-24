@@ -1658,40 +1658,46 @@ class OrgHub_UsersModel
 					'post_name'    => sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] ),
 					'post_author'  => $db_user['wp_user_id'],
 					'post_status'  => $post_status,
-					'tax_input'    => array( 'connection-group' => $db_user['category'] ),
 				);
-				wp_update_post( $connections_post );
-
-				update_post_meta( $connections_info['post_id'], 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
-				update_post_meta( $connections_info['post_id'], 'site-type', 'wp' );
+				$connections_post_id = wp_update_post( $connections_post, true );
 				
-				$blog_details = get_blog_details( $db_user['profile_blog_id'] );
-				if( $blog_details )
-					update_post_meta( $connections_info['post_id'], 'url', $blog_details->siteurl );
-				else
-					update_post_meta( $connections_info['post_id'], 'url', 'n/a' );
+				if( !is_wp_error($connections_post_id) )
+				{
+					$cids = $this->model->upload->get_taxonomies(
+						array(
+							'connection-group' => $db_user['category'],
+						)
+					);
+					
+					wp_set_object_terms( $connections_post_id, $cids['connection-group'], 'connection-group', false );
+					
+					update_post_meta( $connections_post_id, 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
+					update_post_meta( $connections_post_id, 'site-type', 'wp' );
 				
-				wp_reset_query();
+					$blog_details = get_blog_details( $db_user['profile_blog_id'] );
+					if( $blog_details )
+						update_post_meta( $connections_post_id, 'url', $blog_details->siteurl );
+					else
+						update_post_meta( $connections_post_id, 'url', 'n/a' );
+				
+					wp_reset_query();
 
-				$this->set_connections_column( $db_user, $connections_info, 'post_id', $connections_info['post_id'] );
-				$this->set_connections_column( $db_user, $connections_info, 'connections_error', null );
-				$this->update_user_data( $db_user );
-				return $connections_info['post_id'];
-			}
-			else
-			{
-				// clear out the post id since post does not exist.
-				$connections_info['post_id'] = null;
+					$this->set_connections_column( $db_user, $connections_info, 'post_id', $connections_info['post_id'] );
+					$this->set_connections_column( $db_user, $connections_info, 'connections_error', null );
+					$this->update_user_data( $db_user );
+					return $connections_post_id;
+				}
 			}
 		}
 		
 		restore_current_blog();
-
+		
 		//
 		// Inactive users will not have new Connections Posts created.
 		//
 		if( $db_user['status'] == 'inactive' ) return false;		
 		
+		$connections_info['post_id'] = null;
 		return $this->create_connections_post( $db_user, $connections_info );
 	}
 	
@@ -1773,7 +1779,6 @@ class OrgHub_UsersModel
 				'post_type'    => 'connection',
 				'post_status'  => 'publish',
 				'post_author'  => $db_user['wp_user_id'],
-				'tax_input'    => array( 'connection-group' => $db_user['category'] ),
 			);
 			
 			// determine if the Connections Post already exists.
@@ -1785,25 +1790,25 @@ class OrgHub_UsersModel
 					'posts_per_page' => -1,
 				)
 			);
-
+			
 			if( $wpquery->have_posts() )
 			{
 				// update the post.
 				$wpquery->the_post();
 				$post = get_post();
 				$connections_post['ID'] = $post->ID;
-				$connections_post_id = wp_update_post( $connections_post );
+				$connections_post_id = wp_update_post( $connections_post, true );
 			}
 			else
 			{
 				// insert the post.
 				$connections_post_id = wp_insert_post( $connections_post, true );
 			}
-		
+			
 			wp_reset_query();
 			
 			// determine if the post was created successfully.
-			if( !$connections_post_id )
+			if( is_wp_error($connections_post_id) )
 			{
 				if( isset($connections_post['ID']) )
 				{
@@ -1818,6 +1823,14 @@ class OrgHub_UsersModel
 			}
 			else
 			{
+				$cids = $this->model->upload->get_taxonomies(
+					array(
+						'connection-group' => $db_user['category'],
+					)
+				);
+				
+				wp_set_object_terms( $connections_post_id, $cids['connection-group'], 'connection-group', false );
+				
 				// update Connections post options.
 				update_post_meta( $connections_post_id, 'sort-title', $db_user['last_name'].', '.$db_user['first_name'] );
 				update_post_meta( $connections_post_id, 'username', $db_user['username'] );
@@ -1934,7 +1947,7 @@ class OrgHub_UsersModel
 				'ID'           => $connections_info['post_id'],
 				'post_status'  => 'draft',
 			);
-			wp_update_post( $connections_post );
+			wp_update_post( $connections_post, true );
 		}
 
 		restore_current_blog();
@@ -1992,7 +2005,7 @@ class OrgHub_UsersModel
 				'ID'           => $connections_info['post_id'],
 				'post_status'  => 'publish',
 			);
-			wp_update_post( $connections_post );
+			wp_update_post( $connections_post, true );
 		}
 
 		restore_current_blog();
@@ -2093,7 +2106,7 @@ class OrgHub_UsersModel
 			);
 		}
 		
-		CsvHandler::export( 'users', $headers, $users );
+		PHPUtil_CsvHandler::export( 'users', $headers, $users );
 		exit;
 	}
 	
