@@ -79,7 +79,7 @@ class OrgHub_Model
 	 * @param  bool    $newline   True if a new line character should be inserted after
 	 *                              the line, otherwise False.
 	 */
-	public function write_to_log( $username, $text, $newline = true )
+	public function write_to_log( $username = '', $text = '', $newline = true )
 	{
 		$text = print_r( $text, true );
 		if( $newline ) $text .= "\n";
