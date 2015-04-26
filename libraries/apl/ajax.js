@@ -70,10 +70,10 @@ jQuery(document).ready(
 			data['count'] = fi+1;
 			data['total'] = settings.forms.length;
 			
+			data['input'] = {};
 			// serialize data from form/input data.
 			if( settings.inputs && settings.inputs.length > 0 )
 			{
-				data['input'] = {};
 				for( var i in settings.inputs )
 				{
 					data['input'][settings.inputs[i]] = $(current_form).find('[name="'+settings.inputs[i]+'"]').val();
@@ -81,7 +81,12 @@ jQuery(document).ready(
 			}
 			else
 			{
-				data['input'] = $(current_form).serialize();
+				var form_input = $(current_form).serializeArray();
+				for( var i in form_input )
+				{
+					var finput = form_input[i];
+					data['input'][finput.name] = finput.value;
+				}
 			}
 			
 			// perform the AJAX request.
@@ -97,7 +102,7 @@ jQuery(document).ready(
 				if( settings.cb_loop_end )
 					settings.cb_loop_end( fi, settings, true, data );
 				
-				if( data.ajax )
+				if( data.ajax.items )
 				{
 					// new ajax data to process, start processing the data.
 					data.ajax.cb_start = (data.ajax.cb_start ? window[data.ajax.cb_start] : null);
@@ -192,8 +197,8 @@ jQuery(document).ready(
 			.fail(function( jqXHR, textStatus )
 			{
 				// end loop: call end loop callback, if it exists.
-				if( settings.cb_loop_end )
-					settings.cb_loop_end( fi, settings, false, { message: jqXHR.responseText+': '+textStatus } );
+				if( ajax.cb_loop_end )
+					ajax.cb_loop_end( fi, settings, ai, ajax, false, { message: jqXHR.responseText+': '+textStatus } );
 				
 				// perform ajax action on next item in ajax items.
 				perform_data_ajax( fi, settings, ai+1, ajax );
