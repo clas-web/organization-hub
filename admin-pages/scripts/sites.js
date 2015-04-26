@@ -17,7 +17,7 @@ function refresh_all_sites_start( settings )
  */
 function refresh_all_sites_end( settings )
 {
-	jQuery('#ajax-status').html('AJAX refresh done.');
+	jQuery('#ajax-status').html('Done refreshing sites.');
 	jQuery(settings.this).prop('disabled', false);
 	window.location.replace(window.location.href);
 }
@@ -30,7 +30,7 @@ function refresh_all_sites_end( settings )
  */
 function refresh_all_sites_loop_start( fi, settings )
 {
-	jQuery('#ajax-progress').html('Contacting server for AJAX data.');
+	jQuery('#ajax-progress').html('Contacting server for Site list.');
 }
 
 
@@ -43,7 +43,7 @@ function refresh_all_sites_loop_start( fi, settings )
  */
 function refresh_all_sites_loop_end( fi, settings, success, data )
 {
-	jQuery('#ajax-progress').html('Received AJAX data.');
+	jQuery('#ajax-progress').html('Received Site list.');
 }
 
 
