@@ -15,10 +15,7 @@ register_activation_hook( __FILE__, array('OrgHub_MainBlog', 'activate') );
 require( dirname(__FILE__).'/main.php' );
 
 if( is_admin() ):
-
 add_action( 'wp_loaded', array('OrgHub_MainBlog', 'load') );
-add_action( 'admin_menu', array('OrgHub_MainBlog', 'update'), 5 );
-
 endif;
 
 
@@ -35,6 +32,12 @@ class OrgHub_MainBlog
 
 		$orghub_pages->add_page( new OrgHub_UploadAdminPage('orghub-upload') );
 		$orghub_pages->setup();
+		
+		if( $orghub_pages->get_page() !== false )
+		{
+			add_action( 'admin_enqueue_scripts', array('OrgHub_Main', 'enqueue_scripts') );
+			add_action( 'admin_menu', array('OrgHub_MainBlog', 'update'), 5 );
+		}
 	}
 	
 	public static function activate()

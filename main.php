@@ -26,7 +26,6 @@ endif;
 
 if( is_admin() ):
 
-add_action( 'admin_enqueue_scripts', array('OrgHub_Main', 'enqueue_scripts') );
 require_once( dirname(__FILE__).'/libraries/apl/apl.php' );
 
 endif;

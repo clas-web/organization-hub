@@ -13,10 +13,7 @@ Network: True
 require( dirname(__FILE__).'/main.php' );
 
 if( is_admin() ):
-
 add_action( 'wp_loaded', array('OrgHub_MainNetwork', 'load') );
-add_action( 'network_admin_menu', array('OrgHub_MainNetwork', 'update'), 5 );
-
 endif;
 
 
@@ -39,6 +36,12 @@ class OrgHub_MainNetwork
 		
 		$orghub_pages->add_menu( $menu );
 		$orghub_pages->setup();
+
+		if( $orghub_pages->get_page() !== false )
+		{
+			add_action( 'admin_enqueue_scripts', array('OrgHub_Main', 'enqueue_scripts') );
+			add_action( 'network_admin_menu', array('OrgHub_MainNetwork', 'update'), 5 );
+		}
 	}
 
 	public static function update()
