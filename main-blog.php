@@ -53,12 +53,12 @@ class OrgHub_MainBlog
 
 	public static function update()
 	{
-//		$version = get_option( ORGANIZATION_HUB_DB_VERSION_OPTION );
-//  	if( $version !== ORGANIZATION_HUB_DB_VERSION )
-//  	{
- 			$model = OrgHub_Model::get_instance();
- 			$model->create_tables();
-//  	}
+		$version = get_option( ORGANIZATION_HUB_DB_VERSION_OPTION );
+		if( $version !== ORGANIZATION_HUB_DB_VERSION )
+		{
+				$model = OrgHub_Model::get_instance();
+				$model->create_tables();
+		}
  		
  		update_option( ORGANIZATION_HUB_VERSION_OPTION, ORGANIZATION_HUB_VERSION );
  		update_option( ORGANIZATION_HUB_DB_VERSION_OPTION, ORGANIZATION_HUB_DB_VERSION );
