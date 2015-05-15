@@ -23,14 +23,6 @@ define( 'ORGANIZATION_HUB_LOG_FILE', dirname(__FILE__).'/log.txt' );
 endif;
 
 
-
-if( is_admin() ):
-
-require_once( dirname(__FILE__).'/libraries/apl/apl.php' );
-
-endif;
-
-
 add_action( 'show_user_profile', array('OrgHub_Main', 'show_custom_user_fields') );
 add_action( 'edit_user_profile', array('OrgHub_Main', 'show_custom_user_fields') );
 
@@ -41,8 +33,6 @@ class OrgHub_Main
 	
 	public static function enqueue_scripts()
 	{
-		wp_enqueue_script( 'apl-ajax', plugins_url('libraries/apl/ajax.js', __FILE__), array('jquery') );
-		wp_enqueue_script( 'apl-list-table-inline-bulk-action', plugins_url('libraries/apl/list-table-inline-bulk-action.js', __FILE__), array('jquery') );
 		wp_enqueue_style( 'orghub-style', plugins_url('admin-pages/styles/style.css', __FILE__) );
 	}
 	

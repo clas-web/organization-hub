@@ -33,7 +33,7 @@ class OrgHub_MainBlog
 		$orghub_pages->add_page( new OrgHub_UploadAdminPage('orghub-upload') );
 		$orghub_pages->setup();
 		
-		if( $orghub_pages->get_page() !== false )
+		if( $orghub_pages->controller )
 		{
 			add_action( 'admin_enqueue_scripts', array('OrgHub_Main', 'enqueue_scripts') );
 			add_action( 'admin_menu', array('OrgHub_MainBlog', 'update'), 5 );
