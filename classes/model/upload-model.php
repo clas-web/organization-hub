@@ -3046,6 +3046,7 @@ class OrgHub_UploadModel
 				$required_keys = array( 'user', 'password', 'email' );
 				$required_values = array( 'user', 'email' );
 				$valid_keys = array( 'site', 'role' );
+				$valid_regex_keys = array( '(meta)\-([a-zA-Z0-9\-_]+)' );
 				break;
 			
 			case 'update':
@@ -3058,6 +3059,7 @@ class OrgHub_UploadModel
 				$required_keys = array( 'user' );
 				$required_values = array( 'user' );
 				$valid_keys = array( 'site', 'password', 'email', 'role' );
+				$valid_regex_keys = array( '(meta)\-([a-zA-Z0-9\-_]+)' );
 				break;
 				
 			case 'replace':
@@ -3070,6 +3072,7 @@ class OrgHub_UploadModel
 				$required_keys = array( 'user' );
 				$required_values = array( 'user' );
 				$valid_keys = array( 'site', 'role', 'password', 'email' );
+				$valid_regex_keys = array( '(meta)\-([a-zA-Z0-9\-_]+)' );
 				break;
 			
 			case 'delete':
