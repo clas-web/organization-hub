@@ -1,23 +1,23 @@
 <?php
 /**
- * OrgHub_UsersUploadTabAdminPage
+ * Controls the tab admin page "Users > Upload".
  * 
- * This class controls the tab admin page "Users > Upload".
- * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage admin-pages/tabs/upload
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_UsersUploadTabAdminPage') ):
 class OrgHub_UsersUploadTabAdminPage extends APL_TabAdminPage
 {
-	
+	/**
+	 * The Organization Hub model.
+	 * @var  OrgHub_Model
+	 */
 	private $model = null;
 	
 	
 	/**
-	 * Creates an OrgHub_UploadAdminPage object.
+	 * Constructor.
 	 */
 	public function __construct(
 		$parent,

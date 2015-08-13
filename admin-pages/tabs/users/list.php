@@ -3,34 +3,62 @@
 if( !class_exists('OrgHub_UsersListTable') )
 	require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/users-list-table.php' );
 
-/**
- * OrgHub_UsersListTabAdminPage
- * 
- * This class controls the admin page Users when in list mode.
- * 
- * @package    orghub
- * @subpackage admin-pages/tabs/users
- * @author     Crystal Barton <cbarto11@uncc.edu>
- */
 
+/**
+ * Controls the tab admin page "Users > List".
+ * 
+ * @package    organization-hub
+ * @subpackage admin-pages/tabs/users
+ * @author     Crystal Barton <atrus1701@gmail.com>
+ */
 if( !class_exists('OrgHub_UsersListTabAdminPage') ):
 class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 {
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
+	private $model = null;	
+
+	/**
+	 * The Users admin table.
+	 * @var  OrgHub_UsersListTable
+	 */
+	private $list_table = null;
 	
-	private $model = null;			// The OrgHub's main model.
-	private $list_table = null;		// The page's WP list table.
-	
-	private $filter_types;			// The types of filters.
-	private $filter;				// 
-	private $search;				// 
-	private $orderby;				// 
-	private $show_errors;			// 
-	
+	/**
+	 * List of all filters.
+	 * @var  Array
+	 */
+	private $filter_types;
+
+	/**
+	 * Current filters.
+	 * @var  Array
+	 */
+	private $filter;
+
+	/**
+	 * Current search filter.
+	 * @var  Array
+	 */
+	private $search;
+
+	/**
+	 * The current orderby name and ordering (ASC or DESC).
+	 * @var  string
+	 */
+	private $orderby;
+
+	/**
+	 * True to filter only items with errors, otherwise False.
+	 * @var  bool
+	 */
+	private $show_errors;
 	
 	
 	/**
 	 * Constructor.
-	 * Creates an OrgHub_UsersListTabAdminPage object.
 	 */
 	public function __construct(
 		$parent,

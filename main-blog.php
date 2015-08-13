@@ -1,69 +1,78 @@
 <?php
 /*
 Plugin Name: Organization Hub (Site)
-Plugin URI: 
-Description: 
+Plugin URI: https://github.com/clas-web/organization-hub
+Description: The Organization Hub (Site) is a batch importer for posts, pages, links, taxonomies, and users.
 Version: 0.0.1
 Author: Crystal Barton
-Author URI: http://www.crystalbarton.com
+Author URI: https://www.linkedin.com/in/crystalbarton
 Network: False
 */
 
 
-register_activation_hook( __FILE__, array('OrgHub_MainBlog', 'activate') );
+register_activation_hook( __FILE__, 'orghubsite_activate' );
+require( __DIR__.'/main.php' );
 
-require( dirname(__FILE__).'/main.php' );
 
 if( is_admin() ):
-add_action( 'wp_loaded', array('OrgHub_MainBlog', 'load') );
+	add_action( 'wp_loaded', 'orghubsite_load' );
 endif;
 
 
-if( !class_exists('OrgHub_MainBlog') ):
-class OrgHub_MainBlog
+/**
+ * Setup the site admin pages.
+ */
+if( !function_exists('orghubsite_load') ):
+function load()
 {
+	require_once( __DIR__.'/admin-pages/require.php' );
 	
-	public static function load()
+	$orghub_pages = new APL_Handler( false );
+
+	$orghub_pages->add_page( new OrgHub_UploadAdminPage('orghub-upload') );
+	$orghub_pages->setup();
+	
+	if( $orghub_pages->controller )
 	{
-		require_once( dirname(__FILE__).'/admin-pages/require.php' );
+		add_action( 'admin_enqueue_scripts', array('OrgHub_Main', 'enqueue_scripts') );
+		add_action( 'admin_menu', array('OrgHub_MainBlog', 'update'), 5 );
+	}
+}
+endif;
+
+
+/**
+ * Prevent activation for an individual site.
+ * @param  bool  $network_wide  True if the network activated, else False.
+ */
+if( !function_exists('orghubsite_activate') ):
+function activate( $network_wide )
+{
+	if( !$network_wide ) return;
+
+	deactivate_plugins( plugin_basename(__FILE__), true, true );
+
+	header( 'Location: '.network_admin_url( 'plugins.php?deactivate=true' ) );
+	exit;
+}
+endif;
+
+
+/**
+ * Update the database if a version change.
+ */
+if( !function_exists('orghubsite_update') ):
+function update()
+{
+	$version = get_option( ORGANIZATION_HUB_DB_VERSION_OPTION );
+	if( $version !== ORGANIZATION_HUB_DB_VERSION )
+	{
+		$model = OrgHub_Model::get_instance();
+		$model->create_tables();
+	}
 		
-		// Site admin page.
-		$orghub_pages = new APL_Handler( false );
-
-		$orghub_pages->add_page( new OrgHub_UploadAdminPage('orghub-upload') );
-		$orghub_pages->setup();
-		
-		if( $orghub_pages->controller )
-		{
-			add_action( 'admin_enqueue_scripts', array('OrgHub_Main', 'enqueue_scripts') );
-			add_action( 'admin_menu', array('OrgHub_MainBlog', 'update'), 5 );
-		}
-	}
-	
-	public static function activate()
-	{
-		if ( ! $network_wide )
-			return;
-
-		deactivate_plugins( plugin_basename( __FILE__ ), TRUE, TRUE );
-
-		header( 'Location: ' . network_admin_url( 'plugins.php?deactivate=true' ) );
-		exit;
-	}
-
-	public static function update()
-	{
-		$version = get_option( ORGANIZATION_HUB_DB_VERSION_OPTION );
-		if( $version !== ORGANIZATION_HUB_DB_VERSION )
-		{
-				$model = OrgHub_Model::get_instance();
-				$model->create_tables();
-		}
- 		
- 		update_option( ORGANIZATION_HUB_VERSION_OPTION, ORGANIZATION_HUB_VERSION );
- 		update_option( ORGANIZATION_HUB_DB_VERSION_OPTION, ORGANIZATION_HUB_DB_VERSION );
-	}
-	
+	update_option( ORGANIZATION_HUB_VERSION_OPTION, ORGANIZATION_HUB_VERSION );
+	update_option( ORGANIZATION_HUB_DB_VERSION_OPTION, ORGANIZATION_HUB_DB_VERSION );
 }
 endif;
 

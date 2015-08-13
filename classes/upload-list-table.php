@@ -8,27 +8,32 @@ if( !class_exists('WP_List_Table') )
 if( !class_exists('OrgHub_Model') )
 	require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/model.php' );
 
+
 /**
- * OrgHub_UsersListTable
- * 
  * The WP_List_Table class for the Users table.
  * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage classes
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_UploadListTable') ):
 class OrgHub_UploadListTable extends WP_List_Table
 {
+	/**
+	 * Parent admin page.
+	 * @var  APL_AdminPage
+	 */
+	private $parent;
 
-	private $parent;		// The parent admin page.
-	private $model;			// The main model.
+	/**
+	 * The main Organization Hub model.
+	 * @var  OrgHub_Model
+	 */
+	private $model;
 	
 	
 	/**
 	 * Constructor.
-	 * Creates an OrgHub_SitesListTable object.
 	 */
 	public function __construct( $parent )
 	{
@@ -59,7 +64,7 @@ class OrgHub_UploadListTable extends WP_List_Table
 	
 	/**
 	 * Prepare the table's items.
-	 * @param   string  $orderby      The column to orderby.
+	 * @param  string  $orderby  The column to orderby.
 	 */
 	public function prepare_items( $orderby = null )
 	{
@@ -223,8 +228,8 @@ class OrgHub_UploadListTable extends WP_List_Table
 				
 	/**
 	 * Generates the html for a column.
-	 * @param   array   $item         The item for the current row.
-	 * @param   string  $column_name  The name of the current column.
+	 * @param  array  $item  The item for the current row.
+	 * @param  string  $column_name  The name of the current column.
 	 * @return  string  The heml for the current column.
 	 */
 	public function column_default( $item, $column_name )
@@ -235,7 +240,7 @@ class OrgHub_UploadListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the checkbox column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the checkbox column.
 	 */
 	public function column_cb($item)
@@ -248,7 +253,7 @@ class OrgHub_UploadListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the data column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the username column.
 	 */
 	public function column_data( $item )
@@ -277,7 +282,7 @@ class OrgHub_UploadListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the name/description column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the name/description column.
 	 */
 	public function column_timestamp( $item )
@@ -286,6 +291,12 @@ class OrgHub_UploadListTable extends WP_List_Table
 	}
 	
 	
+	/**
+	 * Print the description for the item.
+	 * @param  int  $id  The post id.
+	 * @param  Array  $item  The post item values.
+	 * @return  string  The generated html.
+	 */
 	protected function data_description( $id, &$item )
 	{
 		extract( $item );

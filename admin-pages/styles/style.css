@@ -1,334 +1,328 @@
-/**
- * 
- */
 
-	.nav-tab.active {
-		color:#000;
-		background-color:#fff;
-	}
-	
-	.page-contents {
-		padding:1em 0em;
-	}
-	
-	.position-controller {
-		display:block;
-		clear:both;
-		text-align:center;
-		border:solid 1px #000;
-		background-color:#fff;
-		padding:0px 5px;
-	}
-	
-	.position-controller > div {
-		display:inline-block;
-		width:20%;
-		height:30px;
-		border:solid 1px #ccc;
-		background-color:#eee;
-		margin:10px 5px;
-		cursor:pointer;
-	}
-	
-	.position-controller > div.selected {
-		border:solid 1px #000;
-	}
-	
-	.position-controller > div:hover {
-		background-color:#ffc;
-	}
-	
-	.position-controller .hleft {
-		float:left;
-	}
+.nav-tab.active {
+	color:#000;
+	background-color:#fff;
+}
 
-	.position-controller .hright {
-		float:right;
-	}
-	
-	.position-controller > div.selected {
-		background-color:#000;
-	}
-	
-	.top-submit {
-		float:right;
-	}
-	
-	input.no-border {
-		border:none;
-		outline:none;
-		box-shadow:none;
-		background:transparent;
-	}
-	
-	.filter-form {
-		min-width:50%;
-		max-width:100%;
-	}
-	
-	.filter-boxes > div {
-		width:300px;
-		display:inline-block;
-	}
-	
-	.filter-form button {
-		margin:5px;
-		margin-left:0;
-	}
-	
-	.filter-boxes {
-		clear:both;
-	}
-	
-	.filter-form .scroll-box {
-		height:100px;
-		border:solid 1px #ccc;
-		padding:5px;
-		overflow-x:hidden;
-		overflow-y:scroll;
-	}
-	
-	.filter-form .scroll-box .item {
-		display:block;
-		white-space:nowrap;
-	}
-	
-	.errors-checkbox {
-		padding:0.5em 0em;
-	}
-	
-	a.export {
-		float: left;
-		margin-top: -0.5em;
-		padding-top: 1em;
-	}
-	
-	h4 {
-		margin-bottom:0.2em;
-	}
-	
-	button.process-user {
-		margin:1em 0em;
-	}
-	
-	p.exception {
-		color:red;
-	}
-	
-	p.error {
-		color:orange;
-	}
+.page-contents {
+	padding:1em 0em;
+}
 
-	td.info span.warning {
-		background-color:yellow;
-	}
-	
-	td.info span.error {
-		background-color:red;
-		color:white;
-	}
-	
-	.details-box {
-		border:solid 1px #999;
-		padding:1em;
-	}
-	
-	.details-box > p {
-		margin-top:0;
-	}
-	
-	.details-box > div {
-		display:inline-block;
-		margin-right:1em;
-	}
+.position-controller {
+	display:block;
+	clear:both;
+	text-align:center;
+	border:solid 1px #000;
+	background-color:#fff;
+	padding:0px 5px;
+}
 
-	.details-box > div > label {
-		display:inline-block;
-		vertical-align:baseline;
-		padding-right:0.3em;
-		font-weight:bold;
-		border-right:solid 1px #ccc;
-	}
+.position-controller > div {
+	display:inline-block;
+	width:20%;
+	height:30px;
+	border:solid 1px #ccc;
+	background-color:#eee;
+	margin:10px 5px;
+	cursor:pointer;
+}
 
-	.details-box > div > span {
-		display:inline-block;
-		vertical-align:baseline;
-		padding-left:0.3em;
-	}
+.position-controller > div.selected {
+	border:solid 1px #000;
+}
 
-	.details-box .buttons {
-		margin:0;
-		margin-top:1em;
-		padding-top:1em;
-		border-top:solid 1px #ccc;
-		text-align:right;
-		display:block;
-	}
-	
-	.details-box .buttons a {
-		float:left;
-	}
+.position-controller > div:hover {
+	background-color:#ffc;
+}
 
-	
-	.buttons button {
-		margin-left:0.5em;
-	}
-	
-	form.upload {
-		padding:1em;
-		margin-bottom:2em;
-		border:dotted 1px #ccc;
-	}
-	
-	form.upload h4 {
-		margin-top:0;
-	}
-	
-	form.upload p.submit {
-		margin:0; padding:0;
-		text-align:right;
-	}
-	
-	#users-table {
-		margin-top:2em;
-	}
-	
-	#users-table .user-exception {
-		color:red;
-	}
-	
-	#users-table > table {
-		white-space: nowrap !important;
-		width: auto !important;
-		min-width:100% !important;
-		table-layout: auto !important;
-	}
-	
-	#users-table > table td,
-	#users-table > table th {
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
-	
-	table.orghub-sites td.processing {
-		color:#c60;
-	}
-	
-	.filters .title {
-		display:inline-block;
-		min-width:10em;
-	}
-	
-	.filters select {
-		min-width:10em;
-	}
-	
-	table.orghub-sites tr.archived {
-		background-color:#dcc;
-	}
-	
-	table.orghub-sites tr.deleted {
-		background-color:#c99;
-	}
-	
-	#orghub-userdata > div
-	{
-		padding:0.3em 0em;
-	}
-	
-	#orghub-userdata > div > label {
-		font-weight:bold;
-		display:inline-block;
-		min-width:6em;
-		max-width:6em;
-		margin-right:1em;
-	}
-	
-	#orghub-userdata > div > div {
-		margin-left:7em;
-	}
-	
-	.page-contents ul {
-		list-style-type:disc;
-		padding-left:2em;
-	}
+.position-controller .hleft {
+	float:left;
+}
 
-	.page-contents ul > li {
-		list-style-type:disc;
-		margin:0;
-		padding:0.1em 0em;
-	}
-	
-	div.page-notices,
-	div.page-errors {
-		margin:0.3em 0em;
-	}
-	
-	div.page-notices > div,
-	div.page-errors > div {
-		margin:0.1em 0em;
-		background-color:#f6f6f6;
-		border:solid 1px #ddd;
-		border-left:solid 5px #ccc;
-		padding-left:5px;
-	}
-	
-	div.page-notices > div {
-		border-left-color:orange;
-	}
-	
-	div.page-errors > div {
-		border-left-color:red;
-	}
+.position-controller .hright {
+	float:right;
+}
 
-	table.orghub-upload td > div.description {
-		padding:0.5em 1em;
-		border:solid 1px #ccc;
-	}
-	
-	table.orghub-upload td > div.extended-data {
-//		background-color:#f9f9f6;
-		padding:0.5em 0em;
-		margin-bottom:0.5em;
-		border:solid 1px #ccc;
-		border-top:0;
-//		display:none;
-	}
-	
-	table.orghub-upload td > div.extended-data > div {
-		display:block;
-	}
-	
-	table.orghub-upload td > div.extended-data > div > label {
-		display:inline-block;
-		width:25%;
-		min-width:6em;
-		font-weight:bold;
-		text-align:right;
-		margin-right:2%;
-	}
-	
-	table.orghub-upload .description {
-		position:relative;
-	}
-	
-	table.orghub-upload .more-data-button {
-		position:absolute;;
-		border:solid 1px #ccc;
-		line-height:1.5em;
-		bottom:-1em;
-		right:1em;
-		padding:0.2em 0.5em;
-		background-color:#f3f3f3;
-	}
+.position-controller > div.selected {
+	background-color:#000;
+}
 
-	table.orghub-upload .more-data-button:hover {
-		cursor:pointer;
-	}
-	
-	table.orghub-sites.fixed,
-	table.orghub-users.fixed,
-	table.orghub-upload.fixed {
-		table-layout:auto !important;
-	}
-	
+.top-submit {
+	float:right;
+}
+
+input.no-border {
+	border:none;
+	outline:none;
+	box-shadow:none;
+	background:transparent;
+}
+
+.filter-form {
+	min-width:50%;
+	max-width:100%;
+}
+
+.filter-boxes > div {
+	width:300px;
+	display:inline-block;
+}
+
+.filter-form button {
+	margin:5px;
+	margin-left:0;
+}
+
+.filter-boxes {
+	clear:both;
+}
+
+.filter-form .scroll-box {
+	height:100px;
+	border:solid 1px #ccc;
+	padding:5px;
+	overflow-x:hidden;
+	overflow-y:scroll;
+}
+
+.filter-form .scroll-box .item {
+	display:block;
+	white-space:nowrap;
+}
+
+.errors-checkbox {
+	padding:0.5em 0em;
+}
+
+a.export {
+	float: left;
+	margin-top: -0.5em;
+	padding-top: 1em;
+}
+
+h4 {
+	margin-bottom:0.2em;
+}
+
+button.process-user {
+	margin:1em 0em;
+}
+
+p.exception {
+	color:red;
+}
+
+p.error {
+	color:orange;
+}
+
+td.info span.warning {
+	background-color:yellow;
+}
+
+td.info span.error {
+	background-color:red;
+	color:white;
+}
+
+.details-box {
+	border:solid 1px #999;
+	padding:1em;
+}
+
+.details-box > p {
+	margin-top:0;
+}
+
+.details-box > div {
+	display:inline-block;
+	margin-right:1em;
+}
+
+.details-box > div > label {
+	display:inline-block;
+	vertical-align:baseline;
+	padding-right:0.3em;
+	font-weight:bold;
+	border-right:solid 1px #ccc;
+}
+
+.details-box > div > span {
+	display:inline-block;
+	vertical-align:baseline;
+	padding-left:0.3em;
+}
+
+.details-box .buttons {
+	margin:0;
+	margin-top:1em;
+	padding-top:1em;
+	border-top:solid 1px #ccc;
+	text-align:right;
+	display:block;
+}
+
+.details-box .buttons a {
+	float:left;
+}
+
+
+.buttons button {
+	margin-left:0.5em;
+}
+
+form.upload {
+	padding:1em;
+	margin-bottom:2em;
+	border:dotted 1px #ccc;
+}
+
+form.upload h4 {
+	margin-top:0;
+}
+
+form.upload p.submit {
+	margin:0; padding:0;
+	text-align:right;
+}
+
+#users-table {
+	margin-top:2em;
+}
+
+#users-table .user-exception {
+	color:red;
+}
+
+#users-table > table {
+	white-space: nowrap !important;
+	width: auto !important;
+	min-width:100% !important;
+	table-layout: auto !important;
+}
+
+#users-table > table td,
+#users-table > table th {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+table.orghub-sites td.processing {
+	color:#c60;
+}
+
+.filters .title {
+	display:inline-block;
+	min-width:10em;
+}
+
+.filters select {
+	min-width:10em;
+}
+
+table.orghub-sites tr.archived {
+	background-color:#dcc;
+}
+
+table.orghub-sites tr.deleted {
+	background-color:#c99;
+}
+
+#orghub-userdata > div
+{
+	padding:0.3em 0em;
+}
+
+#orghub-userdata > div > label {
+	font-weight:bold;
+	display:inline-block;
+	min-width:6em;
+	max-width:6em;
+	margin-right:1em;
+}
+
+#orghub-userdata > div > div {
+	margin-left:7em;
+}
+
+.page-contents ul {
+	list-style-type:disc;
+	padding-left:2em;
+}
+
+.page-contents ul > li {
+	list-style-type:disc;
+	margin:0;
+	padding:0.1em 0em;
+}
+
+div.page-notices,
+div.page-errors {
+	margin:0.3em 0em;
+}
+
+div.page-notices > div,
+div.page-errors > div {
+	margin:0.1em 0em;
+	background-color:#f6f6f6;
+	border:solid 1px #ddd;
+	border-left:solid 5px #ccc;
+	padding-left:5px;
+}
+
+div.page-notices > div {
+	border-left-color:orange;
+}
+
+div.page-errors > div {
+	border-left-color:red;
+}
+
+table.orghub-upload td > div.description {
+	padding:0.5em 1em;
+	border:solid 1px #ccc;
+}
+
+table.orghub-upload td > div.extended-data {
+	padding:0.5em 0em;
+	margin-bottom:0.5em;
+	border:solid 1px #ccc;
+	border-top:0;
+}
+
+table.orghub-upload td > div.extended-data > div {
+	display:block;
+}
+
+table.orghub-upload td > div.extended-data > div > label {
+	display:inline-block;
+	width:25%;
+	min-width:6em;
+	font-weight:bold;
+	text-align:right;
+	margin-right:2%;
+}
+
+table.orghub-upload .description {
+	position:relative;
+}
+
+table.orghub-upload .more-data-button {
+	position:absolute;;
+	border:solid 1px #ccc;
+	line-height:1.5em;
+	bottom:-1em;
+	right:1em;
+	padding:0.2em 0.5em;
+	background-color:#f3f3f3;
+}
+
+table.orghub-upload .more-data-button:hover {
+	cursor:pointer;
+}
+
+table.orghub-sites.fixed,
+table.orghub-users.fixed,
+table.orghub-upload.fixed {
+	table-layout:auto !important;
+}

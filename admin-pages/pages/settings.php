@@ -1,22 +1,25 @@
 <?php
 /**
- * OrgHub_SettingsAdminPage
+ * Controls the admin page "Upload".
  * 
- * This class controls the admin page "Upload".
- * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage admin-pages/pages
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
 
 if( !class_exists('OrgHub_SettingsAdminPage') ):
 class OrgHub_SettingsAdminPage extends APL_AdminPage
 {
 	
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
 	private $model = null;	
 	
+
 	/**
-	 * Creates an OrgHub_UploadAdminPage object.
+	 * Constructor.
 	 */
 	public function __construct(
 		$name = 'settings',
@@ -29,6 +32,9 @@ class OrgHub_SettingsAdminPage extends APL_AdminPage
 	}
 	
 	
+	/**
+	 * Process the settings.
+	 */
 	public function process()
 	{
 		if( empty($_REQUEST['action']) ) return;
@@ -42,6 +48,9 @@ class OrgHub_SettingsAdminPage extends APL_AdminPage
 	}
 	
 	
+	/**
+	 * Save the settings.
+	 */
 	protected function save()
 	{
 		if( empty($_POST[ORGANIZATION_HUB_OPTIONS]) ) return;
@@ -50,6 +59,9 @@ class OrgHub_SettingsAdminPage extends APL_AdminPage
 	}
 	
 	
+	/**
+	 * Display the settings.
+	 */
 	public function display()
 	{
 		$create_user_types = apply_filters(

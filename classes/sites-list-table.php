@@ -8,27 +8,32 @@ if( !class_exists('WP_List_Table') )
 if( !class_exists('OrgHub_Model') )
 	require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/model.php' );
 
+
 /**
- * OrgHub_SitesListTable
- * 
  * The WP_List_Table class for the Sites table.
  * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage classes
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_SitesListTable') ):
 class OrgHub_SitesListTable extends WP_List_Table
 {
+	/**
+	 * Parent admin page.
+	 * @var  APL_AdminPage
+	 */
+	private $parent;
 
-	private $parent;		// The parent admin page.
-	private $model;			// The main model.
+	/**
+	 * The main Organization Hub model.
+	 * @var  OrgHub_Model
+	 */
+	private $model;
 	
 	
 	/**
 	 * Constructor.
-	 * Creates an OrgHub_SitesListTable object.
 	 */
 	public function __construct( $parent )
 	{
@@ -59,9 +64,9 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 	/**
 	 * Prepare the table's items.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   string  $orderby      The column to orderby.
+	 * @param  array  $filter  An array of filter name and values.
+	 * @param  array  $search  An array of search columns and phrases.
+	 * @param  string  $orderby  The column to orderby.
 	 */
 	public function prepare_items( $filter = array(), $search = array(), $orderby = null )
 	{
@@ -234,7 +239,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 
 	/**
-	 * Echos html to display to the area above and below the table.
+	 * Displays html to display to the area above and below the table.
 	 * @param  string  $which  Which tablenav is being displayed (top / bottom).
 	 */
 	public function display_tablenav( $which )
@@ -259,7 +264,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 
 	/**
-	 * Echos html to display to the right of bulk actions.
+	 * Displays html to display to the right of bulk actions.
 	 * @param  string  $which  Which tablenav is being displayed (top / bottom).
 	 */
 	public function extra_tablenav( $which )
@@ -271,7 +276,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 	
 	/**
-	 * Echos the inline Change Admin table.
+	 * Displays the inline Change Admin table.
 	 */
 	public function inline_change_admin()
 	{
@@ -313,7 +318,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 	
 	/**
-	 * Echos the inline Change Theme table.
+	 * Displays the inline Change Theme table.
 	 */
 	public function inline_change_theme()
 	{
@@ -360,7 +365,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 	
 	/**
-	 * Echos the text to display when no sites are found.
+	 * Displays the text to display when no sites are found.
 	 */
 	public function no_items()
 	{
@@ -369,7 +374,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 
 
 	/**
-	 * Echos the current row's html.
+	 * Displays the current row's html.
 	 * @param  array  $item  The item for the current row.
 	 */
 	public function single_row( $item )
@@ -387,8 +392,8 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for a column.
-	 * @param   array   $item         The item for the current row.
-	 * @param   string  $column_name  The name of the current column.
+	 * @param  array  $item  The item for the current row.
+	 * @param  string  $column_name  The name of the current column.
 	 * @return  string  The heml for the current column.
 	 */
 	public function column_default( $item, $column_name )
@@ -469,7 +474,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the checkbox column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the checkbox column.
 	 */
 	public function column_cb($item)
@@ -482,7 +487,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the site title column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the site title column.
 	 */
 	public function column_site_title( $item )

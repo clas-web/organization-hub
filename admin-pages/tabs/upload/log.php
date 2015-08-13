@@ -1,23 +1,23 @@
 <?php
 /**
- * OrgHub_UploadLogTabAdminPage
+ * Controls the tab admin page "Upload > Log".
  * 
- * This class controls the tab admin page "Sites > Log".
- * 
- * @package    orghub
- * @subpackage admin-pages/tabs/sites
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @package    organization-hub
+ * @subpackage admin-pages/tabs/upload
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_UploadLogTabAdminPage') ):
 class OrgHub_UploadLogTabAdminPage extends APL_TabAdminPage
 {
-	
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
 	private $model = null;
 	
 	
 	/**
-	 * Creates an OrgHub_UploadLogTabAdminPage object.
+	 * Controller.
 	 */
 	public function __construct(
 		$parent,

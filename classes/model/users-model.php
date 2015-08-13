@@ -1,32 +1,53 @@
 <?php
 /**
- * OrgHub_UsersModel
- * 
  * The users model for the Organization Hub plugin.
  * 
- * @package    orghub
- * @subpackage classes
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @package    organization-hub
+ * @subpackage classes/model
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_UsersModel') ):
 class OrgHub_UsersModel
 {
+	/**
+	 * The only instance of the current model.
+	 * @var  OrgHub_UsersModel
+	 */	
+	private static $instance = null;
 
-	private static $instance = null;	// The only instance of this class.
-	private $model = null;				// The "parent" model for Organization Hub.
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
+	private $model = null;
 	
-	// Names of tables used by the model without prefix.
+	/**
+	 * The base name (without prefix) for the user table.
+	 * @var  string
+	 */
 	private static $user_table 			= 'orghub_user';
+	
+	/**
+	 * The base name (without prefix) for the type table.
+	 * @var  string
+	 */
 	private static $type_table 			= 'orghub_type';
+	
+	/**
+	 * The base name (without prefix) for the category table.
+	 * @var  string
+	 */
 	private static $category_table 		= 'orghub_category';
+	
+	/**
+	 * The base name (without prefix) for the connections table.
+	 * @var  string
+	 */
 	private static $connections_table 	= 'orghub_connections';
-
 
 	
 	/**
 	 * Private Constructor.  Needed for a Singleton class.
-	 * Creates an OrgHub_UsersModel object.
 	 */
 	protected function __construct()
 	{
@@ -38,7 +59,6 @@ class OrgHub_UsersModel
 		
 		$this->model = OrgHub_Model::get_instance();
 	}
-
 
 
 	/**
@@ -53,7 +73,6 @@ class OrgHub_UsersModel
 		}
 		return self::$instance;
 	}
-	
 	
 	
 //========================================================================================
@@ -157,7 +176,6 @@ class OrgHub_UsersModel
 	}
 
 
-
 //========================================================================================
 //================================================ Import / Updating database tables =====
 
@@ -169,9 +187,7 @@ class OrgHub_UsersModel
 	 */
 	protected function check_args( &$args )
 	{
-		//
 		// Verify that the required columns have been included.
-		//
 		$required_fields = array(
 			'username', 'first_name', 'last_name', 'email', 'type', 'description', 'category',
 		);
@@ -190,16 +206,14 @@ class OrgHub_UsersModel
 			}
 		}
 		
-		//
+
 		// Verify that columns with multiple columns have valid values.
-		//
 		if( !$this->check_multiple_value_arg('type', $args['type'], false) ) return false;
 		if( !$this->check_multiple_value_arg('category', $args['category'], false) ) return false;
 		
-		//
+
 		// If not specified, populate site_domain column with its default value.
 		// If site_domain is specified, then verify that the value is valid.
-		//
 		if( (!in_array('site_domain', array_keys($args))) || ($args['site_domain'] === '') )
 		{
 			$args['site_domain'] = '';
@@ -210,18 +224,16 @@ class OrgHub_UsersModel
 			return false;
 		}
 
-		//
+
 		// If not specified, populate site_domain column with its default value.
 		// If site_domain is specified, then verify that the value is valid.
-		//
 		if( (!in_array('site_path', array_keys($args))) )
 		{
 			$args['site_path'] = '';
 		}
 		
-		//
+
 		// If not specified, populate connections_sites column with its default value.
-		//
 		if( (!in_array('connections_sites', array_keys($args))) || (!$args['connections_sites']) )
 		{
 			$args['connections_sites'] = array();
@@ -240,8 +252,8 @@ class OrgHub_UsersModel
 	 * Parses and verifies each item in a column/field's comma-seperated value.
 	 * @param  string  $field  The column/field name.
 	 * @param  string  $value  The string value of the column/field.
-	 * @param  bool    $at_least_one  True if the value should have at least one value.
-	 * @return bool    True if the value is valid.
+	 * @param  bool  $at_least_one  True if the value should have at least one value.
+	 * @return  bool  True if the value is valid.
 	 */
 	protected function check_multiple_value_arg( $field, &$value, $at_least_one = true )
 	{
@@ -269,8 +281,8 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Verifies that the domain value is a valid format.
-	 * @param   string  $site_domain_name  The blog domain.
-	 * @return  bool    True if the blog domain is a valid format.
+	 * @param  string  $site_domain_name  The blog domain.
+	 * @return  bool  True if the blog domain is a valid format.
 	 */
 	protected function is_valid_site_domain_name( $site_domain_name )
 	{
@@ -282,19 +294,16 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Adds an OrgHub user to the database.
-	 * @param   array     $args  An array of data about a user.
+	 * @param  array  $args  An array of data about a user.
 	 * @return  int|bool  The id of the inserted user or false on failure.
 	 */
 	public function add_user( &$args )
 	{
-		//
 		// Check the args to determine that all needed values are present and valid.
-		//
 		if( !$this->check_args( $args ) ) return false;
 		
-		//
+
 		// If user already exists, then update the user.
-		//
 		$db_user = $this->get_user_by_username( $args['username'] );
 		if( $db_user )
 		{
@@ -305,9 +314,8 @@ class OrgHub_UsersModel
 		
 		global $wpdb;
 		
-		//
+
 		// Insert new user into Users table.
-		//
 		$result = $wpdb->insert(
 			self::$user_table,
 			array(
@@ -323,9 +331,8 @@ class OrgHub_UsersModel
 			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 		
-		//
+
 		// Check to make sure insertion was successful.
-		//
 		$user_id = $wpdb->insert_id;
 		if( !$user_id )
 		{
@@ -333,9 +340,8 @@ class OrgHub_UsersModel
 			return false;
 		}
 		
-		//
+
 		// Insert the user's types.
-		//
 		foreach( $args['type'] as $type )
 		{
 			$wpdb->insert(
@@ -348,9 +354,8 @@ class OrgHub_UsersModel
 			);
 		}
 		
-		//
+
 		// Insert the user's categories.
-		//
 		foreach( $args['category'] as $category )
 		{
 			$wpdb->insert(
@@ -363,9 +368,8 @@ class OrgHub_UsersModel
 			);
 		}
 		
-		//
+
 		// Insert the user's connections sites.
-		//
 		foreach( $args['connections_sites'] as $site )
 		{
 			$wpdb->insert(
@@ -385,17 +389,15 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Updates an OrgHub user in the database.
-	 * @param   int       $id    The user's id (not the WordPress user id).
-	 * @param   array     $args  An array of data about a user.
+	 * @param  int  $id  The user's id (not the WordPress user id).
+	 * @param  array  $args  An array of data about a user.
 	 * @return  int|bool  The id of the updated user or false on failure.
 	 */
 	public function update_user( $id, &$args )
 	{
 		global $wpdb;
 		
-		//
 		// Update user in Users table.
-		//
 		$result = $wpdb->update(
 			self::$user_table,
 			array(
@@ -413,18 +415,16 @@ class OrgHub_UsersModel
 			array( '%d' )
 		);
 
-		//
+
 		// Check to make sure update was successful.
-		//
 		if( $result === false )
 		{
 			$this->model->last_error = 'Unable to update user.';
 			return false;
 		}
 
-		//
+
 		// Update the user's types.
-		//
 		$current_values = $wpdb->get_col( 
 			$wpdb->prepare(
 				"SELECT type FROM ".self::$type_table." WHERE user_id=%d",
@@ -461,10 +461,9 @@ class OrgHub_UsersModel
 				);
 			}
 		}
-			
-		//
+		
+
 		// Update the user's categories.
-		//
 		$current_values = $wpdb->get_col( 
 			$wpdb->prepare(
 				"SELECT category FROM ".self::$category_table." WHERE user_id=%d",
@@ -502,9 +501,8 @@ class OrgHub_UsersModel
 			}
 		}	
 		
-		//
+
 		// Update the user's connections sites.
-		//
 		$current_values = $wpdb->get_results( 
 			$wpdb->prepare(
 				"SELECT site, required, post_id FROM ".self::$connections_table." WHERE user_id=%d",
@@ -571,8 +569,8 @@ class OrgHub_UsersModel
 
 	/**
 	 * Deletes an OrgHub user in the database.
-	 * @param   int       $id    The user's id (not the WordPress user id).
-	 * @return  bool      True if the user is deleted, otherwise false.
+	 * @param  int  $id  The user's id (not the WordPress user id).
+	 * @return  bool  True if the user is deleted, otherwise false.
 	 */
 	public function delete_user( $id )
 	{
@@ -620,20 +618,19 @@ class OrgHub_UsersModel
 	}
 	
 	
-	
 //========================================================================================
 //================================================= Retrieve user data from database =====
 	
 	
 	/**
 	 * Retrieve a complete list of OrgHub users from the database after filtering.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   bool    $only_errors  True if filter out OrgHub users with errors.
-	 * @param   string  $orderby      The column to orderby.
-	 * @param   int     $offset       The offset of the users list.
-	 * @param   int     $limit        The amount of users to retrieve.
-	 * @return  array   An array of users given the filtering.
+	 * @param  array  $filter  An array of filter name and values.
+	 * @param  array  $search  An array of search columns and phrases.
+	 * @param  bool  $only_errors  True if filter out OrgHub users with errors.
+	 * @param  string  $orderby  The column to orderby.
+	 * @param  int  $offset  The offset of the users list.
+	 * @param  int  $limit  The amount of users to retrieve.
+	 * @return  array  An array of users given the filtering.
 	 */
 	public function get_users( $filter = array(), $search = array(), $only_errors = false, $orderby = null, $offset = 0, $limit = -1 )
 	{
@@ -656,42 +653,38 @@ class OrgHub_UsersModel
 		$list = $this->model->get_column_list( $list );
 		
 		$groupby = self::$user_table.".id";
-// 		apl_print( "SELECT $list FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit) );
 		$users = $wpdb->get_results( "SELECT $list FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit), ARRAY_A );
-// 		apl_print($users, '$users (get_users-results)');
 		
 		if( !is_array($users) ) return false;
 		
 		foreach( $users as &$user ) $this->prepare_db_user($user);
 			
-		//apl_print($users, '$users (get_users-end)');
 		return $users;
 	}
 
 
 	/**
 	 * The amount of OrgHub users from the database after filtering.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   bool    $only_errors  True if filter out OrgHub users with errors.
-	 * @param   string  $orderby      The column to orderby.
-	 * @param   int     $offset       The offset of the users list.
-	 * @param   int     $limit        The amount of users to retrieve.
-	 * @return  int     A count of users given the filtering.
+	 * @param  array  $filter  An array of filter name and values.
+	 * @param  array  $search  An array of search columns and phrases.
+	 * @param  bool  $only_errors  True if filter out OrgHub users with errors.
+	 * @param  string  $orderby  The column to orderby.
+	 * @param  int  $offset  The offset of the users list.
+	 * @param  int  $limit  The amount of users to retrieve.
+	 * @return  int  A count of users given the filtering.
 	 */
 	public function get_users_count( $filter = array(), $search = array(), $only_errors = false, $orderby = null, $offset = 0, $limit = -1 )
 	{
 		global $wpdb;
 		
 		$groupby = null;
-		//apl_print("SELECT COUNT(DISTINCT ".self::$user_table.".id) FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit));
 		return $wpdb->get_var( "SELECT COUNT(DISTINCT ".self::$user_table.".id) FROM ".self::$user_table.' '.$this->filter_sql($filter,$search,$only_errors,$groupby,$orderby,$offset,$limit) );
 	}	
 
 
 	/**
 	 * Retrieve a OrgHub user by its id value.
-	 * @param   int         $user_id  The OrgHub user's id (not the WordPress user id).
+	 * @param  int  $user_id  The OrgHub user's id (not the WordPress user id).
 	 * @return  array|bool  The user's data or false on failure.
 	 */
 	public function get_user_by_id( $user_id )
@@ -712,7 +705,7 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Retrieve a OrgHub user by its username value.
-	 * @param   string      $username  The OrgHub user's username.
+	 * @param  string  $username  The OrgHub user's username.
 	 * @return  array|bool  The user's data or false on failure.
 	 */
 	public function get_user_by_username( $username )
@@ -733,12 +726,12 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Creates the SQL needed to complete an SQL statement.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   bool    $only_errors  True if filter out OrgHub users with errors.
-	 * @param   string  $orderby      The column to orderby.
-	 * @param   int     $offset       The offset of the users list.
-	 * @param   int     $limit        The amount of users to retrieve.
+	 * @param  array  $filter  An array of filter name and values.
+	 * @param  array  $search  An array of search columns and phrases.
+	 * @param  bool  $only_errors  True if filter out OrgHub users with errors.
+	 * @param  string  $orderby  The column to orderby.
+	 * @param  int  $offset  The offset of the users list.
+	 * @param  int  $limit  The amount of users to retrieve.
 	 * @return  string  The constructed SQL needed to complete an SQL statement.
 	 */
 	protected function filter_sql( $filter = array(), $search = array(), $only_errors = false, $groupby = null, $orderby = null, $offset = 0, $limit = -1 )
@@ -864,8 +857,8 @@ class OrgHub_UsersModel
 
 	/**
 	 * Prepares the user's array with additional information from other database tables.
-	 * @param   array  $user  The user's data retreived from the users database.
-	 * @return  bool   True if the user was prepared correctly, otherwise False.
+	 * @param  array  $user  The user's data retreived from the users database.
+	 * @return  bool  True if the user was prepared correctly, otherwise False.
 	 */
 	protected function prepare_db_user( &$user )
 	{
@@ -916,9 +909,9 @@ class OrgHub_UsersModel
 
 	/**
 	 * Gets a column in the OrgHub users table.
-	 * @param   int     $user_id  The OrgHub user's id (not WordPress user id).
-	 * @param   string  $column   The column name.
-	 * @return  bool    The requested value or false on failure.
+	 * @param  int  $user_id  The OrgHub user's id (not WordPress user id).
+	 * @param  string  $column  The column name.
+	 * @return  bool  The requested value or false on failure.
 	 */
 	public function get_user_column( $user_id, $column )
 	{
@@ -934,11 +927,10 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Sets a column in the OrgHub users table to a value.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @param   string     $column   The column name.
-	 * @param   strint     $value    The value to set column to.
-	 * @return  bool       True if update was successful, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @param  string  $column  The column name.
+	 * @param  string  $value  The value to set column to.
+	 * @return  bool  True if update was successful, otherwise false.
 	 */
 	public function set_user_column( &$db_user, $column, $value )
 	{
@@ -979,10 +971,10 @@ class OrgHub_UsersModel
 
 	/**
 	 * Gets a column in the OrgHub connections sites table.
-	 * @param   int     $user_id  The OrgHub user's id (not WordPress user id).
-	 * @param   string  $site     The connections site.
-	 * @param   string  $column   The column name.
-	 * @return  bool    The requested value or false on failure.
+	 * @param  int  $user_id  The OrgHub user's id (not WordPress user id).
+	 * @param  string  $site  The connections site.
+	 * @param  string  $column  The column name.
+	 * @return  bool  The requested value or false on failure.
 	 */
 	public function get_connections_column( $user_id, $site, $column )
 	{
@@ -999,12 +991,11 @@ class OrgHub_UsersModel
 
 	/**
 	 * Sets a column in the OrgHub connections sites table to a value.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @param   string     $site     The connections site.
-	 * @param   string     $column   The column name.
-	 * @param   strint     $value    The value to set column to.
-	 * @return  bool       True if update was successful, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @param  string  $site  The connections site.
+	 * @param  string  $column  The column name.
+	 * @param  string  $value  The value to set column to.
+	 * @return  bool  True if update was successful, otherwise false.
 	 */
 	public function set_connections_column( &$db_user, &$connections_info, $column, $value )
 	{
@@ -1059,8 +1050,7 @@ class OrgHub_UsersModel
 	/**
 	 * Checks the $db_user to ensure it is an array of the OrgHub user's data, not an id.
 	 * Sets the $db_user to the user's data, if it is an id.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
 	 */
 	public function check_user( &$db_user )
 	{
@@ -1074,8 +1064,8 @@ class OrgHub_UsersModel
 	 * Checks the $connections_info to ensure it is an array of the Connections data for
 	 * the OrgHub user, not just a string of the site name/slug.
 	 * Sets the $connections_info to the connections's data, if it is a name.
-	 * @param   int           $user_id           The OrgHub user's id (not the WP user id).
-	 * @param   string|array  $connections_info  The connections site name or info array.
+	 * @param  int  $user_id  The OrgHub user's id (not the WP user id).
+	 * @param  string|array  $connections_info  The connections site name or info array.
 	 */
 	public function check_connections( $user_id, &$connections_info )
 	{
@@ -1087,13 +1077,13 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Resets the user's ids for their WP user, profile blog, and connections sites' post.	
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @return  bool       True on success, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an
+	 *                              array of the user's data.
+	 * @return  bool  True on success, otherwise false.
 	 */
 	public function reset_user( &$db_user )
 	{
-		// Check user.
+ 		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 		
 		$this->remove_user_data( $db_user );
@@ -1117,13 +1107,12 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Process an OrgHub user.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @return  bool       True if process was completed, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @return  bool  True if process was completed, otherwise false.
 	 */
 	public function process_user( &$db_user )
 	{
-		// Check user.
+ 		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 		
 		//
@@ -1158,20 +1147,18 @@ class OrgHub_UsersModel
 
 	/**
 	 * Create a WordPress user for an OrgHub user.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @return  int|bool   The wp_user_id of tne new user or false on failure.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @return  int|bool  The wp_user_id of tne new user or false on failure.
 	 */
 	public function create_wp_user( &$db_user )
 	{
 		global $wpdb;
-		
-		// Check user.
+
+ 		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 		
-		//
+
 		// If wp_user_id is already set, then test that the id is valid.
-		//
 		if( $db_user['wp_user_id'] )
 		{
 			$user = $this->get_wp_user( $db_user['wp_user_id'] );
@@ -1185,9 +1172,8 @@ class OrgHub_UsersModel
 			}
 		}
 		
-		//
+
 		// Check if the current username is already in use.
-		//
 		$user = get_user_by( 'login', $db_user['username'] );
 		$user_id = false;
 		
@@ -1209,9 +1195,8 @@ class OrgHub_UsersModel
 			return null;
 		}
 		
-		//
+
 		// If user was found or created, then update the users data.
-		//
 		if( $user_id )
 		{
 			$result = $this->set_user_column( $db_user, 'wp_user_id', $user_id );
@@ -1229,9 +1214,8 @@ class OrgHub_UsersModel
 			return null;
 		}
 		
-		//
+
 		// No user was created.
-		//
 		$this->model->write_to_log( $db_user['username'], 'Unable to create user.' );
 		$this->set_user_column( $db_user, 'wp_user_error', 'Unable to create user.' );
 		return null;
@@ -1240,18 +1224,16 @@ class OrgHub_UsersModel
 
 	/**
 	 * Updates the user's meta data.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @param   WP_User    $user     The OrgHub user's WP_User object.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @param  WP_User  $user  The OrgHub user's WP_User object.
 	 */
 	public function update_user_data( &$db_user, $user = null )
 	{
-		// Check user.
+ 		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 		
-		//
+
 		// Verify that the user is valid.
-		//
 		if( $user === null && $db_user['wp_user_id'] )
 		{
 			$user = $this->get_wp_user( $db_user['wp_user_id'] );
@@ -1264,9 +1246,8 @@ class OrgHub_UsersModel
 			return false;
 		}
 		
-		//
+
 		// Update user information.
-		//
 		update_user_meta( $user->ID, 'description', $db_user['description'] );
 		update_user_meta( $user->ID, 'category', implode( ', ', $db_user['category'] ) );
 		update_user_meta( $user->ID, 'type', implode( ', ', $db_user['type'] ) );
@@ -1301,17 +1282,15 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Remove the user's meta data.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
 	 */
 	public function remove_user_data( &$db_user )
 	{
 		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 		
-		//
+
 		// Verify that the user is valid.
-		//
 		if( $db_user['wp_user_id'] )
 		{
 			$user = $this->get_wp_user( $db_user['wp_user_id'] );
@@ -1323,9 +1302,8 @@ class OrgHub_UsersModel
 			return false;
 		}
 		
-		//
+
 		// Remove user information.
-		//
 		delete_user_option( $user->ID, 'description', true );
 		delete_user_option( $user->ID, 'category', true );
 		delete_user_option( $user->ID, 'type', true );
@@ -1341,20 +1319,18 @@ class OrgHub_UsersModel
 
 	/**
 	 * Create the OrgHub user's profile blog.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @return  int|bool   The profile blog id on success, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @return  int|bool  The profile blog id on success, otherwise false.
 	 */	
 	public function create_profile_blog( &$db_user )
 	{
 		global $wpdb;
 		
-		// Check user.
+ 		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 		
-		//
+
 		// The user's username needs to be setup before creating a profile blog.
-		//
 		if( !$db_user['wp_user_id'] )
 		{
 			$this->model->write_to_log( $db_user['username'], 'Wordpress username not set.' );
@@ -1362,10 +1338,9 @@ class OrgHub_UsersModel
 			return false;
 		}
 		
-		//
+
 		// If a profile blog is already set, then verify that it exists and that the 
 		// options are setup correctly.
-		//
 		if( $db_user['profile_blog_id'] )
 		{
 			$blog_details = get_blog_details( $db_user['profile_blog_id'] );
@@ -1389,9 +1364,8 @@ class OrgHub_UsersModel
 		$path = $db_user['site_path'];
 		$this->model->get_site_url( $domain, $path );
 		
-		//
+
 		// Check if blog already exists.
-		//
 		$blog_id = $this->get_blog_by_path( $path );
 		
 		if( $blog_id )
@@ -1435,9 +1409,8 @@ class OrgHub_UsersModel
 			}
 		}
 		
-		//
+
 		// If blog was found or created, then update the users data.
-		//
 		if( $blog_id )
 		{
 			$result = $this->set_user_column( $db_user, 'profile_blog_id', $blog_id );
@@ -1456,9 +1429,8 @@ class OrgHub_UsersModel
 			}
 		}
 		
-		//
+
 		// No blog was created.
-		//
 		$this->model->write_to_log( $db_user['username'], 'Unable to create profile blog.' );
 		$this->set_user_column( $db_user, 'profile_blog_error', 'Unable to create profile blog.' );
 		return false;
@@ -1467,23 +1439,20 @@ class OrgHub_UsersModel
 
 	/**
 	 * Arhive the user's profile blog.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @return  int|bool   The profile blog id on success, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @return  int|bool  The profile blog id on success, otherwise false.
 	 */
 	public function archive_profile_blog( &$db_user )
 	{
-		// Check user.
+ 		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 		
-		//
+
 		// If profile blog has not been set, then cannot archive blog.
-		//
 		if( !$db_user['profile_blog_id'] ) return false;
 		
-		//
+
 		// Verify that the blog exists, then update the blog settings.
-		//
 		$blog_details = get_blog_details( $db_user['profile_blog_id'] );
 		if( $blog_details !== false )
 		{
@@ -1496,9 +1465,8 @@ class OrgHub_UsersModel
 			);
 		}
 		
-		//
+
 		// Clear the errors.
-		//
 		$this->set_user_column( $db_user, 'profile_blog_error', null );
 		return $db_user['profile_blog_id'];
 	}
@@ -1506,23 +1474,20 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Publish the user's profile blog.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @return  int|bool   The profile blog id on success, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @return  int|bool  The profile blog id on success, otherwise false.
 	 */
 	public function publish_profile_blog( &$db_user )
 	{
-		// Check user.
+ 		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 		
-		//
+
 		// If profile blog has not been set, then cannot publish blog.
-		//
 		if( !$db_user['profile_blog_id'] ) return false;
 		
-		//
+
 		// Verify that the blog exists, then update the blog settings.
-		//
 		$blog_details = get_blog_details( $db_user['profile_blog_id'] );
 		if( $blog_details !== false )
 		{
@@ -1535,9 +1500,8 @@ class OrgHub_UsersModel
 			);
 		}
 		
-		//
+
 		// Clear the errors.
-		//
 		$this->set_user_column( $db_user, 'profile_blog_error', null );
 		return $db_user['profile_blog_id'];
 	}
@@ -1545,11 +1509,11 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Update a blog's settings in the blogs table.
-	 * @param   int   $blog_id   The blog's id.
-	 * @param   bool  $archived  True if site should be archived, otherwise false.
-	 * @param   bool  $mature    True if site should be mature, otherwise false.
-	 * @param   bool  $spam      True if site should be spam, otherwise false.
-	 * @param   bool  $deleted   True if site should be deleted, otherwise false.
+	 * @param  int  $blog_id  The blog's id.
+	 * @param  bool  $archived  True if site should be archived, otherwise false.
+	 * @param  bool  $mature  True if site should be mature, otherwise false.
+	 * @param  bool  $spam  True if site should be spam, otherwise false.
+	 * @param  bool  $deleted  True if site should be deleted, otherwise false.
 	 * @return  bool  True if the update was successful, otherwise false.
 	 */
 	protected function update_blog_settings( $blog_id, $archived, $mature, $spam, $deleted )
@@ -1575,9 +1539,8 @@ class OrgHub_UsersModel
 
 	/**
 	 * Process all of the Connections Sites' posts for an OrgHub user.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @return  int|bool   True on success, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @return  int|bool  True on success, otherwise false.
 	 */
 	public function process_all_connections_posts( &$db_user )
 	{
@@ -1586,9 +1549,8 @@ class OrgHub_UsersModel
  		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 		
-		//
+
 		// Process each Connections Site's post.
-		//
 		foreach( $db_user['connections_sites'] as &$cs )
 		{
 			$this->process_connections_post( $db_user, $cs );
@@ -1600,22 +1562,20 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Process a single Connections Site's post for an OrgHub user.
-	 * @param   int|array     $db_user           The OrgHub user's id (not WordPress user 
-	 *                                           id) an array of the user's data.
-	 * @param   string|array  $connections_info  The connections site name or info array.
-	 * @return  bool          True if the processing occured successfully, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @param  string|array  $connections_info  The connections site name or info array.
+	 * @return  bool  True if the processing occured successfully, otherwise false.
 	 */
 	protected function process_connections_post( &$db_user, &$connections_info )
 	{
  		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 
- 		// Check conections.
+ 		// Check connections.
 		$this->check_connections( $db_user['id'], $connections_info ); if( !$connections_info ) return false;
 
-		//
+
 		// The user's username needs to be setup before processing a Connections post.
-		//
 		if( !$db_user['wp_user_id'] )
 		{
 			$this->model->write_to_log( $db_user['username'], 'Wordpress username not set.' );
@@ -1623,9 +1583,8 @@ class OrgHub_UsersModel
 			return null;
 		}
 		
-		//
+
 		// Verify that the Connections site is a valid Connections site.
-		//
 		$connections_blog_id = $this->is_connections_site( $connections_info['site'] );
 		
 		if( !$connections_blog_id )
@@ -1637,9 +1596,8 @@ class OrgHub_UsersModel
 		
 		switch_to_blog( $connections_blog_id );
 				
-		//
+
 		// If the post already exists, then update the data, otherwise clear post_id.
-		//
 		if( $connections_info['post_id'] )
 		{
 			$post = get_post( $connections_info['post_id'], ARRAY_A );
@@ -1692,9 +1650,8 @@ class OrgHub_UsersModel
 		
 		restore_current_blog();
 		
-		//
+
 		// Inactive users will not have new Connections Posts created.
-		//
 		if( $db_user['status'] == 'inactive' ) return false;		
 		
 		$connections_info['post_id'] = null;
@@ -1704,9 +1661,8 @@ class OrgHub_UsersModel
 
 	/**
 	 * Create all of the Connections Sites' posts for an OrgHub user.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @return  int|bool   True on success, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @return  int|bool  True on success, otherwise false.
 	 */
 	public function create_all_connections_posts( &$db_user )
 	{
@@ -1715,9 +1671,8 @@ class OrgHub_UsersModel
  		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 		
-		//
+
 		// Process each Connections Site's post.
-		//
 		foreach( $db_user['connections_sites'] as &$cs )
 		{
 			$this->create_connections_post( $db_user, $cs );
@@ -1729,10 +1684,9 @@ class OrgHub_UsersModel
 		
 	/**
 	 * Creates a Connections Post.
-	 * @param   int|array     $db_user           The OrgHub user's id (not WordPress user 
-	 *                                           id) an array of the user's data.
-	 * @param   string|array  $connections_info  The connections site name or info array.
-	 * @return  int|bool      The connections post id on success, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @param  string|array  $connections_info  The connections site name or info array.
+	 * @return  int|bool  The connections post id on success, otherwise false.
 	 */
 	public function create_connections_post( &$db_user, &$connections_info )
 	{
@@ -1745,9 +1699,8 @@ class OrgHub_UsersModel
 		
 		$connections_post_id = false;
 		
-		//
+
 		// Verify that the Connections site is a valid Connections site.
-		//
 		$connections_blog_id = $this->is_connections_site( $connections_info['site'] );
 		
 		if( !$connections_blog_id )
@@ -1759,9 +1712,8 @@ class OrgHub_UsersModel
 		
 		switch_to_blog( $connections_blog_id );
 		
-		//
+
 		// If connections post id is not set and user is not inactive, then create post.
-		//
 		if( !$connections_info['post_id'] )
 		{
 			// determine was tyep of conneciton to make (synch or manual).
@@ -1849,9 +1801,8 @@ class OrgHub_UsersModel
 		
 		restore_current_blog();
 
-		//
+
 		// Connections post was created or updated successfully.
-		//
 		if( $connections_post_id )
 		{
 			$result = $this->set_connections_column( $db_user, $connections_info, 'post_id', $connections_post_id );
@@ -1868,9 +1819,8 @@ class OrgHub_UsersModel
 			return null;
 		}
 		
-		//
+
 		// Connections post was not created successfully.
-		//
 		$this->model->write_to_log( $db_user['username'], 'Unable to create Connections post.' );
 		$this->set_connections_column( $db_user, $connections_info, 'connections_error', 'Unable to create Connections Post.' );
 		return null;
@@ -1879,9 +1829,8 @@ class OrgHub_UsersModel
 
 	/**
 	 * Draft all of the Connections Sites' posts for an OrgHub user.
-	 * @param   int|array  $db_user  The OrgHub user's id (not WordPress user id) an
-	 *                               array of the user's data.
-	 * @return  int|bool   True on success, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @return  int|bool  True on success, otherwise false.
 	 */
 	public function draft_all_connections_posts( &$db_user )
 	{
@@ -1890,9 +1839,8 @@ class OrgHub_UsersModel
  		// Check user.
 		$this->check_user( $db_user ); if( !$db_user ) return false;
 
-		//
+
 		// Process each Connections Site's post.
-		//
 		foreach( $db_user['connections_sites'] as &$cs )
 		{
 			$this->draft_connections_post( $db_user, $cs );
@@ -1904,10 +1852,9 @@ class OrgHub_UsersModel
 		
 	/**
 	 * Draft a Connections Post.
-	 * @param   int|array     $db_user           The OrgHub user's id (not WordPress user 
-	 *                                           id) an array of the user's data.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
 	 * @param   string|array  $connections_info  The connections site name or info array.
-	 * @return  int|bool      The connections post id on success, otherwise false.
+	 * @return  int|bool  The connections post id on success, otherwise false.
 	 */
 	public function draft_connections_post( &$db_user, &$connections_info )
 	{
@@ -1919,14 +1866,12 @@ class OrgHub_UsersModel
  		// Check conections.
 		$this->check_connections( $db_user['id'], $connections_info ); if( !$connections_info ) return false;
 		
-		//
+
 		// Cannot draft post that doesn't exist.
-		//
 		if( !$connections_info['post_id'] ) return false;
 		
-		//
+
 		// Detemrine that site is valid Connections site.
-		//
 		$connections_blog_id = $this->is_connections_site( $connections_info['site'] );
 		if( !$connections_blog_id )
 		{
@@ -1937,9 +1882,8 @@ class OrgHub_UsersModel
 		
 		switch_to_blog( $connections_blog_id );
 		
-		//
+
 		// Draft the post, if it exists.
-		//
 		$post = get_post( $connections_info['post_id'], ARRAY_A );
 		if( $post )
 		{
@@ -1952,9 +1896,8 @@ class OrgHub_UsersModel
 
 		restore_current_blog();
 		
-		//
+
 		// Clear errors.
-		//
 		$this->set_connections_column( $db_user, $connections_info, 'connections_error', null );
 		return $connections_info['post_id'];
 	}	
@@ -1962,10 +1905,9 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Publish a Connections Post.
-	 * @param   int|array     $db_user           The OrgHub user's id (not WordPress user 
-	 *                                           id) an array of the user's data.
-	 * @param   string|array  $connections_info  The connections site name or info array.
-	 * @return  int|bool      The connections post id on success, otherwise false.
+	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
+	 * @param  string|array  $connections_info  The connections site name or info array.
+	 * @return  int|bool  The connections post id on success, otherwise false.
 	 */
 	public function publish_connections_post( &$db_user, &$connections_info )
 	{
@@ -1977,14 +1919,12 @@ class OrgHub_UsersModel
  		// Check conections.
 		$this->check_connections( $db_user['id'], $connections_info ); if( !$connections_info ) return false;
 
-		//
+
 		// Cannot publish post that doesn't exist.
-		//
 		if( !$connections_info['post_id'] ) return false;
 		
-		//
+
 		// Detemrine that site is valid Connections site.
-		//
 		$connections_blog_id = $this->is_connections_site( $connections_info['site'] );
 		if( !$connections_blog_id )
 		{
@@ -1995,9 +1935,8 @@ class OrgHub_UsersModel
 		
 		switch_to_blog( $connections_blog_id );
 		
-		//
+
 		// Publish the post, if it exists.
-		//
 		$post = get_post( $connections_info['post_id'], ARRAY_A );
 		if( $post )
 		{
@@ -2010,9 +1949,8 @@ class OrgHub_UsersModel
 
 		restore_current_blog();
 		
-		//
+
 		// Clear errors.
-		//
 		$this->set_connections_column( $db_user, $connections_info, 'connections_error', null );
 		return $connections_info['post_id'];
 	}	
@@ -2020,8 +1958,8 @@ class OrgHub_UsersModel
 
 	/**
 	 * Determines if the Connections Site is a valid Connecitons site.
-	 * @param   string  $connections_site_slug  The name/slug of the connections site.
-	 * @return  bool    True if the site is valid Connections site, otherwise false.
+	 * @param  string  $connections_site_slug  The name/slug of the connections site.
+	 * @return  bool  True if the site is valid Connections site, otherwise false.
 	 */
 	public function is_connections_site( $connections_site_slug )
 	{
@@ -2041,9 +1979,9 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Get the information related to a Connections site for an OrgHub user.
-	 * @param   int     $user_id           The user id of an OrgHub user.
-	 * @param   string  $connections_site  The connections site name.
-	 * @return  array   An array of a Connections site.
+	 * @param  int  $user_id  The user id of an OrgHub user.
+	 * @param  string  $connections_site  The connections site name.
+	 * @return  array  An array of a Connections site.
 	 */
 	public function get_connections_info( $user_id, $connections_site )
 	{
@@ -2060,17 +1998,16 @@ class OrgHub_UsersModel
 	}
 	
 
-
 //========================================================================================
 //=========================================================================== Export =====
 	
 	
 	/**
 	 * Exports a list of users to a CSV.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   bool    $only_errors  True if filter out OrgHub users with errors.
-	 * @param   string  $orderby      The column to orderby.
+	 * @param  array  $filter  An array of filter name and values.
+	 * @param  array  $search  An array of search columns and phrases.
+	 * @param  bool  $only_errors  True if filter out OrgHub users with errors.
+	 * @param  string  $orderby  The column to orderby.
 	 */
 	public function csv_export( $filter = array(), $search = array(), $only_errors = false, $orderby = null )
 	{
@@ -2109,7 +2046,6 @@ class OrgHub_UsersModel
 		PHPUtil_CsvHandler::export( 'users', $headers, $users );
 		exit;
 	}
-	
 	
 	
 //========================================================================================
@@ -2171,14 +2107,13 @@ class OrgHub_UsersModel
 	}
 	
 
-	
 //========================================================================================
 //=================================================================== Util Functions =====
 	
 	
 	/**
 	 * Retrieves the blog_id of a blog using it's path.
-	 * @param   string  $path  The path of the blog.
+	 * @param  string  $path  The path of the blog.
 	 * @return  The blog id on success, otherwise false.
 	 */
 	public function get_blog_by_path( $path, $prefix_base_path = false )
@@ -2206,7 +2141,7 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Get a user by it's WordPress user id.
-	 * @param   int           $id  The WordPress user id.
+	 * @param  int  $id  The WordPress user id.
 	 * @return  WP_User|bool  A WP_User object on success, otherwise false.
 	 */
 	public function get_wp_user( $id )
@@ -2217,7 +2152,7 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Get a blog's information.
-	 * @param   int         $id  The blog id.
+	 * @param  int  $id  The blog id.
 	 * @return  array|bool  The blog's information on success, otherwise false.
 	 */
 	public function get_profile_blog( $id )
@@ -2246,7 +2181,7 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Get a blog's link.
-	 * @param   int     $id  The blog id.
+	 * @param  int  $id  The blog id.
 	 * @return  string  The url to the blog's main page.
 	 */
 	 public function get_profile_blog_link( $id )
@@ -2260,8 +2195,8 @@ class OrgHub_UsersModel
 
 	/**
 	 * Gets the Connections Post.
-	 * @param   int           $id                The Connections Post's id.
-	 * @param   string        $connections_site  The Connections Site's name/slug.
+	 * @param  int  $id  The Connections Post's id.
+	 * @param  string  $connections_site  The Connections Site's name/slug.
 	 * @return  WP_Post|bool  The post on success, otherwise false.
 	 */
 	public function get_connections_post( $id, $connections_site )
@@ -2280,8 +2215,8 @@ class OrgHub_UsersModel
 
 	/**
 	 * Gets the Connections Post's view link.
-	 * @param   int     $id                The Connections Post's id.
-	 * @param   string  $connections_site  The Connections Site's name/slug.
+	 * @param  int  $id  The Connections Post's id.
+	 * @param  string  $connections_site  The Connections Site's name/slug.
 	 * @return  string  The url to the post's view page.
 	 */
 	public function get_connections_post_link( $id, $connections_site )
@@ -2299,8 +2234,8 @@ class OrgHub_UsersModel
 	
 	/**
 	 * Gets the Connections Post's edit link.
-	 * @param   int     $id                The Connections Post's id.
-	 * @param   string  $connections_site  The Connections Site's name/slug.
+	 * @param  int  $id  The Connections Post's id.
+	 * @param  string  $connections_site  The Connections Site's name/slug.
 	 * @return  string  The url to the post's edit page.
 	 */
 	public function get_connections_post_edit_link( $id, $connections_site )

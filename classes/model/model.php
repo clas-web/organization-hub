@@ -1,35 +1,49 @@
 <?php
 /**
- * OrgHub_Model
- * 
  * The main model for the Organization Hub plugin.
  * 
- * @package    orghub
- * @subpackage classes
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @package    organization-hub
+ * @subpackage classes/model
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_Model') ):
 class OrgHub_Model
 {
+	/**
+	 * The only instance of the current model.
+	 * @var  OrgHub_Model
+	 */	
+	private static $instance = null;
 	
-	private static $instance = null;	// The only instance of this class.
+	/**
+	 * The Sites model.
+	 * @var  OrgHub_SitesModel
+	 */	
+	public $site = null;
+
+	/**
+	 * The Users Model.
+	 * @var  OrgHub_UsersModel
+	 */	
+	public $user = null;
+
+	/**
+	 * The Upload model.
+	 * @var  OrgHub_UploadModel
+	 */	
+	public $upload = null;
 	
-	public $site = null;				// The site model.
-	public $user = null;				// The user model.
-	public $upload = null;				// The upload model.
-	
-	public $last_error = null;			// The error logged by a model.
-	
-	
+	/**
+	 * The last error saved by the model.
+	 * @var  string
+	 */	
+	public $last_error = null;
+		
 	
 	/**
 	 * Private Constructor.  Needed for a Singleton class.
-	 * Creates an OrgHub_Model object.
 	 */
-	protected function __construct()
-	{
-	}
+	protected function __construct() { }
 	
 	
 	/**
@@ -75,9 +89,8 @@ class OrgHub_Model
 	/**
 	 * Write the username followed by a log line.
 	 * @param  string  $username  The user's username.
-	 * @param  string  $text      The line of text to insert into the log.
-	 * @param  bool    $newline   True if a new line character should be inserted after
-	 *                              the line, otherwise False.
+	 * @param  string  $text  The line of text to insert into the log.
+	 * @param  bool  $newline  True if a new line character should be inserted after the line, otherwise False.
 	 */
 	public function write_to_log( $username = '', $text = '', $newline = true )
 	{
@@ -108,10 +121,10 @@ class OrgHub_Model
 	
 	/**
 	 * Get an Organization Hub option.
-	 * @param  string       $name     The name of the option.
-	 * @param  bool|string  $default  The default value for the option used if the option
+	 * @param  string  $name  The name of the option.
+	 * @param  bool|string  $default  The default value for the option used if the option 
 	 *                                doesn't currently exist.
-	 * @return bool|string  The value of the option, if it exists, otherwise the default.
+	 * @return  bool|string  The value of the option, if it exists, otherwise the default.
 	 */
 	public function get_option( $name, $default = false )
 	{
@@ -125,8 +138,8 @@ class OrgHub_Model
 	/**
 	 * Updates the current value(s) of the Organization Hub options.
 	 * @param  array  $options  The new values.
-	 * @param  bool   $merge    True if the new values should be merged into the existing
-	 *                            options, otherwise the options are overwrited.
+	 * @param  bool  $merge  True if the new values should be merged into the existing
+	 *                       options, otherwise the options are overwrited.
 	 */
 	public function update_options( $options, $merge = false )
 	{
@@ -142,7 +155,7 @@ class OrgHub_Model
 	
 	/**
 	 * Updates the current value(s) of the Organization Hub options.
-	 * @param  string  $key    The key name of the option.
+	 * @param  string  $key  The key name of the option.
 	 * @param  string  $value  The string value of the option.
 	 */
 	public function update_option( $key, $value )
@@ -196,11 +209,11 @@ class OrgHub_Model
 
 	/**
 	 * Determines if a key/value pair is present in an array.
-	 * @param   mixed   $value   The value to use in the comparison.
-	 * @param   string  $key     The key to use in the comparison.
-	 * @param   array   $array   The array to use in the comparison.
-	 * @param   bool    $strict  Use a strict comparison (eg. case-sensitive string).
-	 * @return  bool    True if a match, otherwise false.
+	 * @param  mixed  $value  The value to use in the comparison.
+	 * @param  string  $key  The key to use in the comparison.
+	 * @param  array  $array  The array to use in the comparison.
+	 * @param  bool  $strict  Use a strict comparison (eg. case-sensitive string).
+	 * @return  bool  True if a match, otherwise false.
 	 */
 	public function in_array_by_key( $value, $key, $array, $strict = false )
 	{ 
@@ -225,8 +238,7 @@ class OrgHub_Model
 	
 	/**
 	 * Creates a list of column names.
-	 * @param   array   $columns  An associative array with key being table name and
-	 *                            values being column names.
+	 * @param  array  $columns  An associative array with key being table name and values being column names.
 	 * @return  string  The generated SQL of column names.
 	 */
 	public function get_column_list( $columns )
@@ -248,18 +260,20 @@ class OrgHub_Model
 	
 	/**
 	 * Creates a user.
-	 * @param  string        $username  The user's login name.
-	 * @param  string        $password  The user's password.
-	 * @param  string        $email     The user's email.
-	 * @return WP_User|null  The user object on success, otherwise null.
+	 * @param  string  $username  The user's login name.
+	 * @param  string  $password  The user's password.
+	 * @param  string  $email  The user's email.
+	 * @return  WP_User|null  The user object on success, otherwise null.
 	 */
 	public function create_user( $username, $password, $email )
 	{
 		$user = null;
 		
+
 		// Determine how the user should be created.
 		$create_user_type = $this->get_option( 'create-user-type', 'local' );
 		
+
 		// Create the user.
 		switch( $create_user_type )
 		{
@@ -360,11 +374,10 @@ class OrgHub_Model
 	
 	/**
 	 * Gets the complete site url and alters the domain and variables.
-	 * @param  string  $domain       The domain of the site. If domain is empty then the
-	 *                               default domain is used.
-	 * @param  string  $path         The path of the site.
-	 * @param  bool    $add_to_path  Prepend the default site's path to the path.
-	 * @return string  The complete path from the domain and path.
+	 * @param  string  $domain  The domain of the site. If domain is empty then the default domain is used.
+	 * @param  string  $path  The path of the site.
+	 * @param  bool  $add_to_path  Prepend the default site's path to the path.
+	 * @return  string  The complete path from the domain and path.
 	 */
 	public function get_site_url( &$domain, &$path, $add_to_path = true )
 	{
@@ -395,8 +408,7 @@ class OrgHub_Model
 	{
 		return is_plugin_active_for_network('wpmuldap/ldap_auth.php');
 	}
-		
-		
+	
 } // class OrgHub_Model
 endif; // if( !class_exists('OrgHub_Model') ):
 

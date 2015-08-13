@@ -3,31 +3,56 @@
 if( !class_exists('OrgHub_SitesListTable') )
 	require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/sites-list-table.php' );
 
-/**
- * OrgHub_SitesAdminPage
- * 
- * This class controls the admin page "Sites > List".
- * 
- * @package    orghub
- * @subpackage admin-pages/pages
- * @author     Crystal Barton <cbarto11@uncc.edu>
- */
 
+/**
+ * Controls the admin page "Sites > List".
+ * 
+ * @package    organization-hub
+ * @subpackage admin-pages/tabs/sites
+ * @author     Crystal Barton <atrus1701@gmail.com>
+ */
 if( !class_exists('OrgHub_SitesListTabAdminPage') ):
 class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 {
-	
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
 	private $model = null;	
+
+	/**
+	 * The Sites admin table.
+	 * @var  OrgHub_SitesListTable
+	 */
 	private $list_table = null;
 	
+	/**
+	 * List of all filters.
+	 * @var  Array
+	 */
 	private $filter_types;
+
+	/**
+	 * Current filters.
+	 * @var  Array
+	 */
 	private $filter;
+
+	/**
+	 * Current search filter.
+	 * @var  Array
+	 */
 	private $search;
+
+	/**
+	 * The current orderby name and ordering (ASC or DESC).
+	 * @var  string
+	 */
 	private $orderby;
 	
 	
 	/**
-	 * Creates an OrgHub_SitesListTabAdminPage object.
+	 * Controller.
 	 */
 	public function __construct( 
 		$parent,

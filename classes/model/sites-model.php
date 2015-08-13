@@ -1,29 +1,35 @@
 <?php
 /**
- * OrgHub_SitesModel
- * 
  * The sites model for the Organization Hub plugin.
  * 
- * @package    orghub
- * @subpackage classes
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @package    organization-hub
+ * @subpackage classes/model
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_SitesModel') ):
 class OrgHub_SitesModel
 {
+	/**
+	 * The only instance of the current model.
+	 * @var  OrgHub_SitesModel
+	 */	
+	private static $instance = null;
+
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
+	private $model = null;
 	
-	private static $instance = null;	// The only instance of this class.
-	private $model = null;				// The "parent" model for Organization Hub.
-	
-	// Names of tables used by the model without prefix.
+	/**
+	 * The base name (without prefix) for the site table.
+	 * @var  string
+	 */
 	private static $site_table = 'orghub_site';	// 
-	
 	
 	
 	/**
 	 * Private Constructor.  Needed for a Singleton class.
-	 * Creates an OrgHub_SitesModel object.
 	 */
 	protected function __construct()
 	{
@@ -117,16 +123,12 @@ class OrgHub_SitesModel
 	
 	/**
 	 * Adds an OrgHub site to the database.
-	 * @param   array     $args  An array of data about a site.
+	 * @param  array  $args  An array of data about a site.
 	 * @return  int|bool  The id of the inserted site or false on failure.
 	 */
 	public function add_site( &$args )
 	{
-		//if( !$this->check_args( $args ) ) return false;
-
-		//
 		// If site already exists, then update the user.
-		//
 		$db_site = $this->get_site_by_blog_id( $args['blog_id'] );
 		if( $db_site )
 		{
@@ -135,9 +137,8 @@ class OrgHub_SitesModel
 		
 		global $wpdb;
 		
-		//
+
 		// Insert new site into Sites table.
-		//
 		$result = $wpdb->insert(
 			self::$site_table,
 			array(
@@ -158,9 +159,8 @@ class OrgHub_SitesModel
 			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 		
-		//
+
 		// Check to make sure insertion was successful.
-		//
 		$site_id = $wpdb->insert_id;
 		if( !$site_id )
 		{
@@ -174,17 +174,16 @@ class OrgHub_SitesModel
 	
 	/**
 	 * Updates an OrgHub site in the database.
-	 * @param   int       $id    The site's id (not the WordPress blog id).
-	 * @param   array     $args  An array of data about a site.
+	 * @param  int  $id  The site's id (not the WordPress blog id).
+	 * @param  array  $args  An array of data about a site.
 	 * @return  int|bool  The id of the updated site or false on failure.
 	 */
 	public function update_site( $id, &$args )
 	{
 		global $wpdb;
 		
-		//
+
 		// Update user in Users table.
-		//
 		$result = $wpdb->update(
 			self::$site_table,
 			array(
@@ -207,9 +206,8 @@ class OrgHub_SitesModel
 			array( '%d' )
 		);
 
-		//
+
 		// Check to make sure update was successful.
-		//
 		if( $result === false )
 		{
 			$this->model->last_error = 'Unable to update site.';
@@ -227,12 +225,12 @@ class OrgHub_SitesModel
 
 	/**
 	 * Retrieve a complete list of OrgHub site from the database after filtering.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   string  $orderby      The column to orderby.
-	 * @param   int     $offset       The offset of the users list.
-	 * @param   int     $limit        The amount of users to retrieve.
-	 * @return  array   An array of sites given the filtering.
+	 * @param  array  $filter  An array of filter name and values.
+	 * @param  array  $search  An array of search columns and phrases.
+	 * @param  string  $orderby  The column to orderby.
+	 * @param  int  $offset  The offset of the users list.
+	 * @param  int  $limit  The amount of users to retrieve.
+	 * @return  array  An array of sites given the filtering.
 	 */
 	public function get_sites( $filter = array(), $search = array(), $orderby = array(), $offset = 0, $limit = -1 )
 	{
@@ -263,10 +261,10 @@ class OrgHub_SitesModel
 	
 	/**
 	 * The amount of OrgHub sites from the database after filtering.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   string  $orderby      The column to orderby.
-	 * @return  array   The amount of sites given the filtering.
+	 * @param  array  $filter  An array of filter name and values.
+	 * @param  array  $search  An array of search columns and phrases.
+	 * @param  string  $orderby  The column to orderby.
+	 * @return  array  The amount of sites given the filtering.
 	 */
 	public function get_sites_count( $filter, $search, $orderby )
 	{
@@ -278,7 +276,7 @@ class OrgHub_SitesModel
 
 	/**
 	 * Get a site's information based on its blog id.
-	 * @param   int         $blog_id  The blog's id.
+	 * @param  int  $blog_id  The blog's id.
 	 * @return  array|bool  The site's data on success, otherwise false.
 	 */
 	public function get_site_by_blog_id( $blog_id )
@@ -323,11 +321,11 @@ class OrgHub_SitesModel
 	
 	/**
 	 * Creates the SQL needed to complete an SQL statement.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   string  $orderby      The column to orderby.
-	 * @param   int     $offset       The offset of the users list.
-	 * @param   int     $limit        The amount of users to retrieve.
+	 * @param  array  $filter  An array of filter name and values.
+	 * @param  array  $search  An array of search columns and phrases.
+	 * @param  string  $orderby  The column to orderby.
+	 * @param  int  $offset  The offset of the users list.
+	 * @param  int  $limit  The amount of users to retrieve.
 	 * @return  string  The constructed SQL needed to complete an SQL statement.
 	 */
 	protected function filter_sql( $filter = array(), $search = array(), $groupby = null, $orderby = null, $offset = 0, $limit = -1 )
@@ -455,9 +453,9 @@ class OrgHub_SitesModel
 
 	/**
 	 * Gets a column in the OrgHub sites table.
-	 * @param   int     $user_id  The OrgHub site's id (not WordPress site id).
-	 * @param   string  $column   The column name.
-	 * @return  bool    The requested value or false on failure.
+	 * @param  int  $user_id  The OrgHub site's id (not WordPress site id).
+	 * @param  string  $column  The column name.
+	 * @return  bool  The requested value or false on failure.
 	 */
 	public function get_site_column( $blog_id, $column )
 	{
@@ -473,10 +471,10 @@ class OrgHub_SitesModel
 	
 	/**
 	 * Sets a column in the OrgHub sites table to a value.
-	 * @param   int     $user_id  The OrgHub site's id (not WordPress site id).
-	 * @param   string  $column   The column name.
-	 * @param   strint  $value    The value to set column to.
-	 * @return  bool    True if update was successful, otherwise false.
+	 * @param  int  $user_id  The OrgHub site's id (not WordPress site id).
+	 * @param  string  $column  The column name.
+	 * @param  strint  $value  The value to set column to.
+	 * @return  bool  True if update was successful, otherwise false.
 	 */
 	protected function set_site_column( $user_id, $column, $value )
 	{
@@ -533,7 +531,7 @@ class OrgHub_SitesModel
 	
 	/**
 	 * Refresh a single site.
-	 * @param   int         $blog_id  The blog id of the site.
+	 * @param  int  $blog_id  The blog id of the site.
 	 * @return  array|bool  The site's info on success, otherwise false.
 	 */
 	public function refresh_site( $blog_id )
@@ -626,8 +624,8 @@ class OrgHub_SitesModel
 
 	/**
 	 * Change the active theme of a blog.
-	 * @param  int     $blog_id  The blog's id.
-	 * @param  string  $theme    The new theme's name.	 
+	 * @param  int  $blog_id  The blog's id.
+	 * @param  string  $theme  The new theme's name.	 
 	 */
 	function change_theme( $blog_id, $theme )
 	{
@@ -641,9 +639,9 @@ class OrgHub_SitesModel
 
 	/**
 	 * Change the active theme of a blog.
-	 * @param  int     $blog_id        The blog's id.
-	 * @param  int     $admin_user_id  The admin's user id.
-	 * @param  string  $admin_mail     The admin's email.
+	 * @param  int  $blog_id  The blog's id.
+	 * @param  int  $admin_user_id  The admin's user id.
+	 * @param  string  $admin_mail  The admin's email.
 	 */
 	function change_site_admin( $blog_id, $admin_user_id, $admin_email )
 	{
@@ -669,9 +667,9 @@ class OrgHub_SitesModel
 	
 	/**
 	 * Exports a list of sites to a CSV.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   string  $orderby      The column to orderby.
+	 * @param  array  $filter  An array of filter name and values.
+	 * @param  array  $search  An array of search columns and phrases.
+	 * @param  string  $orderby  The column to orderby.
 	 */
 	public function get_site_csv_export( $filter = array(), $search = array(), $orderby = null )
 	{

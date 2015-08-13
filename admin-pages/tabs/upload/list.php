@@ -3,27 +3,38 @@
 if( !class_exists('OrgHub_UploadListTable') )
 	require_once( ORGANIZATION_HUB_PLUGIN_PATH.'/classes/upload-list-table.php' );
 
-/**
- * OrgHub_UploadListTabAdminPage
- * 
- * This class controls the tab admin page "Upload > Content".
- * 
- * @package    orghub
- * @subpackage admin-pages/tabs/upload
- * @author     Crystal Barton <cbarto11@uncc.edu>
- */
 
+/**
+ * Controls the tab admin page "Upload > List".
+ * 
+ * @package    organization-hub
+ * @subpackage admin-pages/tabs/upload
+ * @author     Crystal Barton <atrus1701@gmail.com>
+ */
 if( !class_exists('OrgHub_UploadListTabAdminPage') ):
 class OrgHub_UploadListTabAdminPage extends APL_TabAdminPage
 {
-	
-	private $model = null;
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
+	private $model = null;	
+
+	/**
+	 * The Upload admin table.
+	 * @var  OrgHub_UploadListTable
+	 */
 	private $list_table = null;
-	private $orderby = null;
+	
+	/**
+	 * The current orderby name and ordering (ASC or DESC).
+	 * @var  string
+	 */
+	private $orderby;	
 	
 	
 	/**
-	 * Creates an OrgHub_UploadListTabAdminPage object.
+	 * Controller.
 	 */
 	public function __construct(
 		$parent,

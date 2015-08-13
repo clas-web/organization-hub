@@ -1,12 +1,10 @@
 <?php
 /**
- * OrgHub_UsersAdminPage
+ * Controls the admin page "Users".
  * 
- * This class controls the admin page "Users".
- * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage admin-pages/pages
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
 
 if( !class_exists('OrgHub_UsersAdminPage') ):

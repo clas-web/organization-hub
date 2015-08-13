@@ -1,29 +1,35 @@
 <?php
 /**
- * OrgHub_UploadModel
- * 
  * The upload model for the Organization Hub plugin.
  * 
- * @package	orghub
- * @subpackage classes
- * @author	 Crystal Barton <cbarto11@uncc.edu>
+ * @package    organization-hub
+ * @subpackage classes/model
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_UploadModel') ):
 class OrgHub_UploadModel
 {
+	/**
+	 * The only instance of the current model.
+	 * @var  OrgHub_UploadModel
+	 */	
+	private static $instance = null;
+
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
+	private $model = null;
 	
-	private static $instance = null;	// The only instance of this class.
-	private $model = null;				// The "parent" model for Organization Hub.
-	
-	// Names of tables used by the model without prefix.
-	private static $upload_table = 'orghub_upload';	// 
-	
+	/**
+	 * The base name (without prefix) for the upload table.
+	 * @var  string
+	 */
+	private static $upload_table = 'orghub_upload';
 	
 	
 	/**
 	 * Private Constructor.  Needed for a Singleton class.
-	 * Creates an OrgHub_SitesModel object.
 	 */
 	protected function __construct()
 	{
@@ -46,7 +52,6 @@ class OrgHub_UploadModel
 		}
 		return self::$instance;
 	}
-
 
 
 //========================================================================================
@@ -98,7 +103,6 @@ class OrgHub_UploadModel
 		global $wpdb;
 		$wpdb->query( 'DELETE FROM '.self::$upload_table.';' );
 	}
-	
 	
 	
 //========================================================================================
@@ -155,15 +159,14 @@ class OrgHub_UploadModel
 	/**
 	 * Validates the arguments for an item based on required key, values, and other
 	 * checks that checks for errors before writting to the database.
-	 * @param   array  $args              The arguments.
-	 * @param   array  $required_keys     The required keys that must exist in the args.
-	 * @param   array  $required_values   The keys that must have non-empty values in the args.
-	 * @param   array  $valid_keys        Others keys that are also valid in the args and 
-	 *                                    should not be ignored or should be created if
-	 *                                    they are missing.
-	 * @param   array  $valid_regex_keys  Regular expression that need to be matched to 
-	 *                                    determine there any other valid keys.
-	 * @return  bool   True if all args where validated, otherwise false on error.
+	 * @param  array  $args  The arguments.
+	 * @param  array  $required_keys  The required keys that must exist in the args.
+	 * @param  array  $required_values  The keys that must have non-empty values in the args.
+	 * @param  array  $valid_keys  Others keys that are also valid in the args and should not be ignored 
+	 *                             or should be created if they are missing.
+	 * @param  array  $valid_regex_keys  Regular expression that need to be matched to determine there 
+	 *                                   any other valid keys.
+	 * @return  bool  True if all args where validated, otherwise false on error.
 	 */
 	private function validate_args_for_db( &$args, $required_keys, $required_values, $valid_keys, $valid_regex_keys )
 	{
@@ -210,15 +213,14 @@ class OrgHub_UploadModel
 	/**
 	 * Validates the arguments for an item based on required key, values, and other
 	 * checks that checks for errors before processing.
-	 * @param   array  $args              The arguments.
-	 * @param   array  $required_keys     The required keys that must exist in the args.
-	 * @param   array  $required_values   The keys that must have non-empty values in the args.
-	 * @param   array  $valid_keys        Others keys that are also valid in the args and 
-	 *                                    should not be ignored or should be created if
-	 *                                    they are missing.
-	 * @param   array  $valid_regex_keys  Regular expression that need to be matched to 
-	 *                                    determine there any other valid keys.
-	 * @return  bool   True if all args where validated, otherwise false on error.
+	 * @param  array  $args  The arguments.
+	 * @param  array  $required_keys  The required keys that must exist in the args.
+	 * @param  array  $required_values  The keys that must have non-empty values in the args.
+	 * @param  array  $valid_keys  Others keys that are also valid in the args and should not be ignored or 
+	 *                             should be created if they are missing.
+	 * @param  array  $valid_regex_keys  Regular expression that need to be matched to determine there any
+	 *                                   other valid keys.
+	 * @return  bool  True if all args where validated, otherwise false on error.
 	 */
 	private function validate_args_for_action( &$args, $required_keys, $required_values, $valid_keys, $valid_regex_keys )
 	{
@@ -288,7 +290,7 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Adds an OrgHub import data to the database.
-	 * @param   array	 $args  An array of data about a site.
+	 * @param  array  $args  An array of data about a site.
 	 * @return  int|bool  The id of the inserted site or false on failure.
 	 */
 	public function add_item( &$args )
@@ -297,9 +299,8 @@ class OrgHub_UploadModel
 		
 		global $wpdb;
 		
-		//
+		
 		// Insert new site into Upload table.
-		//
 		$result = $wpdb->insert(
 			self::$upload_table,
 			array(
@@ -309,9 +310,8 @@ class OrgHub_UploadModel
 			array( '%s' )
 		);
 		
-		//
+
 		// Check to make sure insertion was successful.
-		//
 		$item_id = $wpdb->insert_id;
 		if( !$item_id )
 		{
@@ -325,7 +325,7 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Delete an OrgHub upload item from the database.
-	 * @param   int   $id  The id of the item to delete.
+	 * @param  int  $id  The id of the item to delete.
 	 * @return  bool  True if the item was deleted successfully, otherwise false.
 	 */
 	public function delete_item( $id )
@@ -344,14 +344,13 @@ class OrgHub_UploadModel
 	}
 	
 	
-
 //========================================================================================
 //=============================================== Retrieve upload data from database =====
 	
 	
 	/**
 	 * Gets an item based on the id.
-	 * @param   int         $id  The id of the item
+	 * @param  int  $id  The id of the item
 	 * @return  array|null  The item if found, otherwise null on failure or not found.
 	 */
 	public function get_item_by_id( $id )
@@ -373,10 +372,10 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Retrieve a complete list of OrgHub items from the database after filtering.
-	 * @param   int	 $blog_id  The blog id of the current site's batch. 
-	 * @param   int		$offset	  The offset of the users list.
-	 * @param   int		$limit	  The amount of users to retrieve.
-	 * @return  array   An array of items given the filtering.
+	 * @param  int  $blog_id  The blog id of the current site's batch. 
+	 * @param  int  $offset  The offset of the users list.
+	 * @param  int  $limit  The amount of users to retrieve.
+	 * @return  array  An array of items given the filtering.
 	 */
 	public function get_items( $orderby = null, $offset = 0, $limit = -1 )
 	{
@@ -392,7 +391,6 @@ class OrgHub_UploadModel
 		$blog_id = $this->get_current_blog_id();
 		$filter = $this->filter_sql($blog_id, $orderby, $offset, $limit);
 		
-//  		apl_print( 'SELECT '.$list.' FROM '.self::$upload_table.' '.$filter );
 		$items = $wpdb->get_results( 'SELECT '.$list.' FROM '.self::$upload_table.' '.$filter, ARRAY_A );
 		
 		foreach( $items as &$item ) $item['data'] = json_decode( $item['data'], true );
@@ -403,8 +401,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * The amount of OrgHub items from the database.
-	 * @param   int	 $blog_id  The blog id of the current site's batch. 
-	 * @return  array   The amount of items.
+	 * @param  int  $blog_id  The blog id of the current site's batch. 
+	 * @return  array  The amount of items.
 	 */
 	public function get_items_count()
 	{
@@ -416,9 +414,9 @@ class OrgHub_UploadModel
 
 	/**
 	 * Creates the SQL needed to complete an SQL statement.
-	 * @param   int	 $blog_id  The blog id of the current site's batch. 
-	 * @param   int		$offset	  The offset of the users list.
-	 * @param   int		$limit	  The amount of users to retrieve.
+	 * @param  int  $blog_id  The blog id of the current site's batch. 
+	 * @param  int  $offset  The offset of the users list.
+	 * @param  int  $limit  The amount of users to retrieve.
 	 * @return  string  The constructed SQL needed to complete an SQL statement.
 	 */
 	protected function filter_sql( $blog_id = 0, $orderby = null, $offset = 0, $limit = -1 )
@@ -500,9 +498,9 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Process a single item in the upload table.
-	 * @param   int         $id    The id of the item to process.
-	 * @param   array|null  $item  The item to process or null in order to get item from db.
-	 * @return  bool        True if no errors occured, otherwise false.
+	 * @param  int  $id  The id of the item to process.
+	 * @param  array|null  $item  The item to process or null in order to get item from db.
+	 * @return  bool  True if no errors occured, otherwise false.
 	 */
 	public function process_item( $id, &$item = null )
 	{
@@ -539,8 +537,6 @@ class OrgHub_UploadModel
 		
 		if( is_callable($function) )
 		{
-// 			apl_print($action.'_'.$type, 'FUNCTION');
-			
 			$this->delete_item( $item['id'] );
 			
 			if( ($switch_to_blog) && (!$this->switch_to_blog($data, $site_required)) )
@@ -563,7 +559,6 @@ class OrgHub_UploadModel
 		$this->model->last_error = $error . 'Invalid type "'.$data['type'].' or action "'.$data['action'].'" specified.';
 		return false;
 	}
-	
 	
 	
 //========================================================================================
@@ -797,8 +792,8 @@ class OrgHub_UploadModel
 	/**
 	 * Add a new post to a site.  If a post with the same title already exists, then the 
 	 * post will not be created.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_post( &$item )
 	{
@@ -847,8 +842,8 @@ class OrgHub_UploadModel
 	/**
 	 * Updates an existing post on a site.  If a post with a matching title does not 
 	 * exist, then it will not be created.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function update_post( &$item )
 	{
@@ -896,8 +891,8 @@ class OrgHub_UploadModel
 	/**
 	 * Adds or updates a post on a site.  If a post with a matching title exists, then it 
 	 * will be updated.  If a matching post is not found, then it will be created.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function replace_post( &$item )
 	{
@@ -913,8 +908,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Prepend content to the start of the post’s excerpt or content.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function prepend_post( &$item )
 	{
@@ -948,8 +943,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Append content to the start of the post’s excerpt or content.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function append_post( &$item )
 	{
@@ -983,8 +978,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Deletes a post for a site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_post( &$item )
 	{
@@ -1010,8 +1005,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Renames a post by changing it’s title.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function rename_post( &$item )
 	{
@@ -1045,8 +1040,8 @@ class OrgHub_UploadModel
 	/**
 	 * Search through a field in a post using a regular expression.  If the title of the 
 	 * post is not specified, then the grep will be performed on all posts in the site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function grep_post( &$item )
 	{
@@ -1127,8 +1122,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Adds to the post’s existing terms for the taxonomy by adding these taxonomy terms(s).
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_taxonomy_post( &$item )
 	{
@@ -1205,8 +1200,8 @@ class OrgHub_UploadModel
 	/**
 	 * Overwrites the post’s existing terms for the taxonomy and replaces with these 
 	 * taxonomy term(s).
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function update_taxonomy_post( &$item )
 	{
@@ -1231,8 +1226,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Deletes the post’s terms for the taxonomy that matches these taxonomy term(s).
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_taxonomy_post( &$item )
 	{
@@ -1307,8 +1302,8 @@ class OrgHub_UploadModel
 	/**
 	 * Adds a custom field / metadata for the post.  If the meta field already exists, 
 	 * then it will not be updated.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_meta_post( &$item )
 	{
@@ -1334,8 +1329,8 @@ class OrgHub_UploadModel
 	/**
 	 * Updates an existing custom field / metadata for the post.  If the meta field does 
 	 * not exist, then it will not be created.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function update_meta_post( &$item )
 	{
@@ -1362,8 +1357,8 @@ class OrgHub_UploadModel
 	 * Adds or updates an existing custom field / metadata for the post.  If the meta 
 	 * field does not exist, then it will be created.  If the meta field exists, it will 
 	 * be updated.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function replace_meta_post( &$item )
 	{
@@ -1388,8 +1383,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Deletes a custom field / metadata for the post.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_meta_post( &$item )
 	{
@@ -1416,8 +1411,8 @@ class OrgHub_UploadModel
 	 * Creates a copy of the custom field / metadata with a new name.  If the field does 
 	 * not exists, a copy will not be made.  If the new field already exists, it will be 
 	 * overwritten.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function copy_meta_post( &$item )
 	{
@@ -1446,7 +1441,6 @@ class OrgHub_UploadModel
 		
 		return true;
 	}	
-	
 	
 	
 //========================================================================================
@@ -1657,8 +1651,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Adds a new page if an existing page with same title does not exist.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_page( &$item )
 	{
@@ -1707,8 +1701,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Updates an existing page.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function update_page( &$item )
 	{
@@ -1756,8 +1750,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Adds a new page if one does not exist, otherwise the page is updated.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function replace_page( &$item )
 	{
@@ -1773,8 +1767,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Prepend content to the start of the page’s excerpt or content.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function prepend_page( &$item )
 	{
@@ -1808,8 +1802,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Append content to the start of the page’s excerpt or content.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function append_page( &$item )
 	{
@@ -1843,8 +1837,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Delete an existing page.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_page( &$item )
 	{
@@ -1871,8 +1865,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Rename an existing page to new title.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function rename_page( &$item )
 	{
@@ -1906,8 +1900,8 @@ class OrgHub_UploadModel
 	/**
 	 * Search a page or all pages on a site for matches that will be replaced with
 	 * replacement text.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function grep_page( &$item )
 	{
@@ -1979,8 +1973,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Add meta data to existing page.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_meta_page( &$item )
 	{
@@ -2005,8 +1999,8 @@ class OrgHub_UploadModel
 
 	/**
 	 * Update meta data for an existing page.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function update_meta_page( &$item )
 	{
@@ -2033,8 +2027,8 @@ class OrgHub_UploadModel
 	 * Adds or updates an existing custom field / metadata for the page.  If the meta 
 	 * field does not exist, then it will be created.  If the meta field exists, it will 
 	 * be updated.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function replace_meta_page( &$item )
 	{
@@ -2059,8 +2053,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Delete meta data for an existing page.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_meta_page( &$item )
 	{
@@ -2085,8 +2079,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Copy meta data to a new name for an existing page.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function copy_meta_page( &$item )
 	{
@@ -2117,7 +2111,6 @@ class OrgHub_UploadModel
 	}
 
 
-	
 //========================================================================================
 //======================================================================= TYPE: Link =====
 	
@@ -2241,8 +2234,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Adds a link if another link of the same name does not exist.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_link( &$item )
 	{
@@ -2277,8 +2270,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Updates an existing link that matches the link name.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function update_link( &$item )
 	{
@@ -2314,8 +2307,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Adds a new link if it doesn't exist or updates an existing link of the same name.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function replace_link( &$item )
 	{
@@ -2331,8 +2324,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Delete a link that matches the link name.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_link( &$item )
 	{
@@ -2356,8 +2349,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Renames a link's name to a new name.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function rename_link( &$item )
 	{
@@ -2389,8 +2382,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Searches a link or all links for a match, then replaces that match with replacment text.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function grep_link( &$item )
 	{
@@ -2462,7 +2455,6 @@ class OrgHub_UploadModel
 				
 		return true;
 	}
-	
 	
 	
 //========================================================================================
@@ -2551,8 +2543,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Add a new taxonomy terms to a site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_taxonomy( &$item )
 	{
@@ -2620,8 +2612,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Delete taxonomy terms from a site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_taxonomy( &$item )
 	{
@@ -2662,8 +2654,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Rename taxonomy terms for a site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function rename_taxonomy( &$item )
 	{
@@ -2815,8 +2807,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Add a new site, if it does not already exist.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_site( &$item )
 	{
@@ -2862,8 +2854,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Update an existing site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function update_site( &$item )
 	{
@@ -2906,8 +2898,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Mark an existing site as deleted.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_site( &$item )
 	{	
@@ -2943,8 +2935,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Mark an existing site as archived.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function archive_site( &$item )
 	{
@@ -2980,8 +2972,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Search a site's option for match then replace match with replacement text.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function grep_site( &$item )
 	{
@@ -3015,7 +3007,6 @@ class OrgHub_UploadModel
 		
 		return true;		
 	}
-	
 	
 	
 //========================================================================================
@@ -3177,8 +3168,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Add a new user if they don't already exist.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_user( &$item )
 	{
@@ -3214,8 +3205,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Update an existing user.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function update_user( &$item )
 	{
@@ -3250,8 +3241,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Add user if they don't exist or update the user if they do already exist.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function replace_user( &$item )
 	{
@@ -3286,8 +3277,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Delete an existing user.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_user( &$item )
 	{
@@ -3300,8 +3291,8 @@ class OrgHub_UploadModel
 
 	/**
 	 * Add user data for an existing user.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_meta_user( &$item )
 	{
@@ -3327,8 +3318,8 @@ class OrgHub_UploadModel
 
 	/**
 	 * Update user data for an existing user.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function update_meta_user( &$item )
 	{
@@ -3361,8 +3352,8 @@ class OrgHub_UploadModel
 
 	/**
 	 * Add or update user data for existing user.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function replace_meta_user( &$item )
 	{
@@ -3388,8 +3379,8 @@ class OrgHub_UploadModel
 
 	/**
 	 * Delete user data for existing user.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_meta_user( &$item )
 	{
@@ -3413,8 +3404,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Copy user data to a new name for an existing user.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function copy_meta_user( &$item )
 	{
@@ -3444,7 +3435,6 @@ class OrgHub_UploadModel
 		
 		return true;
 	}
-	
 	
 	
 //========================================================================================
@@ -3567,8 +3557,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Add a option key/value to a site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function add_option( &$item )
 	{
@@ -3586,8 +3576,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Update an existing option value for a site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function update_option( &$item )
 	{
@@ -3605,8 +3595,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Add a new option or update an existing option for a site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function replace_option( &$item )
 	{
@@ -3624,8 +3614,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Delete an existing option for a site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function delete_option( &$item )
 	{
@@ -3643,8 +3633,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Copy an existing option to a new name for a site.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function copy_option( &$item )
 	{
@@ -3670,8 +3660,8 @@ class OrgHub_UploadModel
 	/**
 	 * Search an option's value or search all options for a match that will be replaced
 	 * with replacement text.
-	 * @param   array  $item  The data for the batch item.
-	 * @return  bool   True if the action was successful, otherwise false.
+	 * @param  array  $item  The data for the batch item.
+	 * @return  bool  True if the action was successful, otherwise false.
 	 */
 	private function grep_option( &$item )
 	{
@@ -3720,10 +3710,10 @@ class OrgHub_UploadModel
 	/**
 	 * Gets the author's id.  If the author does not exist, then they will be created if
 	 * $create is set to true.
-	 * @param   string    $author    The author's username.
-	 * @param   bool      $create    True if author should be created if they don't exist.
-	 * @param   string    $password  Password to use if user is created.
-	 * @param   string    $email     Email to use if user is created.
+	 * @param  string  $author  The author's username.
+	 * @param  bool  $create  True if author should be created if they don't exist.
+	 * @param  string  $password  Password to use if user is created.
+	 * @param  string  $email  Email to use if user is created.
 	 * @return  int|null  The author's id if they exist, otherwise null.
 	 */
 	protected function get_author_id( $author, $create = false, $password = false, $email = false )
@@ -3740,9 +3730,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Parses the a date string and returns a SQL formatted string.
-	 * @param   string  $date           The date string to parse.
-	 * @param   bool    $supports_null  True if null should be returned on failure or 
-	 *                                  date string is empty.
+	 * @param  string  $date  The date string to parse.
+	 * @param  bool  $supports_null  True if null should be returned on failure or date string is empty.
 	 * @return  string  The SQL formatted datetime string.
 	 */
 	protected function parse_date( $date, $supports_null = false )
@@ -3759,7 +3748,7 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Gets the post type.
-	 * @param   string  $post_type  The post type.
+	 * @param  string  $post_type  The post type.
 	 * @return  string  The post type on non-empty strings, otherwise 'post'.
 	 */
 	protected function get_post_type( $post_type )
@@ -3771,7 +3760,7 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Gets the post id of a post that will be or currently is a parent.
-	 * @param   string|int  The parent title or post id.
+	 * @param  string|int  The parent title or post id.
 	 * @return  The parent post's id.
 	 */
 	protected function get_post_parent( $parent )
@@ -3789,10 +3778,8 @@ class OrgHub_UploadModel
 	/**
 	 * Gets a list of taxonomies with matching terms or ids (for heirarchical taxonomies).
 	 * Creates any terms that do not currently exist.
-	 * @param   array       $taxonomies     An array of taxonomies with terms in 
-	 *                                      comma-seperated string form.
-	 * @param   bool        $supports_null  True if null should be returned on failure or 
-	 *                                      taxonomy list is empty.
+	 * @param  array  $taxonomies  An array of taxonomies with terms in comma-seperated string form.
+	 * @param  bool  $supports_null  True if null should be returned on failure or taxonomy list is empty.
 	 * @return  array|null  An array of taxonomies with their terms or ids on success, 
 	 *                      otherwise null or empty array (based on supports_null).
 	 */
@@ -3868,8 +3855,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Gets a post with the matching title.
-	 * @param   string       $title      The post title.
-	 * @param   string       $post_type  The post type.
+	 * @param  string  $title  The post title.
+	 * @param  string  $post_type  The post type.
 	 * @return  object|null  The post object if found, otherwise null.
 	 */
 	protected function get_post_by_title( $title, $post_type = 'post' )
@@ -3883,7 +3870,7 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Gets a link with the matching name.
-	 * @param   string       $name  The name of the link.
+	 * @param  string  $name  The name of the link.
 	 * @return  object|null  The link object if found, otherwise null.
 	 */
 	protected function get_link_by_name( $name )
@@ -3902,7 +3889,7 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Gets a list of all link categories' ids and creates any categories that don't exist.
-	 * @param   array       $category  A comma-seperated array of link categories.
+	 * @param  array  $category  A comma-seperated array of link categories.
 	 * @return  array|null  An array of link category ids on success, otherwise null.
 	 */
 	protected function get_link_category( $category )
@@ -3931,9 +3918,9 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Switches to a blog/site for network admin processing.
-	 * @param   array  $item           The item being processed.
-	 * @param   bool   $site_required  True if site is a required field for the item.
-	 * @return  bool   True if the switch occured without errors, otherwise false.
+	 * @param  array  $item  The item being processed.
+	 * @param  bool  $site_required  True if site is a required field for the item.
+	 * @return  bool  True if the switch occured without errors, otherwise false.
 	 */
 	protected function switch_to_blog( &$item, $site_required = true )
 	{
@@ -3963,9 +3950,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Get the string value of the value.
-	 * @param   mixed        $value          The value to evaluate.
-	 * @param   bool         $supports_null  True if null can be returned if not an string 
-	 *                                       or empty string.
+	 * @param  mixed  $value  The value to evaluate.
+	 * @param  bool  $supports_null  True if null can be returned if not an string or empty string.
 	 * @return  string|null  The evaluated string value.
 	 */
 	protected function get_string_value( $value, $supports_null = false )
@@ -3977,8 +3963,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Get the int value of the value.
-	 * @param   mixed     $value          The value to evaluate.
-	 * @param   bool      $supports_null  True if null can be returned if not an int.
+	 * @param  mixed  $value  The value to evaluate.
+	 * @param  bool  $supports_null  True if null can be returned if not an int.
 	 * @return  int|null  The evaluated int value.
 	 */
 	protected function get_int_value( $value, $supports_null = false )
@@ -3990,9 +3976,9 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Inserts a string into another string at the offset.
-	 * @param   string  $insert   The string to insert.
-	 * @param   string  $subject  The original string to insert into.
-	 * @param   int     $offset   The offset of the insert.
+	 * @param  string  $insert  The string to insert.
+	 * @param  string  $subject  The original string to insert into.
+	 * @param  int  $offset  The offset of the insert.
 	 * @return  string  The altered string with the inserted string.
 	 */
 	public function str_insert( $insert, $subject, $offset )
@@ -4001,11 +3987,10 @@ class OrgHub_UploadModel
 	}
 
 
-
 	/**
 	 * Find the first start tag, if one is found that matches one of the search tags.
-	 * @param   string       $content      The post content.
-	 * @param   array        $search_tags  The html tags to search for at the start of content.
+	 * @param  string  $content  The post content.
+	 * @param  array  $search_tags  The html tags to search for at the start of content.
 	 * @return  string|null  The start tag if found, otherwise null.
 	 */
     protected function find_start_tag( $content, $search_tags )
@@ -4039,8 +4024,8 @@ class OrgHub_UploadModel
 
 	/**
 	 * Find the last end tag, if one is found that matches one of the search tags.
-	 * @param   string       $content      The post content.
-	 * @param   array        $search_tags  The html tags to search for at the end of content.
+	 * @param  string  $content  The post content.
+	 * @param  array  $search_tags  The html tags to search for at the end of content.
 	 * @return  string|null  The end tag if found, otherwise null.
 	 */
     protected function find_end_tag( $content, $search_tags )
@@ -4066,8 +4051,8 @@ class OrgHub_UploadModel
     
 	/**
 	 * Prepends content to the original content.
-	 * @param   string  $post_content     The original content.
-	 * @param   string  $prepend_content  The prepend content.
+	 * @param  string  $post_content  The original content.
+	 * @param  string  $prepend_content  The prepend content.
 	 * @return  string  The content with prepended content.
 	 */
     public function prepend_to_content( $post_content, $prepend_content )
@@ -4092,8 +4077,8 @@ class OrgHub_UploadModel
     
     /**
 	 * Appends content to the original content.
-	 * @param   string  $post_content    The original content.
-	 * @param   string  $append_content  The append content.
+	 * @param  string  $post_content  The original content.
+	 * @param  string  $append_content  The append content.
 	 * @return  string  The content with appended content.
 	 */
     public function append_to_content( $post_content, $append_content )
@@ -4118,7 +4103,7 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Filters out any null values from the post data array.
-	 * @param   array  $post_data  The post data array.
+	 * @param  array  $post_data  The post data array.
 	 */
 	protected function filter_post_data( &$post_data )
 	{
@@ -4128,8 +4113,8 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Gets the post status.
-	 * @param   string  $status   The post's status.
-	 * @param   string  $default  The default value if status is empty.
+	 * @param  string  $status  The post's status.
+	 * @param  string  $default  The default value if status is empty.
 	 * @return  string  The post status value.
 	 */
 	protected function get_post_status( $status, $default = 'publish' )
@@ -4141,7 +4126,7 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Gets the items description based on action and type values.
-	 * @param   array   $item  The item to process to create a description.
+	 * @param  array  $item  The item to process to create a description.
 	 * @return  string  The item's description.
 	 */
 	protected function get_item_description( $id, &$item )
@@ -4155,7 +4140,7 @@ class OrgHub_UploadModel
 	
 	/**
 	 * Formats an array of errors into a single string.
-	 * @param   array   $errors  An array of errors.
+	 * @param  array  $errors  An array of errors.
 	 * @return  string  The complete error string comprised of all the errors.
 	 */
 	protected function format_errors_into_string( &$errors )
@@ -4173,8 +4158,6 @@ class OrgHub_UploadModel
 		
 		return $error;
 	}
-	
-	
 }
 endif;
 

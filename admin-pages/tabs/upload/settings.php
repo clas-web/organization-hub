@@ -1,21 +1,25 @@
 <?php
-
 /**
- * OrgHub_UploadSettingsTabAdminPage
- * 
- * This class controls the tab admin page "Batch Upload > Settings".
+ * Controls the tab admin page "Batch Upload > Settings".
  * Only seen in a blog, not on the network admin panel.
  * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage admin-pages/tabs/upload
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_UploadSettingsTabAdminPage') ):
 class OrgHub_UploadSettingsTabAdminPage extends APL_TabAdminPage
 {
-	
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
 	private $model = null;
+
+	/**
+	 * The network version of the Settings page.
+	 * @var  OrgHub_SettingsAdminPage
+	 */	
 	private $settings_admin_page = null;
 	
 	
@@ -53,6 +57,10 @@ class OrgHub_UploadSettingsTabAdminPage extends APL_TabAdminPage
 	}
 	
 	
+	/**
+	 * Setup the page's APL handler.
+	 * @param  APL_Handler  $handler  The APL handler that contains this admin page.
+	 */
 	public function set_handler( $handler )
 	{
 		parent::set_handler( $handler );

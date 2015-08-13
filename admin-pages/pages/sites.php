@@ -1,20 +1,18 @@
 <?php
 /**
- * OrgHub_SitesAdminPage
+ * Controls the admin page "Sites".
  * 
- * This class controls the admin page "Sites".
- * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage admin-pages/pages
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
 
 if( !class_exists('OrgHub_SitesAdminPage') ):
 class OrgHub_SitesAdminPage extends APL_AdminPage
 {
-	
+
 	/**
-	 * Creates an OrgHub_SitesAdminPage object.
+	 * Constructor.
 	 */
 	public function __construct(
 		$name = 'sites',

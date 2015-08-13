@@ -1,12 +1,10 @@
 <?php
 /**
- * OrgHub_UploadAdminPage
+ * Controls the admin page "Upload".
  * 
- * This class controls the admin page "Upload".
- * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage admin-pages/pages
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
 
 if( !class_exists('OrgHub_UploadAdminPage') ):
@@ -14,7 +12,7 @@ class OrgHub_UploadAdminPage extends APL_AdminPage
 {
 	
 	/**
-	 * Creates an OrgHub_UploadAdminPage object.
+	 * Constructor.
 	 */
 	public function __construct(
 		$name = 'upload',

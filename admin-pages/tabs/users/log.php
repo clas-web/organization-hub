@@ -1,23 +1,23 @@
 <?php
 /**
- * OrgHub_UsersLogTabAdminPage
+ * Controls the tab admin page "Users > Log".
  * 
- * This class controls the tab admin page "Users > Log".
- * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage admin-pages/tabs/sites
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_UsersLogTabAdminPage') ):
 class OrgHub_UsersLogTabAdminPage extends APL_TabAdminPage
 {
-	
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
 	private $model = null;
 	
 	
 	/**
-	 * Creates an OrgHub_UsersLogTabAdminPage object.
+	 * Controller.
 	 */
 	public function __construct(
 		$parent,

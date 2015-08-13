@@ -1,23 +1,23 @@
 <?php
 /**
- * OrgHub_UsersEditTabAdminPage
+ * Controls the admin page "Users" when in edit user mode.
  * 
- * This class controls the admin page "Users" when in edit user mode.
- * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage admin-pages/tabs/users
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_UsersEditTabAdminPage') ):
 class OrgHub_UsersEditTabAdminPage extends APL_TabAdminPage
 {
-	
+	/**
+	 * The main model for the Organization Hub.
+	 * @var  OrgHub_Model
+	 */	
 	private $model = null;
 	
 	
 	/**
-	 * Creates an OrgHub_UsersEditTabAdminPage object.
+	 * Controller.
 	 */
 	public function __construct(
 		$parent,

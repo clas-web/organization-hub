@@ -8,27 +8,32 @@ if( !class_exists('WP_List_Table') )
 if( !class_exists('OrgHub_Model') )
 	require_once( ORGANIZATION_HUB_PLUGIN_PATH . '/classes/model.php' );
 
+
 /**
- * OrgHub_UsersListTable
- * 
  * The WP_List_Table class for the Users table.
  * 
- * @package    orghub
+ * @package    organization-hub
  * @subpackage classes
- * @author     Crystal Barton <cbarto11@uncc.edu>
+ * @author     Crystal Barton <atrus1701@gmail.com>
  */
-
 if( !class_exists('OrgHub_UsersListTable') ):
 class OrgHub_UsersListTable extends WP_List_Table
 {
+	/**
+	 * Parent admin page.
+	 * @var  APL_AdminPage
+	 */
+	private $parent;
 
-	private $parent;		// The parent admin page.
-	private $model;			// The main model.
+	/**
+	 * The main Organization Hub model.
+	 * @var  OrgHub_Model
+	 */
+	private $model;
 	
 	
 	/**
 	 * Constructor.
-	 * Creates an OrgHub_SitesListTable object.
 	 */
 	public function __construct( $parent )
 	{
@@ -58,10 +63,10 @@ class OrgHub_UsersListTable extends WP_List_Table
 	
 	/**
 	 * Prepare the table's items.
-	 * @param   array   $filter       An array of filter name and values.
-	 * @param   array   $search       An array of search columns and phrases.
-	 * @param   bool    $only_errors  True if filter out OrgHub users with errors.
-	 * @param   string  $orderby      The column to orderby.
+	 * @param  array  $filter  An array of filter name and values.
+	 * @param  array  $search  An array of search columns and phrases.
+	 * @param  bool  $only_errors  True if filter out OrgHub users with errors.
+	 * @param  string  $orderby  The column to orderby.
 	 */
 	public function prepare_items( $filter = array(), $search = array(), $only_errors = false, $orderby = null )
 	{
@@ -263,8 +268,8 @@ class OrgHub_UsersListTable extends WP_List_Table
 				
 	/**
 	 * Generates the html for a column.
-	 * @param   array   $item         The item for the current row.
-	 * @param   string  $column_name  The name of the current column.
+	 * @param  array  $item  The item for the current row.
+	 * @param  string  $column_name  The name of the current column.
 	 * @return  string  The heml for the current column.
 	 */
 	public function column_default( $item, $column_name )
@@ -275,7 +280,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the checkbox column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the checkbox column.
 	 */
 	public function column_cb($item)
@@ -288,7 +293,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the username column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the username column.
 	 */
 	public function column_username( $item )
@@ -303,7 +308,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the name/description column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the name/description column.
 	 */
 	public function column_namedesc( $item )
@@ -318,7 +323,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the type column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the type column.
 	 */
 	public function column_type( $item )
@@ -336,7 +341,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the category column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the category column.
 	 */
 	public function column_category( $item )
@@ -354,7 +359,7 @@ class OrgHub_UsersListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the status column.
-	 * @param   array   $item         The item for the current row.
+	 * @param  array  $item  The item for the current row.
 	 * @return  string  The heml for the status column.
 	 */
 	public function column_status( $item )
@@ -365,8 +370,8 @@ class OrgHub_UsersListTable extends WP_List_Table
 	
 	/**
 	 * Generates the html for the info column.
-	 * @param   array   $item         The item for the current row.
-	 * @return  string  The heml for the info column.
+	 * @param  array  $item  The item for the current row.
+	 * @return  string  The html for the info column.
 	 */
 	public function column_info( $item )
 	{
