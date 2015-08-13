@@ -23,7 +23,7 @@ endif;
  * Setup the site admin pages.
  */
 if( !function_exists('orghubsite_load') ):
-function load()
+function orghubsite_load()
 {
 	require_once( __DIR__.'/admin-pages/require.php' );
 	
@@ -46,7 +46,7 @@ endif;
  * @param  bool  $network_wide  True if the network activated, else False.
  */
 if( !function_exists('orghubsite_activate') ):
-function activate( $network_wide )
+function orghubsite_activate( $network_wide )
 {
 	if( !$network_wide ) return;
 
@@ -62,7 +62,7 @@ endif;
  * Update the database if a version change.
  */
 if( !function_exists('orghubsite_update') ):
-function update()
+function orghubsite_update()
 {
 	$version = get_option( ORGANIZATION_HUB_DB_VERSION_OPTION );
 	if( $version !== ORGANIZATION_HUB_DB_VERSION )

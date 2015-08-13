@@ -22,7 +22,7 @@ endif;
  * Setup the network admin pages.
  */
 if( !function_exists('orghubnet_load') ):
-function load()
+function orghubnet_load()
 {
 	require_once( __DIR__.'/admin-pages/require.php' );
 	
