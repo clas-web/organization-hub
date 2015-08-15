@@ -302,7 +302,7 @@ class OrgHub_Model
 					$this->last_error = 'WPMU LDAP plugin not enabled.';
 					return null;
 				}
-				
+
 				$user_data = null;
 				if( !wpmuLdapSearch(wpmuSetupLdapOptions(), $username, $user_data) ) 
 				{
@@ -319,7 +319,7 @@ class OrgHub_Model
 				$user = wpmuLdapCreateWPUserFromLdap(
 					array(
 						'newUserName'	=> $username,
-						'ldapUserData'	=> null,
+						'ldapUserData'	=> $user_data,
 						'createBlog'	=> false,
 					)
 				);
