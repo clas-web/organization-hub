@@ -1,0 +1,5 @@
+#,username,first_name,last_name,email,description,category,type,site_domain,site_path,connections_sites
+,myuser1,first1,last1,myname1@myaddress.com,Adminstrative Staff,Admin,staff,,first-last-name1,"staff-connections, all-connections"
+,myuser2,first2,last2,myname2@myaddress.com,"Faculty, Department of Biology",Biology,faculty,,first-last-name2,faculty-connections
+,myuser3,first3,last3,myname3@myaddress.com,,Biology,student,students.domain.com,first-last-name3,
+#,commented,row,will,not,be,processed,,,,

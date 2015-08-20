@@ -1,0 +1,17 @@
+#,site,type,action,name,terms,new-terms
+#,,,,,,
+#,commented,rows,are,not,processed,
+#,,,,,,
+#,,,,,,
+#,"site, type, action, name, terms",,,,,
+#,,,,,,
+,test-batch,taxonomy,add,category,"Chemistry, Biology",
+#,,,,,,
+#,"site, type, action, name, terms",,,,,
+#,,,,,,
+,test-batch,taxonomy,delete,category,Chemistry,
+,test-batch,taxonomy,delete,category,Biology,
+#,,,,,,
+#,"site, type, action, name, terms, new-terms",,,,,
+#,,,,,,
+,test-batch,taxonomy,rename,category,Biology,Biological Sciences
