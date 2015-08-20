@@ -3,7 +3,7 @@
 Plugin Name: Organization Hub (Network)
 Plugin URI: https://github.com/clas-web/organization-hub
 Description: The Organization Hub (Network) is a collection of useful tools for maintaining a multisite WordPress instance for an organization.  The Users page keeps track of the organization users, their profile site, and any connections posts (see Connections Hub).  The Sites page is a listing of all the current sites, its posts and pages count, and the last time it was updated and by whom.  The Upload page is used to batch import large amounts of posts, pages, links, taxonomies, users, and sites.
-Version: 0.0.1
+Version: 1.0
 Author: Crystal Barton
 Author URI: https://www.linkedin.com/in/crystalbarton
 Network: True
