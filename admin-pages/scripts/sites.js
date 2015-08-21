@@ -112,7 +112,10 @@ function refresh_site_loop_end( fi, settings, ai, ajax, success, data )
 	
 	if( ai+1 === ajax.items.length )
 	{
-		jQuery('#orghub-sites-time').html(dajax.refresh_date);
+		jQuery('.notice-success').html(
+			'<div class="time">The last sites listing refresh happened on <span id="orghub-sites-time">' +
+			dajax.refresh_date + '</span></div>'
+		);
 	}
 }
 
