@@ -34,8 +34,8 @@ function orghubsite_load()
 	
 	if( $orghub_pages->controller )
 	{
-		add_action( 'admin_enqueue_scripts', array('OrgHub_Main', 'enqueue_scripts') );
-		add_action( 'admin_menu', array('OrgHub_MainBlog', 'update'), 5 );
+		add_action( 'admin_enqueue_scripts', 'orghub_enqueue_scripts' );
+		add_action( 'admin_menu', 'orghubsite_update', 5 );
 	}
 }
 endif;
