@@ -2224,9 +2224,8 @@ class OrgHub_UsersModel
 		$connections_blog_id = $this->is_connections_site( $connections_site );
 		if( !$connections_blog_id ) return false;
 		
-		switch_to_blog( $connections_blog_id );
-		$link = get_permalink( $id );
-		restore_current_blog();
+		$url = get_site_url( $connections_blog_id ).'?generate-connections-url='.$id;
+		$link = file_get_contents( $url );
 		
 		return $link;
 	}	
