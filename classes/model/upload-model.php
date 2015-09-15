@@ -1082,7 +1082,7 @@ class OrgHub_UploadModel
 					if( !preg_match_all("/$regex/", $post->post_excerpt, $matches) ) continue;
 					
 					$excerpt = $post->post_excerpt;
-					foreach( $matches as $match ) $excerpt = str_replace( $match, $replace_text, $excerpt );
+					foreach( $matches as $match ) $excerpt = preg_replace( $match, $replace_text, $excerpt );
 					
 					$post_data['post_excerpt'] = $excerpt;
 					break;
@@ -1091,7 +1091,7 @@ class OrgHub_UploadModel
 					if( !preg_match_all("/$regex/", $post->post_content, $matches) ) continue;
 					
 					$content = $post->post_content;
-					foreach( $matches as $match ) $content = str_replace( $match, $replace_text, $content );
+					foreach( $matches as $match ) $content = preg_replace( $match, $replace_text, $content );
 					
 					$post_data['post_content'] = $content;
 					break;
@@ -1942,7 +1942,7 @@ class OrgHub_UploadModel
 					if( !preg_match_all("/$regex/", $post->post_content, $matches) ) continue;
 					
 					$content = $post->post_content;
-					foreach( $matches as $match ) $content = str_replace( $match, $replace_text, $content );
+					foreach( $matches as $match ) $content = preg_replace( $match, $replace_text, $content );
 					
 					$post_data['post_content'] = $content;
 					break;
@@ -2420,7 +2420,7 @@ class OrgHub_UploadModel
 					if( !preg_match_all("/$regex/", $link->link_url, $matches) ) continue;
 					
 					$url = $link->link_url;
-					foreach( $matches as $match ) $url = str_replace( $match, $replace_text, $url );
+					foreach( $matches as $match ) $url = preg_replace( $match, $replace_text, $url );
 					
 					$link_data['link_url'] = $url;
 					break;
@@ -2429,7 +2429,7 @@ class OrgHub_UploadModel
 					if( !preg_match_all("/$regex/", $link->link_description, $matches) ) continue;
 					
 					$description = $link->link_description;
-					foreach( $matches as $match ) $description = str_replace( $match, $replace_text, $description );
+					foreach( $matches as $match ) $description = preg_replace( $match, $replace_text, $description );
 					
 					$post_data['link_description'] = $description;
 					break;
@@ -2986,7 +2986,7 @@ class OrgHub_UploadModel
 				if( !preg_match_all("/$regex/", $title, $matches) ) continue;
 				
 				foreach( $matches as $match )
-					$title = str_replace( $match, $replace_text, $title );
+					$title = preg_replace( $match, $replace_text, $title );
 				
 				update_option( 'blogname', $title );
 				break;
@@ -2996,7 +2996,7 @@ class OrgHub_UploadModel
 				if( !preg_match_all("/$regex/", $description, $matches) ) continue;
 				
 				foreach( $matches as $match )
-					$description = str_replace( $match, $replace_text, $description );
+					$description = preg_replace( $match, $replace_text, $description );
 				
 				update_option( 'blogdescription', $description );
 				break;
@@ -3684,7 +3684,7 @@ class OrgHub_UploadModel
 		{
 			if( !preg_match_all("/$regex/", $value, $matches) ) continue;
 			
-			foreach( $matches as $match ) $value = str_replace( $match, $replace_text, $value );
+			foreach( $matches as $match ) $value = preg_replace( $match, $replace_text, $value );
 			
 			if( !update_option($key, $value) )
 			{
