@@ -272,7 +272,7 @@ class OrgHub_UploadListTable extends WP_List_Table
 		$html .= '<div class="extended-data">';
 		foreach( $item['data'] as $key => $value )
 		{
-			$html .= '<div class="key-'.$key.'"><label>'.$key.'</label>'.$value.'</div>';
+			$html .= '<div class="key-'.$key.'"><label>'.$key.'</label>'.esc_html($value).'</div>';
 		}
 		$html .= '</div>';
 		
