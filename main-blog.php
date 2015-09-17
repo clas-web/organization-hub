@@ -10,7 +10,6 @@ Network: False
 */
 
 
-register_activation_hook( __FILE__, 'orghubsite_activate' );
 require( __DIR__.'/main.php' );
 
 
@@ -37,23 +36,6 @@ function orghubsite_load()
 		add_action( 'admin_enqueue_scripts', 'orghub_enqueue_scripts' );
 		add_action( 'admin_menu', 'orghubsite_update', 5 );
 	}
-}
-endif;
-
-
-/**
- * Prevent activation for an individual site.
- * @param  bool  $network_wide  True if the network activated, else False.
- */
-if( !function_exists('orghubsite_activate') ):
-function orghubsite_activate( $network_wide )
-{
-	if( !$network_wide ) return;
-
-	deactivate_plugins( plugin_basename(__FILE__), true, true );
-
-	header( 'Location: '.network_admin_url( 'plugins.php?deactivate=true' ) );
-	exit;
 }
 endif;
 
