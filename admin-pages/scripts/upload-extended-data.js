@@ -12,15 +12,15 @@ jQuery(document).ready( function()
 	// Setup all Upload Table Extended Data.
 	jQuery('table.orghub-upload tr').each( function() {
 
-		var extended = $(this).find('div.extended-data');
-		var button = $(this).find('div.more-data-button');
+		var extended = jQuery(this).find('div.extended-data');
+		var button = jQuery(this).find('div.more-data-button');
 		
 		if( !extended || !button ) return;
 		
-		$(extended).hide();
+		jQuery(extended).hide();
 		
-		$(button).click( function() {
-			$(extended).toggle();
+		jQuery(button).click( function() {
+			jQuery(extended).toggle();
 		});
 	});
 
