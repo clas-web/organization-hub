@@ -1079,20 +1079,16 @@ class OrgHub_UploadModel
 			switch( $subject )
 			{
 				case 'excerpt':
-					if( !preg_match_all("/$regex/", $post->post_excerpt, $matches) ) continue;
-					
-					$excerpt = $post->post_excerpt;
-					foreach( $matches as $match ) $excerpt = preg_replace( $match, $replace_text, $excerpt );
+					$excerpt = preg_replace( "/{$regex}/", $replace_text, $post->post_excerpt, -1, $count );
+					if( $count === 0 ) continue;
 					
 					$post_data['post_excerpt'] = $excerpt;
 					break;
 					
 				case 'content':
-					if( !preg_match_all("/$regex/", $post->post_content, $matches) ) continue;
-					
-					$content = $post->post_content;
-					foreach( $matches as $match ) $content = preg_replace( $match, $replace_text, $content );
-					
+					$content = preg_replace( "/{$regex}/", $replace_text, $post->post_content, -1, $count );
+					if( $count === 0 ) continue;
+
 					$post_data['post_content'] = $content;
 					break;
 				
@@ -1939,11 +1935,9 @@ class OrgHub_UploadModel
 			switch( $subject )
 			{
 				case 'content':
-					if( !preg_match_all("/$regex/", $post->post_content, $matches) ) continue;
-					
-					$content = $post->post_content;
-					foreach( $matches as $match ) $content = preg_replace( $match, $replace_text, $content );
-					
+					$content = preg_replace( "/{$regex}/", $replace_text, $post->post_content, -1, $count );
+					if( $count === 0 ) continue;
+
 					$post_data['post_content'] = $content;
 					break;
 				
@@ -2417,20 +2411,16 @@ class OrgHub_UploadModel
 			switch( $subject )
 			{
 				case 'url':
-					if( !preg_match_all("/$regex/", $link->link_url, $matches) ) continue;
-					
-					$url = $link->link_url;
-					foreach( $matches as $match ) $url = preg_replace( $match, $replace_text, $url );
-					
+					$url = preg_replace( "/{$regex}/", $replace_text, $link->link_url, -1, $count );
+					if( $count === 0 ) continue;
+
 					$link_data['link_url'] = $url;
 					break;
 					
 				case 'description':
-					if( !preg_match_all("/$regex/", $link->link_description, $matches) ) continue;
-					
-					$description = $link->link_description;
-					foreach( $matches as $match ) $description = preg_replace( $match, $replace_text, $description );
-					
+					$description = preg_replace( "/{$regex}/", $replace_text, $link->link_description, -1, $count );
+					if( $count === 0 ) continue;
+
 					$post_data['link_description'] = $description;
 					break;
 				
@@ -2982,22 +2972,16 @@ class OrgHub_UploadModel
 		switch( $subject )
 		{
 			case 'title':
-				$title = get_option( 'blogname' );
-				if( !preg_match_all("/$regex/", $title, $matches) ) continue;
-				
-				foreach( $matches as $match )
-					$title = preg_replace( $match, $replace_text, $title );
-				
+				$title = preg_replace( "/{$regex}/", $replace_text, get_option('blogname'), -1, $count );
+				if( $count === 0 ) continue;
+
 				update_option( 'blogname', $title );
 				break;
 				
 			case 'description':
-				$description = get_option( 'blogdescription' );
-				if( !preg_match_all("/$regex/", $description, $matches) ) continue;
-				
-				foreach( $matches as $match )
-					$description = preg_replace( $match, $replace_text, $description );
-				
+				$description = preg_replace( "/{$regex}/", $replace_text, get_option('blogdescription'), -1, $count );
+				if( $count === 0 ) continue;
+
 				update_option( 'blogdescription', $description );
 				break;
 			
@@ -3682,9 +3666,8 @@ class OrgHub_UploadModel
 		
 		foreach( $options as $key => $value )
 		{
-			if( !preg_match_all("/$regex/", $value, $matches) ) continue;
-			
-			foreach( $matches as $match ) $value = preg_replace( $match, $replace_text, $value );
+			$value = preg_replace( "/{$regex}/", $replace_text, $value, -1, $count );
+			if( $count === 0 ) continue;
 			
 			if( !update_option($key, $value) )
 			{
