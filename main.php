@@ -37,7 +37,7 @@ define( 'ORGANIZATION_HUB_PLUGIN_URL', plugins_url('', __FILE__) );
  * The version of the plugin.
  * @var  string
  */
-define( 'ORGANIZATION_HUB_VERSION', '0.0.1' );
+define( 'ORGANIZATION_HUB_VERSION', '1.0.1' );
 
 /**
  * The database version of the plugin.
