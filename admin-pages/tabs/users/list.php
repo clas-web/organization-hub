@@ -98,7 +98,16 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		$this->add_selectable_columns( $this->list_table->get_selectable_columns() );
 	}
 	
-	
+
+	/**
+	 * Enqueues all the scripts or styles needed for the admin page. 
+	 */
+	public function enqueue_scripts()
+	{
+		wp_enqueue_script( 'orghub-users', ORGANIZATION_HUB_PLUGIN_URL.'/admin-pages/scripts/users.js', array('jquery') );
+	}
+
+
 	/**
 	 * Process any action present in the $_REQUEST data.
 	 */
@@ -282,12 +291,27 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 			</div>
 		<?php endif; ?>
 		</div>
-
 		
-		<?php $this->form_start( 'process-all-users', null, 'process-all-users' ); ?>
-			<button>Process All Users</button>
-		<?php $this->form_end(); ?>
-
+		
+		<?php
+		$this->form_start_get( 'process-all-users', null, 'process-all-users' );
+			$this->create_ajax_submit_button(
+				'Process All Users',
+				'process-all-users',
+				null,
+				null,
+				'process_all_users_start',
+				'process_all_users_end',
+				'process_all_users_loop_start',
+				'process_all_users_loop_end'
+			);
+		$this->form_end();
+		?>
+		<div id="process-users-status"></div>
+		<div id="process-users-substatus"></div>
+		<div id="process-users-results"></div>
+		
+		
 		<?php
 		if( ORGANIZATION_HUB_DEBUG ):
 		$this->form_start_get( 'clear', null, 'clear' );
@@ -365,6 +389,63 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 		
 		<?php
 	}
+
+
+	/**
+	 * Processes and displays the output of an ajax request.
+	 * @param  string  $action  The AJAX action.
+	 * @param  array  $input  The AJAX input array.
+	 * @param  int  $count  When multiple AJAX calls are made, the current count.
+	 * @param  int  $total  When multiple AJAX calls are made, the total count.
+	 */
+	public function ajax_request( $action, $input, $count, $total )
+	{
+		switch( $action )
+		{
+			case 'process-all-users':
+				$all_users = $this->model->user->get_users();
+				
+				$items = array();
+				foreach( $all_users as $user )
+				{
+					$items[] = array(
+						'user_id'	=> $user['id'],
+						'username'	=> $user['username'],
+						'name'		=> $user['first_name'].' '.$user['last_name'],
+					);
+				}
+				
+				$this->ajax_set_items(
+					'process-user',
+					$items,
+					'process_user_start',
+					'process_user_end',
+					'process_user_loop_start',
+					'process_user_loop_end'
+				);
+				break;
+				
+			case 'process-user':
+				if( !isset($input['user_id']) )
+				{
+					$this->ajax_failed( 'No User id given.' );
+					return;
+				}
+				
+				$status = $this->model->user->process_user( $input['user_id'] );
+				$message = ( $status !== false ? 'OK' : $this->model->last_error );
+				$status = ( $status !== false ? 'success' : 'failure' );
+				
+				$this->ajax_set( 'status', $status );
+				$this->ajax_set( 'message', $message );
+				break;
+				
+			default:
+				$this->ajax_failed( 'No valid action was given.' );
+				break;
+		}
+	}
+
 
 } // class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 endif; // if( !class_exists('OrgHub_UsersListTabAdminPage') )
