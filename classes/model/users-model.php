@@ -1537,6 +1537,44 @@ class OrgHub_UsersModel
 	}
 		
 
+	protected function add_user_to_connections_site( &$db_user, &$connections_info )
+	{
+ 		// Check user.
+		$this->check_user( $db_user ); if( !$db_user ) return false;
+
+ 		// Check connections.
+		$this->check_connections( $db_user['id'], $connections_info ); if( !$connections_info ) return false;
+
+
+		// The user's username needs to be setup before processing a Connections post.
+		if( !$db_user['wp_user_id'] )
+		{
+			$this->model->write_to_log( $db_user['username'], 'Wordpress username not set.' );
+			$this->set_connections_column( $db_user, $connections_info, 'connections_error', 'Wordpress username not set.' );
+			return null;
+		}
+		
+
+		// Verify that the Connections site is a valid Connections site.
+		$connections_blog_id = $this->is_connections_site( $connections_info['site'] );
+		
+		if( !$connections_blog_id )
+		{
+			$this->model->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			$this->set_connections_column( $db_user, $connections_info, 'connections_error', 'Connections site does not exist or does not have Connections Hub plugin activated.' );
+			return null;
+		}
+
+		// add user to connections site.
+		if( !is_user_member_of_blog($db_user['wp_user_id'], $connections_blog_id) )
+		{
+			add_user_to_blog( $connections_blog_id, $db_user['wp_user_id'], 'contributor' );
+		}
+
+		return true;
+	}
+
+
 	/**
 	 * Process all of the Connections Sites' posts for an OrgHub user.
 	 * @param  int|array  $db_user  The OrgHub user's id (not WordPress user id) an array of the user's data.
@@ -1553,6 +1591,7 @@ class OrgHub_UsersModel
 		// Process each Connections Site's post.
 		foreach( $db_user['connections_sites'] as &$cs )
 		{
+			$this->add_user_to_connections_site( $db_user, $cs );
 			$this->process_connections_post( $db_user, $cs );
 		}
 		
@@ -1594,8 +1633,9 @@ class OrgHub_UsersModel
 			return null;
 		}
 		
+
 		switch_to_blog( $connections_blog_id );
-				
+		
 
 		// If the post already exists, then update the data, otherwise clear post_id.
 		if( $connections_info['post_id'] )
@@ -1709,10 +1749,13 @@ class OrgHub_UsersModel
 			$this->set_connections_column( $db_user, $connections_info, 'connections_error', 'Connections site does not exist or does not have Connections Hub plugin activated.' );
 			return null;
 		}
+
+		
+		$this->add_user_to_connections_site( $db_user, $connections_info );
+		
 		
 		switch_to_blog( $connections_blog_id );
 		
-
 		// If connections post id is not set and user is not inactive, then create post.
 		if( !$connections_info['post_id'] )
 		{
