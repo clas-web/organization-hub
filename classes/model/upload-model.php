@@ -3907,11 +3907,35 @@ class OrgHub_UploadModel
 	 */
 	protected function switch_to_blog( &$item, $site_required = true )
 	{
+		global $wpdb;
+
 		if( !is_network_admin() ) return true;
 		if( !array_key_exists('site', $item) ) return !$site_required;
 		if( empty($item['site']) ) return !$site_required;
 		
-		$blog_id = get_id_from_blogname( $item['site'] );
+		$blog_id = wp_cache_get( 'get_id_from_blogname_' . $slug, 'blog-details' );
+		if( $blog_id ) return $blog_id;
+
+		if( is_subdomain_install() )
+		{
+			$blog_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT blog_id FROM {$wpdb->blogs} WHERE `domain` LIKE %s",
+					$item['site'].'.%'
+				)
+			);
+		}
+		else
+		{
+			$blog_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT blog_id FROM {$wpdb->blogs} WHERE `path` LIKE %s",
+					'%/'.$item['site'].'/'
+				)
+			);
+		}
+
+		wp_cache_set( 'get_id_from_blogname_' . $slug, $blog_id, 'blog-details' );
 		if( !$blog_id ) return false;
 		
 		switch_to_blog( $blog_id );
