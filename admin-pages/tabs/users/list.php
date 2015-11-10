@@ -405,19 +405,23 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 			case 'process-all-users':
 				$all_users = $this->model->user->get_users();
 				
-				$items = array();
-				foreach( $all_users as $user )
+				foreach( $all_users as &$user )
 				{
-					$items[] = array(
+					$user = array(
 						'user_id'	=> $user['id'],
 						'username'	=> $user['username'],
 						'name'		=> $user['first_name'].' '.$user['last_name'],
 					);
 				}
+
+				if( count($all_users) > 0 )
+				{
+					$all_users[count($all_users)-1]['last'] = '1';
+				}
 				
 				$this->ajax_set_items(
 					'process-user',
-					$items,
+					$all_users,
 					'process_user_start',
 					'process_user_end',
 					'process_user_loop_start',
@@ -438,6 +442,17 @@ class OrgHub_UsersListTabAdminPage extends APL_TabAdminPage
 				
 				$this->ajax_set( 'status', $status );
 				$this->ajax_set( 'message', $message );
+
+				if( array_key_exists('last', $input) && $input['last'] == '1' )
+				{
+					$this->model->update_options(
+						array(
+							'last-process' => date('Y-m-d H:i:s'),
+							'last-process-results' => 'Successfully done processing the user list.',
+						),
+						true
+					);
+				}
 				break;
 				
 			default:

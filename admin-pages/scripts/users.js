@@ -90,7 +90,7 @@ function process_user_start( ajax )
  */
 function process_user_end( ajax )
 {
-	
+	windows.location.reload();
 }
 
 
