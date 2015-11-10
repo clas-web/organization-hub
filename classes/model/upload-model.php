@@ -3916,7 +3916,11 @@ class OrgHub_UploadModel
 		$blog_id = wp_cache_get( 'get_id_from_blogname_' . $slug, 'blog-details' );
 		if( $blog_id ) return $blog_id;
 
-		if( is_subdomain_install() )
+		if( $item['site'] == '' )
+		{
+			$blog_id = 1;
+		}
+		elseif( is_subdomain_install() )
 		{
 			$blog_id = $wpdb->get_var(
 				$wpdb->prepare(
