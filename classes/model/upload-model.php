@@ -3913,7 +3913,7 @@ class OrgHub_UploadModel
 		if( !array_key_exists('site', $item) ) return !$site_required;
 		if( empty($item['site']) ) return !$site_required;
 		
-		$blog_id = wp_cache_get( 'get_id_from_blogname_' . $slug, 'blog-details' );
+		$blog_id = wp_cache_get( 'get_id_from_blogname_' . $item['site'], 'blog-details' );
 		if( $blog_id ) return $blog_id;
 
 		if( $item['site'] == '' )
@@ -3939,7 +3939,7 @@ class OrgHub_UploadModel
 			);
 		}
 
-		wp_cache_set( 'get_id_from_blogname_' . $slug, $blog_id, 'blog-details' );
+		wp_cache_set( 'get_id_from_blogname_' . $item['site'], $blog_id, 'blog-details' );
 		if( !$blog_id ) return false;
 		
 		switch_to_blog( $blog_id );
