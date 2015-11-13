@@ -408,6 +408,48 @@ class OrgHub_Model
 	{
 		return is_plugin_active_for_network('wpmuldap/ldap_auth.php');
 	}
+
+
+	/**
+	 * Get the blog id from the slug (supports multi-domain sites).
+	 * @param  String  $slug  The blog slug.
+	 * @return  int|NULL  The blog id or NULL if the blog is not found.
+	 */
+	public function get_blog_id( $slug )
+	{
+		global $wpdb;
+		$slug = ''.$slug;
+
+		$blog_id = wp_cache_get( 'get_id_from_blogname_' . $slug, 'blog-details' );
+		if( $blog_id ) return $blog_id;
+
+		if( $slug === '' )
+		{
+			$blog_id = 1;
+		}
+		elseif( is_subdomain_install() )
+		{
+			$blog_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT blog_id FROM {$wpdb->blogs} WHERE `domain` LIKE %s",
+					$slug.'.%'
+				)
+			);
+		}
+		else
+		{
+			$blog_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT blog_id FROM {$wpdb->blogs} WHERE `path` LIKE %s",
+					'%/'.$slug.'/'
+				)
+			);
+		}
+
+		wp_cache_set( 'get_id_from_blogname_' . $slug, $blog_id, 'blog-details' );
+		
+		return $blog_id;
+	}
 	
 } // class OrgHub_Model
 endif; // if( !class_exists('OrgHub_Model') ):

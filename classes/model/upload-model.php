@@ -2811,7 +2811,7 @@ class OrgHub_UploadModel
 			return false;
 		}
 		
-		$blog_id = get_id_from_blogname( $site );
+		$blog_id = $this->model->get_blog_id( $site );
 		if( $blog_id )
 		{
 			$this->model->last_error = 'The site already exists: "'.$site.'".';
@@ -2858,7 +2858,7 @@ class OrgHub_UploadModel
 			return false;
 		}
 
-		$blog_id = get_id_from_blogname( $site );
+		$blog_id = $this->model->get_blog_id( $site );
 		if( !$blog_id )
 		{
 			$this->model->last_error = 'Unable to find blog: "'.$site.'".';
@@ -2895,7 +2895,7 @@ class OrgHub_UploadModel
 	{	
 		extract($item);
 		
-		$blog_id = get_id_from_blogname( $site );
+		$blog_id = $this->model->get_blog_id( $site );
 		if( !$blog_id )
 		{
 			$this->model->last_error = 'Unable to find blog: "'.$site.'".';
@@ -2932,7 +2932,7 @@ class OrgHub_UploadModel
 	{
 		extract($item);
 		
-		$blog_id = get_id_from_blogname( $site );
+		$blog_id = $this->model->get_blog_id( $site );
 		if( !$blog_id )
 		{
 			$this->model->last_error = 'Unable to find blog: "'.$site.'".';
@@ -3174,7 +3174,7 @@ class OrgHub_UploadModel
 		if( !isset($site) ) return true;
 		if( !isset($role) ) return true;
 		
-		$blog_id = get_id_from_blogname( $site );
+		$blog_id = $this->model->get_blog_id( $site );
 		if( !$blog_id )
 		{
 			$this->model->last_error = 'Unable to find site: '.$site;
@@ -3210,7 +3210,7 @@ class OrgHub_UploadModel
 		if( !isset($site) ) return true;
 		if( !isset($role) ) return true;
 		
-		$blog_id = get_id_from_blogname( $site );
+		$blog_id = $this->model->get_blog_id( $site );
 		if( !$blog_id )
 		{
 			$this->model->last_error = 'Unable to find site: '.$site;
@@ -3246,7 +3246,7 @@ class OrgHub_UploadModel
 		if( !isset($site) ) return true;
 		if( !isset($role) ) return true;
 		
-		$blog_id = get_id_from_blogname( $site );
+		$blog_id = $this->model->get_blog_id( $site );
 		if( !$blog_id )
 		{
 			$this->model->last_error = 'Unable to find site: '.$site;
@@ -3905,45 +3905,19 @@ class OrgHub_UploadModel
 	 * @param  bool  $site_required  True if site is a required field for the item.
 	 * @return  bool  True if the switch occured without errors, otherwise false.
 	 */
-	protected function switch_to_blog( &$item, $site_required = true )
+	protected function switch_to_blog( &$item, $site_required = TRUE )
 	{
 		global $wpdb;
 
-		if( !is_network_admin() ) return true;
+		if( !is_network_admin() ) return TRUE;
 		if( !array_key_exists('site', $item) ) return !$site_required;
 		if( empty($item['site']) ) return !$site_required;
 		
-		$blog_id = wp_cache_get( 'get_id_from_blogname_' . $item['site'], 'blog-details' );
-		if( $blog_id ) return $blog_id;
-
-		if( $item['site'] == '' )
-		{
-			$blog_id = 1;
-		}
-		elseif( is_subdomain_install() )
-		{
-			$blog_id = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT blog_id FROM {$wpdb->blogs} WHERE `domain` LIKE %s",
-					$item['site'].'.%'
-				)
-			);
-		}
-		else
-		{
-			$blog_id = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT blog_id FROM {$wpdb->blogs} WHERE `path` LIKE %s",
-					'%/'.$item['site'].'/'
-				)
-			);
-		}
-
-		wp_cache_set( 'get_id_from_blogname_' . $item['site'], $blog_id, 'blog-details' );
-		if( !$blog_id ) return false;
+		$blog_id = $this->model->get_blog_id( $item['site'] );
+		if( !$blog_id ) return FALSE;
 		
 		switch_to_blog( $blog_id );
-		return true;
+		return TRUE;
 	}
 	
 	
@@ -3952,10 +3926,10 @@ class OrgHub_UploadModel
 	 */
 	protected function restore_blog()
 	{
-		if( !is_network_admin() ) return true;
+		if( !is_network_admin() ) return TRUE;
 		
 		restore_current_blog();
-		return true;
+		return TRUE;
 	}
 	
 	
