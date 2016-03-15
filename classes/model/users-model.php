@@ -307,8 +307,17 @@ class OrgHub_UsersModel
 		$db_user = $this->get_user_by_username( $args['username'] );
 		if( $db_user )
 		{
-			$args['status'] = $db_user['status'];
-			if( (!$db_user['status']) || ($db_user['status'] == 'inactive') ) $args['status'] = 'new';
+			if( isset( $args['status'] ) ) {
+				if( $args['status'] == 'active' && $db_user['status'] == 'inactive' ) {
+					$args['status'] = 'new';
+				}
+			}
+			else if( ! $db_user['status'] || $db_user['status'] == 'inactive' )  {
+				$args['status'] = 'new';
+			}
+			else {
+				$args['status'] = $db_user['status'];
+			}
 			return $this->update_user( $db_user['id'], $args );
 		}
 		
@@ -326,7 +335,7 @@ class OrgHub_UsersModel
 				'description'		=> $args['description'],
 				'site_domain'		=> $args['site_domain'],
 				'site_path'			=> $args['site_path'],
-				'status'			=> 'new',
+				'status'			=> $args['status'] ? $args['status'] : 'new',
 			),
 			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
@@ -2067,6 +2076,7 @@ class OrgHub_UsersModel
 			'site_path',
 			'connections_sites',
 			'type',
+			'status'
 		);
 
 		foreach( $users as &$user )
@@ -2083,6 +2093,7 @@ class OrgHub_UsersModel
 				$u['site_path'], // blog path
 				array_map( function($cs) { return $cs['site']; }, $u['connections_sites'] ), // connections sites
 				$u['type'], // type
+				$u['status'],
 			);
 		}
 		
