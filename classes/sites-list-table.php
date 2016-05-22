@@ -99,6 +99,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_comment_post'      => 'Comment / Post',
 			'site_post_page'         => 'Post / Page',
 			'site_last_post_date'    => 'Last Post Date',
+			'site_last_post_author'  => 'Last Post Author',
 			'site_last_comment_date' => 'Last Comment Date',
 			'site_administrator'     => 'Administrator',
 		);
@@ -138,6 +139,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_num_posts'         => array( 'num_posts', true ),
 			'site_num_pages'         => array( 'num_pages', true ),
 			'site_last_post_date'    => array( 'last_post_date', true ),
+			'site_last_post_author'  => array( 'last_post_author', true ),
 			'site_last_comment_date' => array( 'last_comment_date', true ),
 			'site_administrator'     => array( 'administrator', false ),
 		);
@@ -157,6 +159,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_comment_post'      => 'Comment / Post',
 			'site_post_page'         => 'Post / Page',
 			'site_last_post_date'    => 'Last Post Date',
+			'site_last_post_author'  => 'Last Post Author',
 			'site_last_comment_date' => 'Last Comment Date',
 			'site_administrator'     => 'Administrator',
 		);
@@ -437,6 +440,15 @@ class OrgHub_SitesListTable extends WP_List_Table
 				}
 				else
 					$html = 'No Posts';
+				break;
+				
+			case 'site_last_post_author':
+				if( !empty($item['last_post_author']) )
+				{
+					$html = $item['last_post_author'];
+				}
+				else
+					$html = 'NO AUTHOR NAME';
 				break;
 				
 			case 'site_last_comment_date':

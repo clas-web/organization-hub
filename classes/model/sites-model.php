@@ -84,6 +84,7 @@ class OrgHub_SitesModel
 				  num_comments bigint(20) NOT NULL DEFAULT 0,
 				  last_post_url text NOT NULL DEFAULT '',
 				  last_post_date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				  last_post_author text NOT NULL DEFAULT '',
 				  last_post_status text NOT NULL DEFAULT '',
 				  last_comment_url text NOT NULL DEFAULT '',
 				  last_comment_date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -150,13 +151,14 @@ class OrgHub_SitesModel
 				'num_comments'		=> $args['num_comments'],
 				'last_post_url'		=> $args['last_post_url'],
 				'last_post_date'	=> $args['last_post_date'],
+				'last_post_author'  => $args['last_post_author'],
 				'last_post_status'	=> $args['last_post_status'],
 				'last_comment_url'	=> $args['last_comment_url'],
 				'last_comment_date'	=> $args['last_comment_date'],
 				'admin_email'		=> $args['admin_email'],
 				'status'			=> $args['status'],
 			),
-			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 		
 
@@ -195,6 +197,7 @@ class OrgHub_SitesModel
 				'num_comments'		=> $args['num_comments'],
 				'last_post_url'		=> $args['last_post_url'],
 				'last_post_date'	=> $args['last_post_date'],
+				'last_post_author'  => $args['last_post_author'],
 				'last_post_status'	=> $args['last_post_status'],
 				'last_comment_url'	=> $args['last_comment_url'],
 				'last_comment_date'	=> $args['last_comment_date'],
@@ -202,7 +205,7 @@ class OrgHub_SitesModel
 				'status'			=> $args['status'],
 			),
 			array( 'id' => intval( $id ) ),
-			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 
@@ -239,7 +242,7 @@ class OrgHub_SitesModel
 		$list = array();
 		$list[self::$site_table] = array(
 			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
-			'last_post_url', 'last_post_date', 'last_post_status',
+			'last_post_url', 'last_post_date', 'last_post_author', 'last_post_status',
 			'last_comment_url', 'last_comment_date', 'admin_email',
 		);
 		$list[$wpdb->users] = array(
@@ -286,7 +289,7 @@ class OrgHub_SitesModel
 		$list = array();
 		$list[self::$site_table] = array(
 			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
-			'last_post_url', 'last_post_date', 'last_post_status',
+			'last_post_url', 'last_post_date', 'last_post_author', 'last_post_status',
 			'last_comment_url', 'last_comment_date', 'admin_email',
 		);
 		$list[$wpdb->users] = array(
@@ -297,7 +300,7 @@ class OrgHub_SitesModel
 
 		$site = $wpdb->get_row(
 			$wpdb->prepare(
-				'SELECT '.$list.' FROM '.self::$site_table.' LEFT JOIN wp_users ON wp_users.user_email = '.self::$site_table.'.admin_email WHERE blog_id = %d',
+				'SELECT '.$list.' FROM '.self::$site_table.' LEFT JOIN '.$wpdb->users.' ON '.$wpdb->users.'.user_email = '.self::$site_table.'.admin_email WHERE blog_id = %d',
 				$blog_id
 			),
 			ARRAY_A
@@ -569,12 +572,15 @@ class OrgHub_SitesModel
 			$site['last_post_url'] = '';
 			$site['last_post_date'] = '0000-00-00 00:00:00';
 			$site['last_post_status'] = '';
+			$site['last_post_author'] = '';
 		}
 		else
 		{
 			$site['last_post_url'] = get_permalink( $recent_post->ID );
 			$site['last_post_date'] = $recent_post->post_modified;
 			$site['last_post_status'] = $recent_post->post_status;
+			$author = get_user_by( 'id', $recent_post->post_author );
+			$site['last_post_author'] = $author->user_login;
 		}
 		
 		$recent_comment = get_comments( array('number' => 1) );
@@ -594,7 +600,7 @@ class OrgHub_SitesModel
 		$site['status'] = 'TO DO';
 
 		restore_current_blog();
-
+		
 		$this->add_site( $site );
 		
 		return $this->get_site_by_blog_id( $blog_id );
@@ -686,6 +692,7 @@ class OrgHub_SitesModel
 			'num_comments',
 			'last_post_url',
 			'last_post_date', 
+			'last_post_author',
 			'last_post_status',
 			'last_comment_url',
 			'last_comment_date',
@@ -706,6 +713,7 @@ class OrgHub_SitesModel
 				$u['num_comments'], // num_comments
 				$u['last_post_url'], // last_post_url
 				$u['last_post_date'], // last_post_date
+				$U['last_post_author'], // last_post_author
 				$u['last_post_status'], // last_post_status
 				$u['last_comment_url'], // last_comment_url
 				$u['last_comment_date'], // last_comment_date

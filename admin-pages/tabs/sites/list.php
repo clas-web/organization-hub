@@ -250,6 +250,10 @@ class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 				if( !$order ) $order = 'asc';
 				break;
 
+			case 'last_post_author':
+				if( !$order ) $order = 'asc';
+				break;
+
 			default:
 				$this->orderby = 'last_post_date';
 				if( !$order ) $order = 'desc';
