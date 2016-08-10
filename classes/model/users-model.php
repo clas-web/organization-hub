@@ -307,17 +307,22 @@ class OrgHub_UsersModel
 		$db_user = $this->get_user_by_username( $args['username'] );
 		if( $db_user )
 		{
-			if( isset( $args['status'] ) ) {
-				if( $args['status'] == 'active' && $db_user['status'] == 'inactive' ) {
-					$args['status'] = 'new';
-				}
+			switch( $args['status'] )
+			{
+				case 'new':
+					break;
+				case 'active':
+					if( $db_user['status'] == 'inactive' ) {
+						$args['status'] = 'new';
+					}
+					break;
+				case 'inactive':
+					break;
+				default:
+					$args['status'] = $db_user['status'];
+					break;
 			}
-			else if( ! $db_user['status'] || $db_user['status'] == 'inactive' )  {
-				$args['status'] = 'new';
-			}
-			else {
-				$args['status'] = $db_user['status'];
-			}
+			
 			return $this->update_user( $db_user['id'], $args );
 		}
 		

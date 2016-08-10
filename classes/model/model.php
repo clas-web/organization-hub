@@ -338,7 +338,7 @@ class OrgHub_Model
 				}
 				
 				break;
-				
+			
 			default:
 				$user = apply_filters(
 					"orghub_create_user-$create_user_type",
@@ -408,7 +408,7 @@ class OrgHub_Model
 	{
 		return is_plugin_active_for_network('wpmuldap/ldap_auth.php');
 	}
-
+	
 
 	/**
 	 * Get the blog id from the slug (supports multi-domain sites).
