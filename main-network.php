@@ -28,13 +28,13 @@ function orghubnet_load()
 	
 	$orghub_pages = new APL_Handler( true );
 	
-	$menu = new APL_AdminMenu( 'orghub', 'Organization Hub' );
+	$menu = $orghub_pages->add_menu( new APL_AdminMenu( 'orghub', 'Organization Hub' ) );
+	
 	$menu->add_page( new OrgHub_UsersAdminPage );
 	$menu->add_page( new OrgHub_SitesAdminPage );
 	$menu->add_page( new OrgHub_UploadAdminPage );
 	$menu->add_page( new OrgHub_SettingsAdminPage );
 	
-	$orghub_pages->add_menu( $menu );
 	$orghub_pages->setup();
 
 	if( $orghub_pages->controller )
