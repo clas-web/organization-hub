@@ -1568,23 +1568,21 @@ class OrgHub_UsersModel
 			return null;
 		}
 		
-
+		
 		// Verify that the Connections site is a valid Connections site.
 		$connections_blog_id = $this->is_connections_site( $connections_info['site'] );
 		
-		if( !$connections_blog_id )
-		{
+		if( !$connections_blog_id ) {
 			$this->model->write_to_log( $db_user['username'], 'Connections site does not exist or does not have Connections Hub plugin activated.' );
 			$this->set_connections_column( $db_user, $connections_info, 'connections_error', 'Connections site does not exist or does not have Connections Hub plugin activated.' );
 			return null;
 		}
-
+		
 		// add user to connections site.
-		if( !is_user_member_of_blog($db_user['wp_user_id'], $connections_blog_id) )
-		{
-			add_user_to_blog( $connections_blog_id, $db_user['wp_user_id'], 'contributor' );
+		if( ! is_user_member_of_blog( $db_user['wp_user_id'], $connections_blog_id ) ) {
+			add_user_to_blog( $connections_blog_id, $db_user['wp_user_id'], 'author' );
 		}
-
+		
 		return true;
 	}
 
