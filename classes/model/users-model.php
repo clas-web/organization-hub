@@ -1782,7 +1782,7 @@ class OrgHub_UsersModel
 			$this->setup_connections_custom_post_type();
 			$connections_post = array(
 				'post_title'   => $db_user['first_name'].' '.$db_user['last_name'],
-				'post_name'    => sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] ),
+				'post_name'    => sanitize_title( $db_user['username'] ),
 				'post_type'    => 'connection',
 				'post_status'  => 'publish',
 				'post_author'  => $db_user['wp_user_id'],
