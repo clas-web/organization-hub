@@ -3814,7 +3814,8 @@ class OrgHub_UploadModel
 							}
 						}
 						
-						$termobject = get_term_by( 'name', $heirarchy[$i], $taxname );
+						$db_name = sanitize_term_field( 'name', $heirarchy[$i], 0, $taxname, 'db' );
+						$termobject = get_term_by( 'name', $db_name, $taxname );
 						if( is_wp_error($termobject) )
 						{
 							//TODO: error: 'Invalid '.$taxonomy_name.'term: '.$heirarchy[$i];
