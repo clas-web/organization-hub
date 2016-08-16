@@ -1665,7 +1665,7 @@ class OrgHub_UsersModel
 				$connections_post = array(
 					'ID'           => $connections_info['post_id'],
 					'post_title'   => $db_user['first_name'].' '.$db_user['last_name'],
-					'post_name'    => sanitize_title( $db_user['first_name'].' '.$db_user['last_name'] ),
+					'post_name'    => sanitize_title( ! empty( $db_user['site_path'] ) ? $db_user['site_path'] : $db_user['username'] ),
 					'post_author'  => $db_user['wp_user_id'],
 					'post_status'  => $post_status,
 				);
@@ -1782,7 +1782,7 @@ class OrgHub_UsersModel
 			$this->setup_connections_custom_post_type();
 			$connections_post = array(
 				'post_title'   => $db_user['first_name'].' '.$db_user['last_name'],
-				'post_name'    => sanitize_title( $db_user['username'] ),
+				'post_name'    => sanitize_title( ! empty( $db_user['site_path'] ) ? $db_user['site_path'] : $db_user['username'] ),
 				'post_type'    => 'connection',
 				'post_status'  => 'publish',
 				'post_author'  => $db_user['wp_user_id'],
