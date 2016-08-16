@@ -330,13 +330,6 @@ class OrgHub_Model
 					return null;
 				}
 				
-				if( (is_a($user, 'WP_User')) &&
-				    ($user_id = username_exists($username)) ) 
-				{
-					add_user_to_blog($blog_id, $user_id, $new_role);
-					update_usermeta($user_id, 'primary_blog', $blog_id );
-				}
-				
 				break;
 			
 			default:
