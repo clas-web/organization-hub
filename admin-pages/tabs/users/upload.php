@@ -128,11 +128,11 @@ class OrgHub_UsersUploadTabAdminPage extends APL_TabAdminPage
 		$this->form_start( 'upload', array('enctype' => 'multipart/form-data'), 'upload', null );
 		?>
 
-		<input type="radio"
+		<!-- <input type="radio"
 			   name="<?php apl_name_e( 'type' ); ?>"
 			   value="synch"
 			   checked="checked" />
-		Synch<br/>
+		Synch<br/>-->
 
 		<input type="radio"
 			   name="<?php apl_name_e( 'type' ); ?>"
