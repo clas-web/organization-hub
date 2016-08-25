@@ -626,7 +626,7 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, title
 				all supported fields:
-					type, action, site, title, excerpt, content
+					type, action, site, title, excerpt, content, post-type
 				*/
 				$required_keys = array( 'site', 'title' );
 				$required_keys = array( 'site', 'title' );
@@ -638,7 +638,7 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, title
 				all supported fields:
-					type, action, site, title, excerpt, content
+					type, action, site, title, excerpt, content, post-type
 				*/
 				$required_keys = array( 'site', 'title' );
 				$required_keys = array( 'site', 'title' );
@@ -650,7 +650,7 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, title
 				all supported fields:
-					type, action, site, title
+					type, action, site, title, post-type
 				*/
 				$required_keys = array( 'site', 'title' );
 				$required_values = array( 'site', 'title' );
@@ -662,7 +662,7 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, title, new-title
 				all supported fields:
-					type, action, site, title, new-title
+					type, action, site, title, new-title, post-type
 				*/
 				$required_keys = array( 'site', 'title', 'new-title' );
 				$required_values = array( 'site', 'title', 'new-title' );
@@ -674,7 +674,7 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, subject, regex, replace-text
 				all supported fields:
-					type, action, site, title, post-type, subject, regex, replace-text
+					type, action, site, title, post-type, subject, regex, replace-text, post-type
 				*/
 				$required_keys = array( 'site', 'subject', 'regex', 'replace-text' );
 				$required_values = array( 'site', 'subject', 'regex' );
@@ -688,12 +688,12 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, title
 				all supported fields:
-					type, action, site, title, categories, tags, taxonomy-{name}
+					type, action, site, title, categories, tags, taxonomy-{name}, post-type
 				*/
 				$required_keys = array( 'site', 'title' );
 				$required_values = array( 'site', 'title' );
 				$valid_keys = array( 'categories', 'tags', 'post-type' );
-				$valid_keys_regex = array( '(taxonomy)\-([a-zA-Z0-9\-_]+)' );
+				$valid_regex_keys = array( '(taxonomy)\-([a-zA-Z0-9\-_]+)' );
 				break;
 			
 			case 'add-meta':
@@ -701,7 +701,7 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, title, name, value
 				all supported fields:
-					type, action, site, title, name, value
+					type, action, site, title, name, value, post-type
 				*/
 				$required_keys = array( 'site', 'title', 'name', 'value' );
 				$required_values = array( 'site', 'title', 'name' );
@@ -713,7 +713,7 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, title, name, value
 				all supported fields:
-					type, action, site, title, name, value
+					type, action, site, title, name, value, post-type
 				*/
 				$required_keys = array( 'site', 'title', 'name', 'value' );
 				$required_values = array( 'site', 'title', 'name' );
@@ -725,7 +725,7 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, title, name, value
 				all supported fields:
-					type, action, site, title, name, value
+					type, action, site, title, name, value, post-type
 				*/
 				$required_keys = array( 'site', 'title', 'name', 'value' );
 				$required_values = array( 'site', 'title', 'name' );
@@ -737,7 +737,7 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, title, name
 				all supported fields:
-					type, action, site, title, name
+					type, action, site, title, name, post-type
 				*/
 				$required_keys = array( 'site', 'title', 'name' );
 				$required_values = array( 'site', 'title', 'name' );
@@ -749,7 +749,7 @@ class OrgHub_UploadModel
 				required fields:
 					type, action, site, title, name, new-name
 				all supported fields:
-					type, action, site, title, name, new-name
+					type, action, site, title, name, new-name, post-type
 				*/
 				$required_keys = array( 'site', 'title', 'name', 'new-name' );
 				$required_values = array( 'site', 'title', 'name', 'new-name' );
