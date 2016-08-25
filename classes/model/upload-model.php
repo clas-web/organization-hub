@@ -1123,7 +1123,7 @@ class OrgHub_UploadModel
 	 */
 	private function add_taxonomy_post( &$item )
 	{
-		extract($item);
+		extract( $item );
 		
 		$post = $this->get_post_by_title( $title, $post_type );
 		if( !$post )
@@ -1133,46 +1133,54 @@ class OrgHub_UploadModel
 		}
 		
 		$existing_taxonomies = array();
-		$taxonomy_names = array_keys($taxonomy);
+		$taxonomy_names = array_keys( $taxonomy );
 		foreach( $taxonomy_names as $taxname )
 		{
-			$taxterms = wp_get_object_terms( $post->ID, array($taxname) );
-			$existing_taxonomies[$taxname] = $taxterms;
+			$taxterms = wp_get_object_terms( $post->ID, array( $taxname ) );
+			$existing_taxonomies[ $taxname ] = $taxterms;
 		}
 		
 		$new_taxonomies = $this->get_taxonomies( $taxonomy );
 		foreach( $new_taxonomies as $taxname => $terms )
 		{
-			if( !array_key_exists($taxname, $existing_taxonomies) )
+			$terms = array_map( 'trim', $terms );
+			if( ! array_key_exists( $taxname, $existing_taxonomies ) )
 			{
-				$existing_taxonomies[$taxname] = $terms;
+				$existing_taxonomies[ $taxname ] = $terms;
 				continue;
 			}
-
-			if( is_taxonomy_hierarchical($taxname) )
+			
+			if( is_taxonomy_hierarchical( $taxname ) )
 			{
 				$existing_taxonomies_ids = array_map(
-					function( $term )
-					{
+					function( $term ) {
 						return $term->term_id;
 					},
-					$existing_taxonomies[$taxname]
+					$existing_taxonomies[ $taxname ]
 				);
-				$existing_taxonomies[$taxname] = array_merge( $existing_taxonomies_ids, $new_taxonomies[$taxname] );
+				
+				$existing_taxonomies[ $taxname ] = array_merge( 
+					$existing_taxonomies_ids, 
+					$new_taxonomies[ $taxname ]
+				);
 			}
 			else
 			{
 				$existing_taxonomies_names = array_map(
-					function( $term )
-					{
+					function( $term ) {
 						return $term->name;
 					},
-					$existing_taxonomies[$taxname]
+					$existing_taxonomies[ $taxname ]
 				);
-				$existing_taxonomies[$taxname] = array_merge( $existing_taxonomies_names, $new_taxonomies[$taxname] );
+				
+				$existing_taxonomies[ $taxname ] = array_merge( 
+					$existing_taxonomies_names, 
+					$new_taxonomies[ $taxname ] 
+				);
 			}
 
-			$existing_taxonomies[$taxname] = array_unique( $existing_taxonomies[$taxname] );
+			$existing_taxonomies[ $taxname ] = array_unique( $existing_taxonomies[ $taxname ] );
+			$existing_taxonomies[ $taxname ] = array_filter( $existing_taxonomies[ $taxname ] );
 		}
 		
 		$post_data = array(
