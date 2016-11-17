@@ -578,6 +578,7 @@ class OrgHub_SitesModel
 		{
 			$site['last_post_url'] = get_permalink( $recent_post->ID );
 			$site['last_post_date'] = $recent_post->post_modified;
+			$site['last_post_status'] = $recent_post->post_status." (".$recent_post->post_type.")";
 			$last_author = $wpdb->get_row( 'SELECT meta_value FROM '.$wpdb->postmeta." WHERE post_id =".$recent_post->ID." AND meta_key = '_edit_last'" );
 			if (isset($last_author)) {
 				$author = get_user_by( 'id', $last_author->meta_value );
