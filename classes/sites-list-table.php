@@ -98,8 +98,8 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_num_pages'         => '# of Pages',
 			'site_comment_post'      => 'Comment / Post',
 			'site_post_page'         => 'Post / Page',
-			'site_last_post_date'    => 'Last Post Date',
-			'site_last_post_author'  => 'Last Post Author',
+			'site_last_post_date'    => 'Last Revision Date',
+			'site_last_post_author'  => 'Last Edited By',
 			'site_last_comment_date' => 'Last Comment Date',
 			'site_administrator'     => 'Administrator',
 		);
@@ -158,8 +158,8 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_num_pages'         => '# of Pages',
 			'site_comment_post'      => 'Comment / Post',
 			'site_post_page'         => 'Post / Page',
-			'site_last_post_date'    => 'Last Post Date',
-			'site_last_post_author'  => 'Last Post Author',
+			'site_last_post_date'    => 'Last Revision Date',
+			'site_last_post_author'  => 'Last Edited By',
 			'site_last_comment_date' => 'Last Comment Date',
 			'site_administrator'     => 'Administrator',
 		);
