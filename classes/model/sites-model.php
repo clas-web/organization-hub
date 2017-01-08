@@ -563,7 +563,7 @@ class OrgHub_SitesModel
 			'_builtin' => false
 		);
 		
-		$post_types = array( 'post', 'page' );
+		$post_types = array( 'post', 'page');
 		$post_types = array_merge( $post_types, get_post_types($args, 'names', 'and') );
 		
 		$recent_post = $wpdb->get_row( 'SELECT * FROM '.$wpdb->posts." WHERE post_type IN ('".implode("','", $post_types)."') ORDER BY post_modified_gmt desc LIMIT 1" );
@@ -579,12 +579,9 @@ class OrgHub_SitesModel
 			$site['last_post_url'] = get_permalink( $recent_post->ID );
 			$site['last_post_date'] = $recent_post->post_modified;
 			$site['last_post_status'] = $recent_post->post_status." (".$recent_post->post_type.")";
-			$last_author = $wpdb->get_row( 'SELECT meta_value FROM '.$wpdb->postmeta." WHERE post_id =".$recent_post->ID." AND meta_key = '_edit_last'" );
-			if (isset($last_author)) {
-				$author = get_user_by( 'id', $last_author->meta_value );
-			} else {
-				$author = get_user_by( 'id', $recent_post->post_author );
-			}
+			//find all revisions of last post, sort by most recent revision and get author information
+ 			$last_author = $wpdb->get_row( 'SELECT * FROM '.$wpdb->posts." WHERE post_parent =".$recent_post->ID." ORDER BY post_modified_gmt desc LIMIT 1" );
+			$author = get_user_by( 'id', $last_author->post_author );
 			$site['last_post_author'] = $author->user_login;
 		}
 		
