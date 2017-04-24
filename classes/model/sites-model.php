@@ -715,7 +715,7 @@ class OrgHub_SitesModel
 				$u['num_comments'], // num_comments
 				$u['last_post_url'], // last_post_url
 				$u['last_post_date'], // last_post_date
-				$U['last_post_author'], // last_post_author
+				$u['last_post_author'], // last_post_author
 				$u['last_post_status'], // last_post_status
 				$u['last_comment_url'], // last_comment_url
 				$u['last_comment_date'], // last_comment_date
