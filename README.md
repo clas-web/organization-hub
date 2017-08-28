@@ -22,5 +22,6 @@ Complete instructions on how to use the Organization Hub can be found in the [wi
 
 ## Authors
 
-[Crystal Barton](https://github.com/atrus1701)
+- [Crystal Barton](https://github.com/atrus1701)
+- [Alex Chapin](https://github.com/marpa)
 
