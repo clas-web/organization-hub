@@ -90,6 +90,7 @@ class OrgHub_SitesModel
 				  last_comment_date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 				  admin_email text NOT NULL DEFAULT '',
 				  status text NOT NULL DEFAULT '',
+				  blogtype NOT NULL DEFAULT '',
 				  PRIMARY KEY  (id)
 				) ENGINE=InnoDB $db_charset_collate;";
 		
@@ -157,8 +158,9 @@ class OrgHub_SitesModel
 				'last_comment_date'	=> $args['last_comment_date'],
 				'admin_email'		=> $args['admin_email'],
 				'status'			=> $args['status'],
+				'blogtype'			=> $args['blogtype'],
 			),
-			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 		
 
@@ -185,7 +187,7 @@ class OrgHub_SitesModel
 		global $wpdb;
 		
 
-		// Update user in Users table.
+		// Update site in Sites table.
 		$result = $wpdb->update(
 			self::$site_table,
 			array(
@@ -203,9 +205,10 @@ class OrgHub_SitesModel
 				'last_comment_date'	=> $args['last_comment_date'],
 				'admin_email'		=> $args['admin_email'],
 				'status'			=> $args['status'],
+				'blogtype'			=> $args['blogtype'],
 			),
 			array( 'id' => intval( $id ) ),
-			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 
@@ -231,8 +234,8 @@ class OrgHub_SitesModel
 	 * @param  array  $filter  An array of filter name and values.
 	 * @param  array  $search  An array of search columns and phrases.
 	 * @param  string  $orderby  The column to orderby.
-	 * @param  int  $offset  The offset of the users list.
-	 * @param  int  $limit  The amount of users to retrieve.
+	 * @param  int  $offset  The offset of the sites list.
+	 * @param  int  $limit  The amount of sites to retrieve.
 	 * @return  array  An array of sites given the filtering.
 	 */
 	public function get_sites( $filter = array(), $search = array(), $orderby = array(), $offset = 0, $limit = -1 )
@@ -243,7 +246,7 @@ class OrgHub_SitesModel
 		$list[self::$site_table] = array(
 			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
 			'last_post_url', 'last_post_date', 'last_post_author', 'last_post_status',
-			'last_comment_url', 'last_comment_date', 'admin_email',
+			'last_comment_url', 'last_comment_date', 'admin_email', 'status', 'blogtype'
 		);
 		$list[$wpdb->users] = array(
 			'display_name','user_login'
@@ -290,7 +293,7 @@ class OrgHub_SitesModel
 		$list[self::$site_table] = array(
 			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
 			'last_post_url', 'last_post_date', 'last_post_author', 'last_post_status',
-			'last_comment_url', 'last_comment_date', 'admin_email',
+			'last_comment_url', 'last_comment_date', 'admin_email', 'status', 'blogtype'
 		);
 		$list[$wpdb->users] = array(
 			'display_name','user_login'
@@ -327,8 +330,8 @@ class OrgHub_SitesModel
 	 * @param  array  $filter  An array of filter name and values.
 	 * @param  array  $search  An array of search columns and phrases.
 	 * @param  string  $orderby  The column to orderby.
-	 * @param  int  $offset  The offset of the users list.
-	 * @param  int  $limit  The amount of users to retrieve.
+	 * @param  int  $offset  The offset of the sites list.
+	 * @param  int  $limit  The amount of sites to retrieve.
 	 * @return  string  The constructed SQL needed to complete an SQL statement.
 	 */
 	protected function filter_sql( $filter = array(), $search = array(), $groupby = null, $orderby = null, $offset = 0, $limit = -1 )
@@ -399,7 +402,21 @@ class OrgHub_SitesModel
 					default:
 						break;
 				}
-			}		
+			}	
+			
+			if( $filter['filter_by_blogtype'] !== false )
+			{
+				if( empty($where_string) ) $where_string = 'WHERE ';
+				else $where_string .= ' AND ';
+				
+				$blogtype =  $filter['blogtype'];
+				if ($blogtype == 'Not Set') {
+					$where_string .= 'blogtype = ""';
+				}
+				else{
+					$where_string .= 'blogtype = \''.$blogtype.'\'';
+				}
+			}
 		}
 
 		if( is_array($search) && count($search) > 0 )
@@ -456,7 +473,7 @@ class OrgHub_SitesModel
 
 	/**
 	 * Gets a column in the OrgHub sites table.
-	 * @param  int  $user_id  The OrgHub site's id (not WordPress site id).
+	 * @param  int  $blog_id  The OrgHub site's id (not WordPress site id).
 	 * @param  string  $column  The column name.
 	 * @return  bool  The requested value or false on failure.
 	 */
@@ -474,12 +491,12 @@ class OrgHub_SitesModel
 	
 	/**
 	 * Sets a column in the OrgHub sites table to a value.
-	 * @param  int  $user_id  The OrgHub site's id (not WordPress site id).
+	 * @param  int  $blog_id  The OrgHub site's id (not WordPress site id).
 	 * @param  string  $column  The column name.
 	 * @param  strint  $value  The value to set column to.
 	 * @return  bool  True if update was successful, otherwise false.
 	 */
-	protected function set_site_column( $user_id, $column, $value )
+	protected function set_site_column( $blog_id, $column, $value )
 	{
 		global $wpdb;
 		
@@ -491,7 +508,7 @@ class OrgHub_SitesModel
 			$return = $wpdb->query( 
 				$wpdb->prepare( 
 					"UPDATE ".self::$site_table." SET $column = NULL WHERE id = %d",
-					intval( $user_id )
+					intval( $blog_id )
 				)
 			);
 		}
@@ -501,7 +518,7 @@ class OrgHub_SitesModel
 				$wpdb->prepare( 
 					"UPDATE ".self::$site_table." SET $column = $type WHERE id = %d",
 					$value,
-					intval( $user_id )
+					intval( $blog_id )
 				)
 			);
 		}
@@ -599,7 +616,9 @@ class OrgHub_SitesModel
 		
 		$site['admin_email'] = get_bloginfo( 'admin_email' );
 		
-		$site['status'] = 'TO DO';
+		$site['status'] = 'TBD';
+		
+		$site['blogtype'] = get_option('blogtype', 'Not Set');
 
 		restore_current_blog();
 		
@@ -646,7 +665,7 @@ class OrgHub_SitesModel
 
 
 	/**
-	 * Change the active theme of a blog.
+	 * Change the site admin of a blog.
 	 * @param  int  $blog_id  The blog's id.
 	 * @param  int  $admin_user_id  The admin's user id.
 	 * @param  string  $admin_mail  The admin's email.
@@ -667,7 +686,14 @@ class OrgHub_SitesModel
 		$this->refresh_site( $blog_id );
 	}
 	
+	function change_blogtype( $blog_id, $blogtype )
+	{
+		switch_to_blog( $blog_id );
+
+		update_option( 'blogtype', $blogtype);
 	
+		restore_current_blog();
+	}
 	
 //========================================================================================
 //=========================================================================== Export =====
@@ -682,7 +708,7 @@ class OrgHub_SitesModel
 	public function get_site_csv_export( $filter = array(), $search = array(), $orderby = null )
 	{
 		global $wpdb;
-		$users = $this->get_sites( $filter, $search, $orderby );
+		$sites = $this->get_sites( $filter, $search, $orderby );
 
 
 		$headers = array(
@@ -701,12 +727,13 @@ class OrgHub_SitesModel
 			'admin_email',
 			'admin_username',
 			'admin_name',
+			'blogtype'
 		);
 
-		foreach( $users as &$user )
+		foreach( $sites as &$site )
 		{
-			$u = $user;
-			$user = array(
+			$u = $site;
+			$site = array(
 				$u['blog_id'], // blog_id
 				$u['url'], // url
 				$u['title'], // title
@@ -722,10 +749,11 @@ class OrgHub_SitesModel
 				$u['admin_email'], // admin_email
 				$u['user_login'], // admin_username
 				$u['display_name'], // admin_name
+				$u['blogtype'], // site_type
 			);
 		}
 		
-		PHPUtil_CsvHandler::export( 'sites', $headers, $users );
+		PHPUtil_CsvHandler::export( 'sites', $headers, $sites );
 		exit;
 	}	
 	

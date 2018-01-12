@@ -43,7 +43,7 @@ define( 'ORGANIZATION_HUB_VERSION', '1.0.1' );
  * The database version of the plugin.
  * @var  string
  */
-define( 'ORGANIZATION_HUB_DB_VERSION', '1.1' );
+define( 'ORGANIZATION_HUB_DB_VERSION', '1.1.1' );
 
 /**
  * The database options key for the Organization Hub version.

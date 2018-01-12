@@ -102,6 +102,8 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_last_post_author'  => 'Last Edited By',
 			'site_last_comment_date' => 'Last Comment Date',
 			'site_administrator'     => 'Administrator',
+			'site_status'			 => 'Status',
+			'blogtype'				 => 'Site Type'
 		);
 	}
 	
@@ -142,6 +144,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_last_post_author'  => array( 'last_post_author', true ),
 			'site_last_comment_date' => array( 'last_comment_date', true ),
 			'site_administrator'     => array( 'administrator', false ),
+			'blogtype'				 => array( 'blogtype', false)
 		);
 	}
 	
@@ -162,6 +165,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_last_post_author'  => 'Last Edited By',
 			'site_last_comment_date' => 'Last Comment Date',
 			'site_administrator'     => 'Administrator',
+			'blogtype'				 => 'Site Type'
 		);
 	}
 	
@@ -173,10 +177,11 @@ class OrgHub_SitesListTable extends WP_List_Table
 	public function get_bulk_actions()
 	{
 		$actions = array(
-			'delete' => 'Delete',
-			'archive' => 'Archive',
+			'delete' => 'Mark Deleted',
+			'archive' => 'Mark Archive',
 			'change-theme' => 'Change Theme',
 			'change-site-admin' => 'Change Site Admin',
+			'change-blogtype' => 'Change Site Type',
 		);
   		return $actions;
 	}
@@ -205,7 +210,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 				break;
 			
 			case 'change-theme':
-				if( !isset($bulk_input['theme']) )
+				if( !isset($bulk_input['theme']) || empty($bulk_input['theme']))
 				{
 					// set error
 					return;
@@ -215,7 +220,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 				break;
 			
 			case 'change-site-admin':
-				if( !isset($bulk_input['admin']) )
+				if( !isset($bulk_input['admin']) || empty($bulk_input['admin']))
 				{
 					// set error
 					return;
@@ -231,7 +236,16 @@ class OrgHub_SitesListTable extends WP_List_Table
 				foreach( $sites as $site_id )
 					$this->model->site->change_site_admin( $site_id, $bulk_input['admin'], $admin_email );
 				break;
-				
+			
+			case 'change-blogtype':
+				if( !isset($bulk_input['blogtype']) || empty($bulk_input['blogtype']))
+				{
+					// set error
+					return;
+				}
+				foreach( $sites as $site_id )
+					$this->model->site->change_blogtype( $site_id, $bulk_input['blogtype']);
+				break;
 			default:
 				return false;
 				break;
@@ -240,6 +254,20 @@ class OrgHub_SitesListTable extends WP_List_Table
 		return true;
 	}
 	
+		/**
+	 * Get the filter values for Site Type.
+	 */
+	public function site_type_values(){
+		$sites = get_sites( array( 'number' => 99999));
+		$blogtypes = array('');
+		foreach( $sites as &$site ){
+			$site_blogtype = get_blog_option($site->blog_id,'blogtype');
+			if(!in_array($site_blogtype, $blogtypes)){
+				array_push($blogtypes, $site_blogtype);
+			}
+		}
+		return $blogtypes;
+	}
 
 	/**
 	 * Displays html to display to the area above and below the table.
@@ -287,7 +315,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 		$users = $wpdb->get_results( "SELECT id, display_name FROM $wpdb->users ORDER BY display_name" );
 		
 		?>
-		<form method="get" action="">
+	<!--	<form method="get" action=""> -->
 			<table id="inline-change-admin"
 			       class="list-table-inline-bulk-action"
 			       table="orghub-sites"
@@ -298,9 +326,10 @@ class OrgHub_SitesListTable extends WP_List_Table
 				<td colspan="<?php echo $this->get_column_count(); ?>" class="colspanchange">
 					<fieldset class="inline-change-admin-col-left">
 					<div class="inline-change-admin-col">
-						<h4>Change Administrator</h4>
+						<h4>Choose Administrator</h4>
 						
 						<select name="bulk[admin]">
+						<option value=""></option>
 						<?php foreach( $users as $user ): ?>
 							<option value="<?php echo $user->id; ?>"><?php echo $user->display_name; ?></option>
 						<?php endforeach; ?>
@@ -315,7 +344,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 			</tr>
 			
 			</table>
-		</form>
+	<!-- </form> -->
 		<?php
 	}
 	
@@ -334,7 +363,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 		);
 		
 		?>
-		<form method="get" action="">
+		<!--<form method="get" action=""> -->
 			<table id="inline-change-theme"
 			       class="list-table-inline-bulk-action"
 			       table="orghub-sites"
@@ -345,9 +374,10 @@ class OrgHub_SitesListTable extends WP_List_Table
 				<td colspan="<?php echo $this->get_column_count(); ?>" class="colspanchange">
 					<fieldset class="inline-change-theme-col-left">
 					<div class="inline-change-theme-col">
-						<h4>Change Theme</h4>
+						<h4>Choose Theme</h4>
 						
 						<select name="bulk[theme]">
+						<option value=""></option>
 						<?php foreach( $themes as $theme ): ?>
 							<option value="<?php echo $theme->get_stylesheet(); ?>"><?php echo $theme->name; ?></option>
 						<?php endforeach; ?>
@@ -362,7 +392,41 @@ class OrgHub_SitesListTable extends WP_List_Table
 			</tr>
 			
 			</table>
-		</form>
+		<!-- </form> -->
+		<?php
+	}
+	
+	public function inline_change_blogtype(){
+		$blogtypes = $this->site_type_values();
+		?>
+		<table id="inline-change-blogtype"
+			       class="list-table-inline-bulk-action"
+			       table="orghub-sites"
+			       action="change-blogtype"
+			       style="display:none">
+
+			<tr class="inline-bulk-action">
+				<td colspan="<?php echo $this->get_column_count(); ?>" class="colspanchange">
+					<fieldset class="inline-change-blogtype-col-left">
+					<div class="inline-change-blogtype-col">
+						<h4>Choose Site Type</h4>
+						
+						<select name="bulk[blogtype]">
+						<option value=""></option>
+						<?php foreach( $blogtypes as $blogtype ): ?>
+							<option value="<?php echo $blogtype; ?>"><?php echo $blogtype; ?></option>
+						<?php endforeach; ?>
+						</select>
+
+						<button class="bulk-save">Save</button>
+						<button class="bulk-cancel">Cancel</button>						
+						
+					</div>
+					</fieldset>
+				</td>
+			</tr>
+			
+			</table>
 		<?php
 	}
 	
@@ -476,6 +540,14 @@ class OrgHub_SitesListTable extends WP_List_Table
 				}
 				break;
 			
+			case 'site_status':
+				$html = $item['status'];
+				break;
+				
+			case 'blogtype':
+				$html = $item['blogtype'];
+				break;
+				
 			default:
 				$html = '<strong>ERROR:</strong><br/>'.$column_name;
 		}
