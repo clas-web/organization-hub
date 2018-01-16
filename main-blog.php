@@ -3,7 +3,7 @@
 Plugin Name: Organization Hub (Site)
 Plugin URI: https://github.com/clas-web/organization-hub
 Description: The Organization Hub (Site) is a batch importer for posts, pages, links, taxonomies, and users.
-Version: 1.3.3
+Version: 1.4.0
 Author: Crystal Barton
 Author URI: https://www.linkedin.com/in/crystalbarton
 Network: False

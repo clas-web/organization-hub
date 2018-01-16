@@ -89,11 +89,10 @@ class OrgHub_SitesModel
 				  last_comment_url text NOT NULL DEFAULT '',
 				  last_comment_date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 				  admin_email text NOT NULL DEFAULT '',
-				  status text NOT NULL DEFAULT '',
-				  blogtype NOT NULL DEFAULT '',
-				  PRIMARY KEY  (id)
+				  status text NOT NULL DEFAULT ''";
+		$sql = apply_filters(orghub_create_table, $sql);
+		$sql .= "PRIMARY KEY  (id)
 				) ENGINE=InnoDB $db_charset_collate;";
-		
         dbDelta($sql);
 	}
 	
@@ -139,11 +138,7 @@ class OrgHub_SitesModel
 		
 		global $wpdb;
 		
-
-		// Insert new site into Sites table.
-		$result = $wpdb->insert(
-			self::$site_table,
-			array(
+		$db_fields_insert = array(
 				'blog_id'			=> $args['blog_id'],
 				'url'				=> $args['url'],
 				'title'				=> $args['title'],
@@ -158,10 +153,14 @@ class OrgHub_SitesModel
 				'last_comment_date'	=> $args['last_comment_date'],
 				'admin_email'		=> $args['admin_email'],
 				'status'			=> $args['status'],
-				'blogtype'			=> $args['blogtype'],
-			),
-			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
-		);
+			);
+		$db_types_insert = array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');
+
+		$db_fields_insert = apply_filters('orghub_db_fields_insert', $db_fields_insert);
+		$db_types_insert = apply_filters('orghub_db_types_insert', $db_types_insert);
+		
+		// Insert new site into Sites table.
+		$result = $wpdb->insert(self::$site_table,$db_fields_insert, $db_types_insert);
 		
 
 		// Check to make sure insertion was successful.
@@ -186,11 +185,7 @@ class OrgHub_SitesModel
 	{
 		global $wpdb;
 		
-
-		// Update site in Sites table.
-		$result = $wpdb->update(
-			self::$site_table,
-			array(
+		$db_fields_update = array(
 				'blog_id'			=> $args['blog_id'],
 				'url'				=> $args['url'],
 				'title'				=> $args['title'],
@@ -205,10 +200,18 @@ class OrgHub_SitesModel
 				'last_comment_date'	=> $args['last_comment_date'],
 				'admin_email'		=> $args['admin_email'],
 				'status'			=> $args['status'],
-				'blogtype'			=> $args['blogtype'],
-			),
+			);
+			
+		$db_types_update = array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s',  '%s');
+		
+		$db_fields_update = apply_filters('orghub_db_fields_update', $db_fields_update, $args);
+		$db_types_update = apply_filters('orghub_db_types_update', $db_types_update);
+		
+		// Update site in Sites table.
+		$result = $wpdb->update(
+			self::$site_table, $db_fields_update,
 			array( 'id' => intval( $id ) ),
-			array( '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			$db_types_update,
 			array( '%d' )
 		);
 
@@ -243,11 +246,15 @@ class OrgHub_SitesModel
 		global $wpdb;
 		
 		$list = array();
-		$list[self::$site_table] = array(
+		
+		$fields_list = array(
 			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
 			'last_post_url', 'last_post_date', 'last_post_author', 'last_post_status',
-			'last_comment_url', 'last_comment_date', 'admin_email', 'status', 'blogtype'
+			'last_comment_url', 'last_comment_date', 'admin_email', 'status'
 		);
+		$fields_list = apply_filters('orghub_fields_list_sites', $fields_list);
+		
+		$list[self::$site_table] = $fields_list;
 		$list[$wpdb->users] = array(
 			'display_name','user_login'
 		);
@@ -290,11 +297,15 @@ class OrgHub_SitesModel
 		global $wpdb;
 		
 		$list = array();
-		$list[self::$site_table] = array(
+		
+		$fields_list = array(
 			'id', 'blog_id', 'url', 'title', 'num_posts', 'num_pages', 'num_comments',
 			'last_post_url', 'last_post_date', 'last_post_author', 'last_post_status',
-			'last_comment_url', 'last_comment_date', 'admin_email', 'status', 'blogtype'
+			'last_comment_url', 'last_comment_date', 'admin_email', 'status'
 		);
+		$fields_list = apply_filters('orghub_fields_list_site', $fields_list);
+		
+		$list[self::$site_table] = $fields_list;
 		$list[$wpdb->users] = array(
 			'display_name','user_login'
 		);
@@ -403,20 +414,7 @@ class OrgHub_SitesModel
 						break;
 				}
 			}	
-			
-			if( $filter['filter_by_blogtype'] !== false )
-			{
-				if( empty($where_string) ) $where_string = 'WHERE ';
-				else $where_string .= ' AND ';
-				
-				$blogtype =  $filter['blogtype'];
-				if ($blogtype == 'Not Set') {
-					$where_string .= 'blogtype = ""';
-				}
-				else{
-					$where_string .= 'blogtype = \''.$blogtype.'\'';
-				}
-			}
+
 		}
 
 		if( is_array($search) && count($search) > 0 )
@@ -441,6 +439,8 @@ class OrgHub_SitesModel
 			}
 			$where_string .= ' ) ';
 		}
+		
+		$where_string = apply_filters('orghub_wherestring', $where_string, $filter);
 		
 		if( $orderby ) $orderby = 'ORDER BY '.$orderby; else $orderby = '';
 		
@@ -618,6 +618,7 @@ class OrgHub_SitesModel
 		
 		$site['status'] = 'TBD';
 		
+		//apply_filters('orghub_site_fields', $site, $blog_id);
 		$site['blogtype'] = get_option('blogtype', 'Not Set');
 
 		restore_current_blog();
@@ -686,15 +687,7 @@ class OrgHub_SitesModel
 		$this->refresh_site( $blog_id );
 	}
 	
-	function change_blogtype( $blog_id, $blogtype )
-	{
-		switch_to_blog( $blog_id );
 
-		update_option( 'blogtype', $blogtype);
-	
-		restore_current_blog();
-	}
-	
 //========================================================================================
 //=========================================================================== Export =====
 	
@@ -727,9 +720,10 @@ class OrgHub_SitesModel
 			'admin_email',
 			'admin_username',
 			'admin_name',
-			'blogtype'
 		);
-
+		$headers = apply_filters('orghub_csv_headers', $headers);
+		
+		$extra_values = apply_filters('orghub_csv_values', $extra_values);
 		foreach( $sites as &$site )
 		{
 			$u = $site;
@@ -749,8 +743,10 @@ class OrgHub_SitesModel
 				$u['admin_email'], // admin_email
 				$u['user_login'], // admin_username
 				$u['display_name'], // admin_name
-				$u['blogtype'], // site_type
-			);
+				);
+			foreach($extra_values as $extra_value){
+				array_push($site, u[$extra_value]);
+			}
 		}
 		
 		PHPUtil_CsvHandler::export( 'sites', $headers, $sites );

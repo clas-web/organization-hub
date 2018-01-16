@@ -203,12 +203,9 @@ class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 				),
 				'default' => 1,
 			),
-			'filter_by_blogtype' => array( 'default' => false ),
-			'blogtype' => array(
-				'values' => $this->site_type_values(),
-				'default' => '',
-			),
 		);
+		
+		$this->filter_types = apply_filters('orghub_filter_types', $this->filter_types);
 		
 		$this->filters = array();
 		foreach( $this->filter_types as $type => $settings )
@@ -273,22 +270,6 @@ class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 		$this->orderby .= ' '.$order;
 	}
 
-	
-	/**
-	 * Get the filter values for Site Type.
-	 */
-	public function site_type_values(){
-		$sites = get_sites( array( 'number' => 99999));
-		$blogtypes = array('');
-		foreach( $sites as &$site ){
-			$site_blogtype = get_blog_option($site->blog_id,'blogtype');
-			if(!in_array($site_blogtype, $blogtypes)){
-				array_push($blogtypes, $site_blogtype);
-			}
-		}
-		return $blogtypes;
-	}
-	
 	
 	/**
 	 * Displays the current admin page.
@@ -432,25 +413,9 @@ class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 					</select>
 					
 				</div>	
-				<div class="blogtype">
-					<div class="title">
-						<input type="checkbox"
-						       name="filter_by_blogtype"
-						       value="1"
-						       <?php checked( true, $this->filters['filter_by_blogtype'] !== false ); ?> />
-						Site Type
-					</div>
-					
-					<select name="blogtype">
-						<?php foreach( $this->filter_types['blogtype']['values'] as $value ): ?>
-							<option value="<?php echo $value; ?>"
-								    <?php selected( $value, $this->filters['blogtype'] ); ?> >
-								<?php echo $value; ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-					
-				</div>						
+				<?php $more_filters = '<div></div>';
+				echo apply_filters('orghub_more_filters', $more_filters, $this->filters);
+				?>
 			</div>
 			
 			
@@ -473,7 +438,7 @@ class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 		if( $this->list_table->has_items() ):
 			$this->list_table->inline_change_theme();
 			$this->list_table->inline_change_admin();
-			$this->list_table->inline_change_blogtype();
+			do_action('orghub_inline_filter', $this->list_table);
 		endif;
 	}
 	

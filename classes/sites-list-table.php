@@ -90,7 +90,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 	 */
 	public function get_columns()
 	{
-		return array(
+		$table_columns = array(
 			'cb'                     => '<input type="checkbox" />',
 			'site_title'             => 'Title',
 			'site_num_comments'      => '# of Comments',
@@ -103,8 +103,9 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_last_comment_date' => 'Last Comment Date',
 			'site_administrator'     => 'Administrator',
 			'site_status'			 => 'Status',
-			'blogtype'				 => 'Site Type'
 		);
+		$table_columns = apply_filters('orghub_table_columns', $table_columns);
+		return $table_columns;
 	}
 	
 	
@@ -144,7 +145,6 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_last_post_author'  => array( 'last_post_author', true ),
 			'site_last_comment_date' => array( 'last_comment_date', true ),
 			'site_administrator'     => array( 'administrator', false ),
-			'blogtype'				 => array( 'blogtype', false)
 		);
 	}
 	
@@ -165,7 +165,6 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_last_post_author'  => 'Last Edited By',
 			'site_last_comment_date' => 'Last Comment Date',
 			'site_administrator'     => 'Administrator',
-			'blogtype'				 => 'Site Type'
 		);
 	}
 	
@@ -181,8 +180,8 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'archive' => 'Mark Archive',
 			'change-theme' => 'Change Theme',
 			'change-site-admin' => 'Change Site Admin',
-			'change-blogtype' => 'Change Site Type',
 		);
+		$actions = apply_filters('orghub_actions', $actions);
   		return $actions;
 	}
 
@@ -196,7 +195,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 		$action = $this->current_action();
 		$sites = ( isset($_REQUEST['site']) ? $_REQUEST['site'] : array() );
 		$bulk_input = ( isset($_REQUEST['bulk']) ? $_REQUEST['bulk'] : array() );
-				
+		
 		switch( $action )
 		{
 			case 'delete':
@@ -237,37 +236,15 @@ class OrgHub_SitesListTable extends WP_List_Table
 					$this->model->site->change_site_admin( $site_id, $bulk_input['admin'], $admin_email );
 				break;
 			
-			case 'change-blogtype':
-				if( !isset($bulk_input['blogtype']) || empty($bulk_input['blogtype']))
-				{
-					// set error
-					return;
-				}
-				foreach( $sites as $site_id )
-					$this->model->site->change_blogtype( $site_id, $bulk_input['blogtype']);
-				break;
+			
 			default:
-				return false;
+				do_action('orghub_batch_action', $action, $sites, $bulk_input);
 				break;
 		}
 		
 		return true;
 	}
-	
-		/**
-	 * Get the filter values for Site Type.
-	 */
-	public function site_type_values(){
-		$sites = get_sites( array( 'number' => 99999));
-		$blogtypes = array('');
-		foreach( $sites as &$site ){
-			$site_blogtype = get_blog_option($site->blog_id,'blogtype');
-			if(!in_array($site_blogtype, $blogtypes)){
-				array_push($blogtypes, $site_blogtype);
-			}
-		}
-		return $blogtypes;
-	}
+
 
 	/**
 	 * Displays html to display to the area above and below the table.
@@ -396,40 +373,6 @@ class OrgHub_SitesListTable extends WP_List_Table
 		<?php
 	}
 	
-	public function inline_change_blogtype(){
-		$blogtypes = $this->site_type_values();
-		?>
-		<table id="inline-change-blogtype"
-			       class="list-table-inline-bulk-action"
-			       table="orghub-sites"
-			       action="change-blogtype"
-			       style="display:none">
-
-			<tr class="inline-bulk-action">
-				<td colspan="<?php echo $this->get_column_count(); ?>" class="colspanchange">
-					<fieldset class="inline-change-blogtype-col-left">
-					<div class="inline-change-blogtype-col">
-						<h4>Choose Site Type</h4>
-						
-						<select name="bulk[blogtype]">
-						<option value=""></option>
-						<?php foreach( $blogtypes as $blogtype ): ?>
-							<option value="<?php echo $blogtype; ?>"><?php echo $blogtype; ?></option>
-						<?php endforeach; ?>
-						</select>
-
-						<button class="bulk-save">Save</button>
-						<button class="bulk-cancel">Cancel</button>						
-						
-					</div>
-					</fieldset>
-				</td>
-			</tr>
-			
-			</table>
-		<?php
-	}
-	
 	
 	/**
 	 * Displays the text to display when no sites are found.
@@ -544,12 +487,10 @@ class OrgHub_SitesListTable extends WP_List_Table
 				$html = $item['status'];
 				break;
 				
-			case 'blogtype':
-				$html = $item['blogtype'];
-				break;
 				
 			default:
 				$html = '<strong>ERROR:</strong><br/>'.$column_name;
+				$html = apply_filters('orghub_column_html', $column_name, $item, $html);
 		}
 		
 		return $html;
