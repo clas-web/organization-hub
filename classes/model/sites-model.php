@@ -90,7 +90,7 @@ class OrgHub_SitesModel
 				  last_comment_date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 				  admin_email text NOT NULL DEFAULT '',
 				  status text NOT NULL DEFAULT ''";
-		$sql = apply_filters(orghub_create_table, $sql);
+		$sql = apply_filters('orghub_create_table', $sql);
 		$sql .= "PRIMARY KEY  (id)
 				) ENGINE=InnoDB $db_charset_collate;";
         dbDelta($sql);
@@ -538,11 +538,11 @@ class OrgHub_SitesModel
 	 */
 	public function refresh_all_sites()
 	{
-		$sites = wp_get_sites( array( 'limit' => 1000000 ) );
+		$sites = get_sites( array( 'number' => 99999));
 		
 		foreach( $sites as &$site )
 		{
-			$this->refresh_site( $site['blog_id'] );
+			$this->refresh_site( $site->blog_id );
 		}
 		
 		$this->model->update_option( 'sites-refresh-time', date('Y-m-d H:i:s') );
@@ -618,9 +618,10 @@ class OrgHub_SitesModel
 		
 		$site['status'] = 'TBD';
 		
-		//apply_filters('orghub_site_fields', $site, $blog_id);
+		
 		$site['blogtype'] = get_option('blogtype', 'Not Set');
-
+		$site['variations'] = maybe_serialize(get_theme_mod('vtt-variation-choices'));
+		apply_filters('orghub_site_fields', $site, $blog_id);
 		restore_current_blog();
 		
 		$this->add_site( $site );
