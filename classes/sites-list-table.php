@@ -102,7 +102,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 			'site_last_post_author'  => 'Last Edited By',
 			'site_last_comment_date' => 'Last Comment Date',
 			'site_administrator'     => 'Administrator',
-			'site_status'			 => 'Status',
+			//'site_status'			 => 'Status',
 		);
 		$table_columns = apply_filters('orghub_table_columns', $table_columns);
 		return $table_columns;
@@ -239,6 +239,7 @@ class OrgHub_SitesListTable extends WP_List_Table
 			
 			default:
 				do_action('orghub_batch_action', $action, $sites, $bulk_input);
+				return false;
 				break;
 		}
 		

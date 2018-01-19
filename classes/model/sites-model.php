@@ -618,10 +618,7 @@ class OrgHub_SitesModel
 		
 		$site['status'] = 'TBD';
 		
-		
-		$site['blogtype'] = get_option('blogtype', 'Not Set');
-		$site['variations'] = maybe_serialize(get_theme_mod('vtt-variation-choices'));
-		apply_filters('orghub_site_fields', $site, $blog_id);
+		$site = apply_filters('orghub_site_fields', $site);
 		restore_current_blog();
 		
 		$this->add_site( $site );
@@ -723,7 +720,7 @@ class OrgHub_SitesModel
 			'admin_name',
 		);
 		$headers = apply_filters('orghub_csv_headers', $headers);
-		
+		$extra_values = array();
 		$extra_values = apply_filters('orghub_csv_values', $extra_values);
 		foreach( $sites as &$site )
 		{
@@ -746,7 +743,7 @@ class OrgHub_SitesModel
 				$u['display_name'], // admin_name
 				);
 			foreach($extra_values as $extra_value){
-				array_push($site, u[$extra_value]);
+				array_push($site, $u[$extra_value]);
 			}
 		}
 		
