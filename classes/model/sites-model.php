@@ -544,9 +544,25 @@ class OrgHub_SitesModel
 		{
 			$this->refresh_site( $site->blog_id );
 		}
-		
 		$this->model->update_option( 'sites-refresh-time', date('Y-m-d H:i:s') );
 	}
+	
+	
+	/**
+	 * Remove deleted sites from the orghub sites table.
+	 */
+	public function remove_deleted_sites()
+	{
+		global $wpdb;
+		$orghub_blogs = $wpdb->get_col('SELECT blog_id FROM '.self::$site_table);
+		foreach ($orghub_blogs as $blog_id){
+			$site = false;
+			$site = $wpdb->get_row( 'SELECT * FROM '.$wpdb->blogs.' WHERE blog_id = '.intval($blog_id), ARRAY_A );
+			if(!$site){
+				$wpdb->query("DELETE FROM ".self::$site_table." WHERE blog_id = ".$blog_id);
+			}
+		}
+	} 
 	
 	
 	/**
@@ -555,11 +571,13 @@ class OrgHub_SitesModel
 	 * @return  array|bool  The site's info on success, otherwise false.
 	 */
 	public function refresh_site( $blog_id )
-	{
+	{	
 		global $wpdb;
-		
 		$site = $wpdb->get_row( 'SELECT * FROM '.$wpdb->blogs.' WHERE blog_id = '.intval($blog_id), ARRAY_A );
-		if( !$site ) return false;
+		if( !$site ) {
+			$wpdb->prepare("DELETE FROM ".self::$site_table." WHERE blog_id = %d", $blog_id);			
+			return false;
+		}
 		
 		switch_to_blog( $blog_id );
 

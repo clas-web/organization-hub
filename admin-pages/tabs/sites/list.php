@@ -71,6 +71,7 @@ class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 	public function init()
 	{
 		$this->setup_filters();
+		$this->model->site->remove_deleted_sites();
 		$this->list_table = new OrgHub_SitesListTable( $this );
 	}
 	
@@ -456,10 +457,8 @@ class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 		{
 			case 'refresh-all-sites':
 				$ids = $this->model->site->get_blog_ids();
-				
 				$items = array();
 				foreach( $ids as $id ) $items[] = array( 'blog_id' => $id );
-				
 				$this->ajax_set_items( 'refresh-site', $items, 'refresh_site_start', 'refresh_site_end', 'refresh_site_loop_start', 'refresh_site_loop_end' );
 				break;
 			
@@ -469,7 +468,6 @@ class OrgHub_SitesListTabAdminPage extends APL_TabAdminPage
 					$this->ajax_failed( 'No blog id given.' );
 					return;
 				}
-				
 				$site_data = $this->model->site->refresh_site( $input['blog_id'] );
 				$column_data = array();
 				
