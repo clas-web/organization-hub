@@ -312,7 +312,7 @@ class OrgHub_UsersModel
 				case 'new':
 					break;
 				case 'active':
-					if( $db_user['status'] == 'inactive' ) {
+					if( $db_user['status'] == 'inactive' || !$this->get_wp_user( $db_user['wp_user_id'] )) {
 						$args['status'] = 'new';
 					}
 					break;
@@ -1193,7 +1193,7 @@ class OrgHub_UsersModel
 		
 		if( $user === false )
 		{
-			$user = $this->model->create_user( $db_user['username'], null, $db_user['email'] );
+			$user = $this->model->create_user( $db_user['username'], null, $db_user['email'], $db_user['first_name'], $db_user['last_name'] );
 		}
 		
 		if( $user )
@@ -1362,6 +1362,7 @@ class OrgHub_UsersModel
 			{
 				$this->update_blog_settings( $db_user['profile_blog_id'], false, false, false, false );
 				$this->set_user_column( $db_user, 'profile_blog_error', null );
+				add_user_to_blog($db_user['profile_blog_id'], $db_user['wp_user_id'], 'administrator' );
 				return $db_user['profile_blog_id'];
 			}
 			else

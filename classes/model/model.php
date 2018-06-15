@@ -145,12 +145,13 @@ class OrgHub_Model
 	{
 		if( $merge === true )
 			$options = array_merge( $this->get_options(), $options );
-		
-		if( is_network_admin() )
-			update_site_option( ORGANIZATION_HUB_OPTIONS, $options );
-		else
-			update_option( ORGANIZATION_HUB_OPTIONS, $options );
-	}
+			if( is_network_admin() ){
+				update_site_option( ORGANIZATION_HUB_OPTIONS, $options );
+			}
+			else{
+				update_option( ORGANIZATION_HUB_OPTIONS, $options );
+			}
+		}
 	
 	
 	/**
@@ -265,71 +266,55 @@ class OrgHub_Model
 	 * @param  string  $email  The user's email.
 	 * @return  WP_User|null  The user object on success, otherwise null.
 	 */
-	public function create_user( $username, $password, $email )
+	public function create_user( $username, $password, $email, $firstname, $lastname )
 	{
 		$user = null;
 		
 
 		// Determine how the user should be created.
 		$create_user_type = $this->get_option( 'create-user-type', 'local' );
-		
-
 		// Create the user.
 		switch( $create_user_type )
 		{
 			case 'local':
-				if( empty($password) )
-					$password = wp_generate_password( 8, false );
+				if (!isset($password)) 	$newPassword = wp_generate_password( 8, false );
 				
-				$result = wp_create_user( $username, $password, $email );
-				
-				if( is_wp_error($result) )
-				{
+				// Check to see if email is empty
+				if ( empty($email) )
+					return new WP_Error('newusercreate_emailempty', sprintf(__('<strong>ERROR</strong>: <strong>%s</strong> does not have an email address in the uploaded file.  All WordPress accounts must have a unique email address.'),$username));
+				// Check to see if email already exists
+				if ( email_exists($email) )
+					return new WP_Error('newusercreate_emailconflict', sprintf(__('<strong>ERROR</strong>: <strong>%s</strong> (%s) is already associated with another account.  All accounts (including the admin account) must have unique email addresses.'),$email,$username));
+				$user_id = wpmu_create_user( $username, $newPassword, $email );
+				if ( $user_id === false ) {
 					$this->last_error = $result->get_error_message();
 					return null;
 				}
-				break;
-			
-			case 'wpmu-ldap':
-				if( !$this->is_ldap_plugin_active() )
-				{
-					$this->last_error = 'WPMU LDAP plugin not active.';
-					return null;
-				}
 				
-				if( get_site_option('ldapAuth') !== '1' )
-				{
-					$this->last_error = 'WPMU LDAP plugin not enabled.';
-					return null;
+				//For use with shibboleth login. Not neccessary for general use.
+				update_usermeta($user_id, 'shibboleth_account', true);
+
+				//Set Public Display Name
+				if (!empty($firstname) && !empty($lastname)){
+					update_usermeta($user_id, 'first_name', $firstname);
+					update_usermeta($user_id, 'last_name', $lastname);
+					$display_name = $firstname.' '.$lastname;
+					if (!empty($display_name)) {
+						$args = array(
+							'ID' => $user_id,
+							'nickname' => $firstname,
+							'display_name' => $display_name
+						);
+						wp_update_user( $args );
+					}
 				}
 
-				$user_data = null;
-				if( !wpmuLdapSearch(wpmuSetupLdapOptions(), $username, $user_data) ) 
-				{
-					$this->last_error = 'Unable to find user in LDAP: '.$username;
-					return null;
-				}
-				
-				if( ($user_id = username_exists($username)) &&
-					(wpmuLdapAddUserToBlog($user_id, 1, 'subscriber')) )
-				{
-					break;
-				}
-
-				$user = wpmuLdapCreateWPUserFromLdap(
-					array(
-						'newUserName'	=> $username,
-						'ldapUserData'	=> $user_data,
-						'createBlog'	=> false,
-					)
-				);
-		
-				if( is_wp_error($user) ) 
-				{
-					$this->last_error = $user->get_error_message();
-					return null;
-				}
-				
+				//This is for plugin events
+				do_action('wpmu_activate_user', $user_id, $newPassword, false);
+	
+				// Add user as subscriber to blog #1
+				add_user_to_blog( '1', $userid, get_site_option( 'default_user_role', 'subscriber' ) );
+				update_usermeta($userid, "primary_blog", 1);
 				break;
 			
 			default:
@@ -393,15 +378,6 @@ class OrgHub_Model
 	}
 
 
-	/**
-	 * Determines if the WPMU Ldap plugin is active.
-	 * @return  bool  True if the plugin is active, otherwise false.
-	 */
-	public function is_ldap_plugin_active()
-	{
-		return is_plugin_active_for_network('wpmuldap/ldap_auth.php');
-	}
-	
 
 	/**
 	 * Get the blog id from the slug (supports multi-domain sites).

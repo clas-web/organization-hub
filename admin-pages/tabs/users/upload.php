@@ -84,11 +84,6 @@ class OrgHub_UsersUploadTabAdminPage extends APL_TabAdminPage
 			}
 		}
 		
-		if( isset($_REQUEST['type']) && $_REQUEST['type'] === 'synch' )
-		{
-			$this->model->user->set_inactive_users( $user_ids );
-		}
-		
 		$this->model->update_options(
 			array(
 				'last-upload' => date('Y-m-d H:i:s'),
@@ -127,18 +122,7 @@ class OrgHub_UsersUploadTabAdminPage extends APL_TabAdminPage
 		<?php
 		$this->form_start( 'upload', array('enctype' => 'multipart/form-data'), 'upload', null );
 		?>
-
-		<!-- <input type="radio"
-			   name="<?php apl_name_e( 'type' ); ?>"
-			   value="synch"
-			   checked="checked" />
-		Synch<br/>-->
-
-		<input type="radio"
-			   name="<?php apl_name_e( 'type' ); ?>"
-			   value="add" />
-		Add<br/>
-		
+			
 		<input type="file"
 			   name="<?php apl_name_e( 'upload' ); ?>"
 			   accept=".csv" />

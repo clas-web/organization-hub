@@ -1661,22 +1661,24 @@ class OrgHub_UploadModel
 	private function add_page( &$item )
 	{
 		extract($item);
-
+		$user_slug = $this->get_string_value( $slug, true );
 		$post = $this->get_post_by_title( $title, 'page' );
-		if( $post )
-		{
-			$this->model->last_error = 'Page already exists "'.$title.'". ';
+		if( $post ){
+			$this->model->last_error = 'A page titled "'.$title.'" already exists. Slug has been modified to accommodate.';
 			return false;
+			//Could remove error and empty user slug and let WP increment as needed so that multiple pages with same title could be created.
+			//Issues arise with child pages specifiying a parent by title.  get_page_by_title returns page with lowest ID when multiple exist.
+			//$user_slug = '';
 		}
-				
+	
 		$post_data = array(
 			'post_content'	=> $this->get_string_value( $content, true ),
-			'post_name'		=> $this->get_string_value( $slug, true ),
+			'post_name'		=> $user_slug,
 			'post_title'	=> $title,
 			'post_status'	=> $this->get_post_status( $status ),
 			'post_type'		=> 'page',
 			'menu_order'	=> $this->get_int_value( $order, true ),
-			'parent'		=> $this->get_post_by_title( $parent, 'page' ),
+			'post_parent'	=> $this->get_post_by_title( $parent, 'page' )->ID,
 			'post_author'	=> $this->get_author_id( $author ),
 			'post_password'	=> $this->get_string_value( $password, true ),
 			'guid'			=> $this->get_string_value( $guid, true ),
@@ -3707,12 +3709,12 @@ class OrgHub_UploadModel
 	 * @param  string  $email  Email to use if user is created.
 	 * @return  int|null  The author's id if they exist, otherwise null.
 	 */
-	protected function get_author_id( $author, $create = false, $password = false, $email = false )
+	protected function get_author_id( $author, $create = false, $password = false, $email = false, $firstname = '', $lastname = '' )
 	{
 		$author_data = get_user_by( 'login', $author );
 		if( !$author_data && $create && $email )
 		{
-			$author_data = $this->model->create_user( $author, $password, $email );
+			$author_data = $this->model->create_user( $author, $password, $email, $firstname, $lastname );
 		}
 		
 		return ( $author_data ? $author_data->ID : null );

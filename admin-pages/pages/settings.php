@@ -66,7 +66,7 @@ class OrgHub_SettingsAdminPage extends APL_AdminPage
 	{
 		$create_user_types = apply_filters(
 			'orghub_create_users_types',
-			array( 'wpmu-ldap' )
+			array()
 		);
 		$create_user_types = array_merge( array('local'), $create_user_types );
 		$create_user_types = array_unique( $create_user_types );
@@ -75,9 +75,9 @@ class OrgHub_SettingsAdminPage extends APL_AdminPage
 		
 		$this->form_start( 'save-settings' );
 		
-		submit_button( 'Save', 'primary', 'action' );
-		?>
 		
+		?>
+		<h3>Account Type<h3>
 		<select name="<?php echo ORGANIZATION_HUB_OPTIONS; ?>[create-user-type]">
 			<?php foreach( $create_user_types as $type ): ?>
 				<option value="<?php echo $type; ?>" <?php selected($current_type, $type); ?>>
@@ -87,6 +87,7 @@ class OrgHub_SettingsAdminPage extends APL_AdminPage
 		</select>
 		
 		<?php
+		submit_button( 'Save', 'primary', 'action' );
 		$this->form_end();
 	}
 	
